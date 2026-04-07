@@ -1,0 +1,85 @@
+require "test_helper"
+require "webmock/minitest"
+
+class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
+  setup do
+    WebMock.enable!
+    WebMock.disable_net_connect!
+    @favorite = Favorite.create!(
+      url: "https://www.youtube.com/watch?v=test123",
+      status: "pending",
+      content_type: "youtube"
+    )
+    @extractor_result = {
+      title: "Rails 8 튜토리얼",
+      description: "Rails 8 소개",
+      transcript: "안녕하세요. 이 영상에서는 Rails 8을 소개합니다."
+    }
+    @analyzer_result = {
+      summary: "Rails 8 튜토리얼 요약",
+      key_points: [ "Solid Queue", "Hotwire" ],
+      tags: [ "rails", "tutorial" ],
+      sentiment: "positive"
+    }
+  end
+
+  teardown do
+    WebMock.reset!
+  end
+
+  test "성공 시 pending → analyzing → done 상태 전이 및 Analysis 생성" do
+    YoutubeExtractor.stub(:call, @extractor_result) do
+      LlmAnalyzer.stub(:call, @analyzer_result) do
+        AnalyzeYoutubeJob.perform_now(@favorite.id)
+
+        @favorite.reload
+        assert_equal "done", @favorite.status
+        assert_not_nil @favorite.analysis
+        assert_equal "Rails 8 튜토리얼 요약", @favorite.analysis.summary
+        assert_equal [ "rails", "tutorial" ], @favorite.analysis.tags
+        assert_equal "positive", @favorite.analysis.sentiment
+      end
+    end
+  end
+
+  test "raw_content에 transcript를 캐싱한다" do
+    YoutubeExtractor.stub(:call, @extractor_result) do
+      LlmAnalyzer.stub(:call, @analyzer_result) do
+        AnalyzeYoutubeJob.perform_now(@favorite.id)
+
+        assert_includes @favorite.reload.analysis.raw_content, "Rails 8"
+      end
+    end
+  end
+
+  test "YouTube 추출 실패 시 status = failed" do
+    YoutubeExtractor.stub(:call, ->(_url) { raise YoutubeExtractor::ExtractionError, "yt-dlp failed" }) do
+      AnalyzeYoutubeJob.perform_now(@favorite.id)
+
+      @favorite.reload
+      assert_equal "failed", @favorite.status
+    end
+  end
+
+  test "LLM 분석 실패 시 status = failed" do
+    YoutubeExtractor.stub(:call, @extractor_result) do
+      LlmAnalyzer.stub(:call, ->(*_args) { raise LlmAnalyzer::ServerError, "llm error" }) do
+        AnalyzeYoutubeJob.perform_now(@favorite.id)
+
+        @favorite.reload
+        assert_equal "failed", @favorite.status
+      end
+    end
+  end
+
+  test "재실행 시 Analysis를 덮어쓴다 (upsert)" do
+    YoutubeExtractor.stub(:call, @extractor_result) do
+      LlmAnalyzer.stub(:call, @analyzer_result) do
+        AnalyzeYoutubeJob.perform_now(@favorite.id)
+        AnalyzeYoutubeJob.perform_now(@favorite.id)
+
+        assert_equal 1, Analysis.where(favorite_id: @favorite.id).count
+      end
+    end
+  end
+end

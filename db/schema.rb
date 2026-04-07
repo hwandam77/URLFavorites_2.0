@@ -10,13 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_07_000004) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_07_000005) do
   create_table "analyses", force: :cascade do |t|
     t.datetime "analyzed_at"
     t.datetime "created_at", null: false
     t.integer "favorite_id", null: false
     t.text "key_points"
     t.string "model_used"
+    t.text "raw_content"
     t.string "sentiment"
     t.string "subtitle_source"
     t.text "summary"

@@ -51,6 +51,39 @@ Layer 2: Nexus LLM (dispatch.sh, 태스크 단위)
 | rails-test | TDD 테스트 선행 작성 | gsd-executor가 구현 전 RED 단계 선행 |
 | rails-qa | 경계면 교차 비교, E2E 검증 | gsd-verifier가 Read하여 체크리스트 적용 |
 
+### Nexus LLM 위임 규칙 (MANDATORY)
+
+코드 생성 시 반드시 로컬 LLM(dispatch.sh)을 **먼저** 시도한다. Claude가 직접 코드를 작성하는 것은 dispatch 실패 시 에스컬레이션으로만 허용.
+
+```bash
+DISPATCH="/Users/hwandam/workspace/infrastructure/llm-orchestration/dispatch.sh"
+```
+
+**위임 대상 (dispatch.sh 필수):**
+- 단일 메서드/함수 (< 50줄) → `$DISPATCH --model 30b --prompt "..." --project urlf2 --lang ruby`
+- migration, factory, fixture → 30b
+- 모델, 시리얼라이저, 라우트 boilerplate → 30b
+- 테스트 스켈레톤 → 30b
+- 서비스 클래스 전체 → `$DISPATCH --model 48b --prompt "..." --project urlf2 --lang ruby`
+- 복잡한 리팩토링 → 48b
+
+**Claude 직접 처리 (dispatch 안 함):**
+- 아키텍처 결정, 파일 간 통합 로직
+- 디버깅 (로그 분석 → 원인 추론 → 수정)
+- GSD 상태 관리, git 커밋, 검증 명령
+
+**호출 → 적용 패턴:**
+1. `$DISPATCH --model 30b --prompt "영어 프롬프트" --project urlf2 --lang ruby` 실행
+2. stdout에 출력된 result 파일 경로를 Read
+3. 코드 블록 추출 → Write/Edit로 대상 파일에 적용
+4. verify 명령으로 검증
+
+**프롬프트 규칙:** 영어 전용, 입출력 스펙 명확, 30b는 100 tokens 이내, 48b는 300 tokens 이내.
+
+**에스컬레이션:** dispatch 실패 → 프롬프트 개선 1회 재시도 → 재실패 시 Claude 직접 구현 + SUMMARY.md에 기록.
+
+**서킷 확인:** 코드 생성 전 `/Users/hwandam/workspace/infrastructure/llm-orchestration/circuit.sh status` 로 모델 상태 확인. OPEN이면 해당 모델 건너뛰기.
+
 ### 실행 규칙
 
 - **GSD 경유 (기본):** `/gsd:plan-phase N` → `/gsd:execute-phase N` → `/gsd:verify-work N`
