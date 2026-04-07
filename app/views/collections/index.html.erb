@@ -1,0 +1,35 @@
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Collections</h1>
+  </div>
+
+  <!-- New Collection Form -->
+  <%= form_with url: collections_path, method: :post, class: "flex gap-2 mb-6" do |f| %>
+    <input type="text" name="collection[name]" placeholder="New collection name..."
+      class="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 cursor-pointer">Create</button>
+  <% end %>
+
+  <% if @collections.any? %>
+    <div class="space-y-3">
+      <% @collections.each do |collection| %>
+        <div class="bg-white rounded-lg shadow-sm border p-4 flex justify-between items-center">
+          <div>
+            <%= link_to collection.name, collection_path(collection), class: "font-semibold text-gray-900 hover:text-blue-600" %>
+            <% if collection.description.present? %>
+              <p class="text-sm text-gray-500"><%= collection.description %></p>
+            <% end %>
+            <span class="text-xs text-gray-400"><%= collection.favorites.count %> favorites</span>
+          </div>
+          <%= button_to "Delete", collection_path(collection), method: :delete,
+            data: { turbo_confirm: "Delete this collection?" },
+            class: "text-red-500 hover:text-red-700 text-sm" %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="text-center py-12">
+      <p class="text-gray-500">No collections yet. Create one above.</p>
+    </div>
+  <% end %>
+</div>
