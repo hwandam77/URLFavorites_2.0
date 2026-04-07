@@ -1,14 +1,21 @@
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  # DSL 을 사용하여 애플리케이션 라우트를 정의합니다. https://guides.rubyonrails.org/routing.html
 
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
+  # 예외 없이 부팅되면 200, 그렇지 않으면 500 을 반환하는 /up 에서 건강 상태를 공개합니다.
+  # 로드 밸런서 및 가동 시간 모니터가 애플리케이션이 활성인지 확인하는 데 사용할 수 있습니다.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
+  # app/views/pwa/* 에서 동적 PWA 파일을 렌더링합니다 (application.html.erb 에서 manifest 를 연결하는 것을 기억하세요)
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+  root "favorites#index"
+
+  resources :favorites, only: %i[index create show destroy] do
+    resource :note, only: %i[update], controller: "favorite_notes"
+    resource :collection_membership, only: %i[create destroy]
+    post :retry, on: :member
+  end
+
+  resources :collections, only: %i[index show create update destroy]
 end
