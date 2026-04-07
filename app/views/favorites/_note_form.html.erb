@@ -1,0 +1,8 @@
+<%= form_with url: favorite_note_path(favorite), method: :patch, class: "space-y-2" do |f| %>
+  <textarea name="favorite[note]" rows="3"
+    class="w-full rounded border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+    placeholder="Add a note..."><%= favorite.note %></textarea>
+  <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer">
+    Save Note
+  </button>
+<% end %>

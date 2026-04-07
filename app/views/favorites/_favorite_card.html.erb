@@ -1,0 +1,24 @@
+<div class="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition">
+  <%= link_to favorite_path(favorite), class: "block" do %>
+    <h3 class="font-semibold text-gray-900 truncate mb-1"><%= favorite.title %></h3>
+    <p class="text-sm text-gray-500 truncate mb-2"><%= favorite.url %></p>
+    <div class="flex items-center gap-2">
+      <% status_class = case favorite.status
+        when "pending" then "bg-yellow-100 text-yellow-800"
+        when "analyzing" then "bg-blue-100 text-blue-800"
+        when "done" then "bg-green-100 text-green-800"
+        when "failed" then "bg-red-100 text-red-800"
+        else "bg-gray-100 text-gray-800"
+      end %>
+      <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium <%= status_class %>"><%= favorite.status %></span>
+      <span class="text-xs text-gray-400"><%= favorite.content_type == "youtube" ? "YouTube" : "Web" %></span>
+    </div>
+    <% if favorite.analysis&.tags.present? %>
+      <div class="flex flex-wrap gap-1 mt-2">
+        <% favorite.analysis.tags.first(3).each do |tag| %>
+          <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs"><%= tag %></span>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+</div>

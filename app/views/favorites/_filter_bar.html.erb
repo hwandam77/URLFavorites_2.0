@@ -1,0 +1,17 @@
+<div class="flex gap-2 items-center mb-4">
+  <select name="content_type" class="rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+    data-controller="auto-submit" data-action="change->auto-submit#submit">
+    <option value="" <%= "selected" if params[:content_type].blank? %>>All Types</option>
+    <option value="webpage" <%= "selected" if params[:content_type] == "webpage" %>>Webpage</option>
+    <option value="youtube" <%= "selected" if params[:content_type] == "youtube" %>>YouTube</option>
+  </select>
+
+  <select name="status" class="rounded border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+    data-controller="auto-submit" data-action="change->auto-submit#submit">
+    <option value="" <%= "selected" if params[:status].blank? %>>All Status</option>
+    <option value="pending" <%= "selected" if params[:status] == "pending" %>>Pending</option>
+    <option value="analyzing" <%= "selected" if params[:status] == "analyzing" %>>Analyzing</option>
+    <option value="done" <%= "selected" if params[:status] == "done" %>>Done</option>
+    <option value="failed" <%= "selected" if params[:status] == "failed" %>>Failed</option>
+  </select>
+</div>

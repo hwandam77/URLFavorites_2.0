@@ -1,4 +1,54 @@
-<h1>Favorites</h1>
-<% @favorites.each do |favorite| %>
-  <div><%= favorite.title %></div>
-<% end %>
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">URLFavorites</h1>
+  </div>
+
+  <!-- Add URL Form -->
+  <%= form_with url: favorites_path, method: :post, class: "flex gap-2 mb-6" do |f| %>
+    <%= f.text_field :url, name: "favorite[url]",
+      placeholder: "Enter URL to bookmark...",
+      class: "flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" %>
+    <%= f.submit "Add", class: "bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 cursor-pointer" %>
+  <% end %>
+
+  <!-- Search & Filter Bar -->
+  <%= render "search_bar" %>
+  <%= render "filter_bar" %>
+
+  <!-- View Mode Toggle -->
+  <div class="flex items-center gap-2 mb-4" data-controller="view-mode">
+    <button type="button"
+      class="px-3 py-1 rounded-md text-sm font-medium bg-blue-600 text-white"
+      data-view-mode-target="cardButton"
+      data-action="view-mode#switchToCard">
+      Card
+    </button>
+    <button type="button"
+      class="px-3 py-1 rounded-md text-sm font-medium bg-gray-200 text-gray-700"
+      data-view-mode-target="listButton"
+      data-action="view-mode#switchToList">
+      List
+    </button>
+
+    <!-- Card View -->
+    <div class="w-full" data-view-mode-target="cardView">
+    </div>
+    <div class="w-full hidden" data-view-mode-target="listView">
+    </div>
+  </div>
+
+  <!-- Favorites -->
+  <%= turbo_frame_tag "favorites" do %>
+    <% if @favorites.respond_to?(:empty?) ? @favorites.empty? : @favorites.blank? %>
+      <%= render "empty_state" %>
+    <% else %>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-view-mode-target="cardView">
+        <%= render partial: "favorite_card", collection: @favorites, as: :favorite %>
+      </div>
+      <div class="space-y-2 hidden" data-view-mode-target="listView">
+        <%= render partial: "favorite_row", collection: @favorites, as: :favorite %>
+      </div>
+    <% end %>
+  <% end %>
+</div>
