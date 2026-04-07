@@ -1,0 +1,39 @@
+{
+  "version": "1.30.0",
+  "project": "urlf2",
+  "milestone": "v1.0",
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true,
+    "auto_advance": false,
+    "discuss_mode": "discuss",
+    "skip_discuss": false
+  },
+  "parallelization": {
+    "enabled": true
+  },
+  "planning": {
+    "commit_docs": true
+  },
+  "hooks": {
+    "context_warnings": true
+  },
+  "profile": "balanced",
+  "custom_agents": {
+    "enabled": true,
+    "path": ".claude/agents/",
+    "phase_mapping": {
+      "01": ["rails-core"],
+      "02": ["rails-test", "rails-core"],
+      "03": ["rails-test", "rails-core"],
+      "04": ["rails-test", "rails-core"],
+      "05": ["rails-test", "rails-core"],
+      "06": ["rails-ui"],
+      "07": ["rails-ui"],
+      "08": ["rails-ui"],
+      "09": ["rails-test", "rails-core"],
+      "10": ["rails-qa"]
+    }
+  }
+}
