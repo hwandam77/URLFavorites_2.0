@@ -27,16 +27,16 @@ export default class extends Controller {
   }
 
   updateButtonStates(activeMode) {
+    const baseStyle = "padding:6px 12px;border-radius:6px;font-size:13px;font-weight:500;transition:all 0.15s;cursor:pointer;border:none;"
+    const activeStyle = baseStyle + "background:var(--color-accent);color:#fff;"
+    const inactiveStyle = baseStyle + "background:transparent;color:var(--color-text-muted);"
+
     if (activeMode === "card") {
-      this.cardButtonTarget.classList.add("bg-blue-600", "text-white")
-      this.cardButtonTarget.classList.remove("bg-gray-200", "text-gray-700")
-      this.listButtonTarget.classList.add("bg-gray-200", "text-gray-700")
-      this.listButtonTarget.classList.remove("bg-blue-600", "text-white")
+      this.cardButtonTarget.style.cssText = activeStyle
+      this.listButtonTarget.style.cssText = inactiveStyle
     } else {
-      this.listButtonTarget.classList.add("bg-blue-600", "text-white")
-      this.listButtonTarget.classList.remove("bg-gray-200", "text-gray-700")
-      this.cardButtonTarget.classList.add("bg-gray-200", "text-gray-700")
-      this.cardButtonTarget.classList.remove("bg-blue-600", "text-white")
+      this.listButtonTarget.style.cssText = activeStyle
+      this.cardButtonTarget.style.cssText = inactiveStyle
     }
   }
 }

@@ -1,40 +1,65 @@
-<div class="max-w-4xl mx-auto px-4 py-8">
+<div class="max-w-5xl mx-auto px-6 py-10">
   <!-- Header -->
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">URLFavorites</h1>
+  <div class="flex justify-between items-center mb-8">
+    <h1 style="font-size:2rem;font-weight:700;letter-spacing:-0.625px;color:var(--notion-black);line-height:1.23;">
+      URLFavorites
+    </h1>
   </div>
 
   <!-- Add URL Form -->
-  <%= form_with url: favorites_path, method: :post, class: "flex gap-2 mb-6" do |f| %>
+  <%= form_with url: favorites_path, method: :post, class: "flex gap-2 mb-8" do |f| %>
     <%= f.text_field :url, name: "favorite[url]",
-      placeholder: "Enter URL to bookmark...",
-      class: "flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" %>
-    <%= f.submit "Add", class: "bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 cursor-pointer" %>
+      placeholder: "URL을 입력하세요...",
+      style: "border:var(--notion-border);border-radius:4px;padding:8px 12px;font-size:15px;font-weight:500;color:var(--notion-black);background:#fff;outline:none;flex:1;",
+      class: "focus:ring-2 focus:ring-blue-500" %>
+    <%= f.submit "추가",
+      style: "background:var(--notion-blue);color:#fff;padding:8px 20px;border-radius:4px;font-size:15px;font-weight:600;cursor:pointer;border:none;transition:background 0.15s;",
+      class: "hover:opacity-90 cursor-pointer" %>
   <% end %>
 
   <!-- Search & Filter Bar -->
   <%= render "search_bar" %>
   <%= render "filter_bar" %>
 
-  <!-- View Mode Toggle -->
-  <div class="flex items-center gap-2 mb-4" data-controller="view-mode">
-    <button type="button"
-      class="px-3 py-1 rounded-md text-sm font-medium bg-blue-600 text-white"
-      data-view-mode-target="cardButton"
-      data-action="view-mode#switchToCard">
-      Card
-    </button>
-    <button type="button"
-      class="px-3 py-1 rounded-md text-sm font-medium bg-gray-200 text-gray-700"
-      data-view-mode-target="listButton"
-      data-action="view-mode#switchToList">
-      List
-    </button>
-
-    <!-- Card View -->
-    <div class="w-full" data-view-mode-target="cardView">
+  <!-- Toolbar: View Mode + Sort -->
+  <div class="flex items-center justify-between mb-6">
+    <%# Sort Dropdown %>
+    <div class="flex items-center gap-2">
+      <label style="font-size:13px;font-weight:500;color:var(--color-text-muted);">정렬:</label>
+      <%= form_with url: favorites_path, method: :get, class: "flex gap-2", data: { turbo_frame: "favorites", turbo_action: "replace" } do %>
+        <input type="hidden" name="q" value="<%= params[:q] %>">
+        <input type="hidden" name="content_type" value="<%= params[:content_type] %>">
+        <input type="hidden" name="status" value="<%= params[:status] %>">
+        <select name="sort"
+          onchange="this.form.requestSubmit()"
+          style="border:var(--color-border) 1px solid;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:500;color:var(--color-text);background:var(--color-surface);outline:none;cursor:pointer;">
+          <option value="recent" <%= "selected" if params[:sort] == "recent" || params[:sort].blank? %>>최근 추가</option>
+          <option value="oldest" <%= "selected" if params[:sort] == "oldest" %>>오래된 순</option>
+          <option value="title" <%= "selected" if params[:sort] == "title" %>>제목 순</option>
+        </select>
+      <% end %>
     </div>
-    <div class="w-full hidden" data-view-mode-target="listView">
+
+    <%# View Mode Toggle %>
+    <div class="flex items-center gap-1 p-1 rounded-lg" style="background:var(--color-surface);border:1px solid var(--color-border);" data-controller="view-mode">
+      <button type="button"
+        style="padding:6px 12px;border-radius:6px;font-size:13px;font-weight:500;transition:all 0.15s;background:var(--color-accent);color:#fff;border:none;cursor:pointer;"
+        data-view-mode-target="cardButton"
+        data-action="view-mode#switchToCard">
+        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+        </svg>
+        카드
+      </button>
+      <button type="button"
+        style="padding:6px 12px;border-radius:6px;font-size:13px;font-weight:500;transition:all 0.15s;background:transparent;color:var(--color-text-muted);border:none;cursor:pointer;"
+        data-view-mode-target="listButton"
+        data-action="view-mode#switchToList">
+        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+        </svg>
+        목록
+      </button>
     </div>
   </div>
 
@@ -43,11 +68,27 @@
     <% if @favorites.respond_to?(:empty?) ? @favorites.empty? : @favorites.blank? %>
       <%= render "empty_state" %>
     <% else %>
+      <%# Card View %>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-view-mode-target="cardView">
         <%= render partial: "favorite_card", collection: @favorites, as: :favorite %>
       </div>
-      <div class="space-y-2 hidden" data-view-mode-target="listView">
-        <%= render partial: "favorite_row", collection: @favorites, as: :favorite %>
+      <%# List View (Table) %>
+      <div class="hidden rounded-lg overflow-hidden" style="border:1px solid var(--color-border);" data-view-mode-target="listView">
+        <table class="w-full" style="background:var(--color-surface);">
+          <thead>
+            <tr style="border-bottom:1px solid var(--color-border);background:var(--color-surface);">
+              <th class="py-3 px-4 text-left" style="font-size:12px;font-weight:600;color:var(--color-text-muted);">북마크</th>
+              <th class="py-3 px-4 text-left hidden md:table-cell" style="font-size:12px;font-weight:600;color:var(--color-text-muted);">유형</th>
+              <th class="py-3 px-4 text-left" style="font-size:12px;font-weight:600;color:var(--color-text-muted);">상태</th>
+              <th class="py-3 px-4 text-left hidden lg:table-cell" style="font-size:12px;font-weight:600;color:var(--color-text-muted);">태그</th>
+              <th class="py-3 px-4 text-left hidden sm:table-cell" style="font-size:12px;font-weight:600;color:var(--color-text-muted);">날짜</th>
+              <th class="py-3 px-4" style="width:80px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= render partial: "favorite_row", collection: @favorites, as: :favorite %>
+          </tbody>
+        </table>
       </div>
     <% end %>
   <% end %>

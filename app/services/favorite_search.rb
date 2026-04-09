@@ -3,15 +3,16 @@ class FavoriteSearch
   # favorites_fts 가상 테이블에 대한 FTS5 전체 텍스트 검색
   # favorites_fts 열: favorite_id, title, summary, tags, note
 
-  def self.call(query: nil, content_type: nil, status: nil, collection_id: nil)
-    new(query: query, content_type: content_type, status: status, collection_id: collection_id).call
+  def self.call(query: nil, content_type: nil, status: nil, collection_id: nil, sort: "recent")
+    new(query: query, content_type: content_type, status: status, collection_id: collection_id, sort: sort).call
   end
 
-  def initialize(query:, content_type: nil, status: nil, collection_id: nil)
+  def initialize(query:, content_type: nil, status: nil, collection_id: nil, sort: "recent")
     @query = query&.strip
     @content_type = content_type
     @status = status
     @collection_id = collection_id
+    @sort = sort
   end
 
   def call
@@ -23,6 +24,17 @@ class FavoriteSearch
   end
 
   private
+
+  def apply_sort(scope)
+    case @sort
+    when "oldest"
+      scope.order(created_at: :asc)
+    when "title"
+      scope.order("COALESCE(title, url) ASC")
+    else # "recent" or default
+      scope.order(created_at: :desc)
+    end
+  end
 
   def fts_search
     sanitized = @query.gsub(/[^a-zA-Z0-9 ]/, "").strip
@@ -38,13 +50,13 @@ class FavoriteSearch
     scope = Favorite.where(id: ids)
     scope = scope.where(content_type: @content_type) if @content_type.present?
     scope = scope.where(status: @status) if @status.present?
-    scope
+    apply_sort(scope)
   end
 
   def filtered_favorites
     scope = Favorite.all
     scope = scope.where(content_type: @content_type) if @content_type.present?
     scope = scope.where(status: @status) if @status.present?
-    scope
+    apply_sort(scope)
   end
 end

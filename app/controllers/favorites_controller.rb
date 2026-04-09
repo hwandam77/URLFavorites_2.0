@@ -4,7 +4,8 @@ class FavoritesController < ApplicationController
       query: params[:q],
       content_type: params[:content_type],
       status: params[:status],
-      collection_id: params[:collection_id]
+      collection_id: params[:collection_id],
+      sort: params[:sort] || "recent"
     )
     @view_mode = params[:view_mode] || "card"
   end
