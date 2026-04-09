@@ -31,34 +31,32 @@
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
 
     <style>
-      /* Notion 디자인 토큰 */
+      /* Editorial Design Tokens — Light Mode */
       :root {
-        --notion-black: rgba(0,0,0,0.95);
-        --notion-blue: #0075de;
-        --notion-blue-active: #005bab;
-        --notion-warm-white: #f6f5f4;
-        --notion-warm-dark: #31302e;
-        --notion-gray-500: #615d59;
-        --notion-gray-300: #a39e98;
-        --notion-badge-bg: #f2f9ff;
-        --notion-badge-text: #097fe8;
-        --notion-border: 1px solid rgba(0,0,0,0.1);
-        --notion-shadow: rgba(0,0,0,0.04) 0px 4px 18px,
-                         rgba(0,0,0,0.027) 0px 2.025px 7.85px,
-                         rgba(0,0,0,0.02) 0px 0.8px 2.93px,
-                         rgba(0,0,0,0.01) 0px 0.175px 1.04px;
+        --color-bg: #faf7f2;
+        --color-surface: #fffbf5;
+        --color-border: #e8ddd0;
+        --color-accent: #c2410c;
+        --color-text: #1c1917;
+        --color-text-muted: #78716c;
+        --color-tag-bg: #fef3c7;
+        --color-tag-text: #92400e;
       }
       body {
         font-family: 'Inter', -apple-system, system-ui, 'Segoe UI', Helvetica, Arial, sans-serif;
-        background-color: var(--notion-warm-white);
-        color: var(--notion-black);
+        background-color: var(--color-bg);
+        color: var(--color-text);
       }
-      /* 다크 모드 */
-      .dark body {
-        background-color: #1c1c1e;
-        color: rgba(255,255,255,0.9);
-      }
+      /* Editorial Design Tokens — Dark Mode */
       .dark {
+        --color-bg: #1c1917;
+        --color-surface: #292524;
+        --color-border: #44403c;
+        --color-accent: #f59e0b;
+        --color-text: #faf7f2;
+        --color-text-muted: #a8a29e;
+        --color-tag-bg: #451a03;
+        --color-tag-text: #fed7aa;
         color-scheme: dark;
       }
       /* 앱 셸 레이아웃 */
@@ -69,14 +67,13 @@
       }
       .sidebar {
         flex-shrink: 0;
+        background-color: var(--color-surface);
+        border-color: var(--color-border);
       }
       .main-content {
         flex: 1;
         overflow-y: auto;
-        background-color: var(--notion-warm-white);
-      }
-      .dark .main-content {
-        background-color: #1c1c1e;
+        background-color: var(--color-bg);
       }
       /* 모바일: 사이드바 드로어 */
       @media (max-width: 768px) {
