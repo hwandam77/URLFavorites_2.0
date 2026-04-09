@@ -1,0 +1,22 @@
+{
+  "round": 2,
+  "implemented": [
+    "F01: URL 저장 — POST /favorites 동작 확인",
+    "F02: URL 안전성 검증 — routes.rb에 정의",
+    "F03: 콘텐츠 타입 감지 — Favorite 모델",
+    "F08: FTS5 검색 — FavoriteSearch 서비스 + favorites_fts 테이블",
+    "F09: 카드형 홈 — views/favorites/index.html.erb",
+    "F11: 컬렉션 CRUD — collections 컨트롤러"
+  ],
+  "pending": [
+    "F06: AI 비동기 분석 — Solid Queue Job",
+    "F13: Turbo Stream 실시간 갱신 — broadcast 확인 필요",
+    "F14: PWA — manifest.json + service worker"
+  ],
+  "verified_working": [
+    "GET / → 200",
+    "GET /favorites → 200",
+    "POST /favorites → 200/201",
+    "GET /collections → 200"
+  ]
+}

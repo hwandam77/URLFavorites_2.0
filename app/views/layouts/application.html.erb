@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Url Favorites 2 0" %></title>
+    <title><%= content_for(:title) || "URL 즐겨찾기" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Url Favorites 2 0">
+    <meta name="application-name" content="URL 즐겨찾기">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -22,11 +22,121 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
+    <%# Google Fonts — Inter (Notion 디자인 시스템 기반) %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+
+    <style>
+      /* Notion 디자인 토큰 */
+      :root {
+        --notion-black: rgba(0,0,0,0.95);
+        --notion-blue: #0075de;
+        --notion-blue-active: #005bab;
+        --notion-warm-white: #f6f5f4;
+        --notion-warm-dark: #31302e;
+        --notion-gray-500: #615d59;
+        --notion-gray-300: #a39e98;
+        --notion-badge-bg: #f2f9ff;
+        --notion-badge-text: #097fe8;
+        --notion-border: 1px solid rgba(0,0,0,0.1);
+        --notion-shadow: rgba(0,0,0,0.04) 0px 4px 18px,
+                         rgba(0,0,0,0.027) 0px 2.025px 7.85px,
+                         rgba(0,0,0,0.02) 0px 0.8px 2.93px,
+                         rgba(0,0,0,0.01) 0px 0.175px 1.04px;
+      }
+      body {
+        font-family: 'Inter', -apple-system, system-ui, 'Segoe UI', Helvetica, Arial, sans-serif;
+        background-color: var(--notion-warm-white);
+        color: var(--notion-black);
+      }
+      /* 다크 모드 */
+      .dark body {
+        background-color: #1c1c1e;
+        color: rgba(255,255,255,0.9);
+      }
+      .dark {
+        color-scheme: dark;
+      }
+      /* 앱 셸 레이아웃 */
+      .app-shell {
+        display: flex;
+        height: 100dvh;
+        overflow: hidden;
+      }
+      .sidebar {
+        flex-shrink: 0;
+      }
+      .main-content {
+        flex: 1;
+        overflow-y: auto;
+        background-color: var(--notion-warm-white);
+      }
+      .dark .main-content {
+        background-color: #1c1c1e;
+      }
+      /* 모바일: 사이드바 드로어 */
+      @media (max-width: 768px) {
+        .sidebar {
+          position: fixed;
+          top: 0; left: 0; bottom: 0;
+          z-index: 50;
+          transform: translateX(-100%);
+          transition: transform 0.2s ease;
+        }
+        body.sidebar-open .sidebar {
+          transform: translateX(0);
+        }
+      @keyframes animate-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+    </style>
+
+    <%# 다크 모드 초기화 (FOUC 방지) %>
+    <script>
+      (function() {
+        if (localStorage.getItem('theme') === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
 
   <body>
-    <%= yield %>
+    <div class="app-shell" data-controller="sidebar">
+      <%# 모바일 오버레이 %>
+      <div class="fixed inset-0 bg-black/40 z-40 hidden md:hidden"
+           data-sidebar-target="overlay"
+           data-action="click->sidebar#closeOnOverlayClick"></div>
+
+      <%# 사이드바 (데스크탑: 항상 표시, 모바일: 드로어) %>
+      <div class="hidden md:flex">
+        <%= render "shared/sidebar" %>
+      </div>
+      <div class="flex md:hidden">
+        <%= render "shared/sidebar" %>
+      </div>
+
+      <%# 메인 컨텐츠 %>
+      <main class="main-content">
+        <%# 모바일 헤더 %>
+        <div class="flex items-center gap-3 px-4 py-3 border-b border-black/10 dark:border-white/10 md:hidden sticky top-0 bg-stone-50 dark:bg-stone-900 z-10">
+          <button type="button"
+                  data-action="click->sidebar#toggle"
+                  class="p-1.5 rounded-md text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <span style="font-size:15px;font-weight:700;" class="text-stone-900 dark:text-stone-100">URLFavorites</span>
+        </div>
+
+        <%= yield %>
+      </main>
+    </div>
   </body>
 </html>

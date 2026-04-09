@@ -1,22 +1,40 @@
-<div class="bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition">
+<%
+  status_style = case favorite.status
+    when "pending"   then "background:#fffbeb;color:#92400e;"
+    when "analyzing" then "background:var(--notion-badge-bg);color:var(--notion-badge-text);animation:animate-pulse 2s infinite;"
+    when "done"      then "background:#f0fdf4;color:#166534;"
+    when "failed"    then "background:#fef2f2;color:#991b1b;"
+    else                  "background:rgba(0,0,0,0.05);color:var(--notion-gray-500);"
+  end
+  status_label = case favorite.status
+    when "pending" then "대기중" when "analyzing" then "분석중"
+    when "done" then "완료" when "failed" then "실패"
+    else favorite.status
+  end
+%>
+<div style="background:#fff;border:var(--notion-border);border-radius:12px;box-shadow:var(--notion-shadow);padding:16px;transition:box-shadow 0.15s;"
+     class="hover:shadow-md">
   <%= link_to favorite_path(favorite), class: "block" do %>
-    <h3 class="font-semibold text-gray-900 truncate mb-1"><%= favorite.title %></h3>
-    <p class="text-sm text-gray-500 truncate mb-2"><%= favorite.url %></p>
+    <h3 style="font-size:15px;font-weight:600;letter-spacing:-0.125px;color:var(--notion-black);margin-bottom:4px;" class="truncate">
+      <%= favorite.title.presence || "제목 없음" %>
+    </h3>
+    <p style="font-size:13px;color:var(--notion-gray-500);margin-bottom:10px;" class="truncate">
+      <%= favorite.url %>
+    </p>
     <div class="flex items-center gap-2">
-      <% status_class = case favorite.status
-        when "pending" then "bg-yellow-100 text-yellow-800"
-        when "analyzing" then "bg-blue-100 text-blue-800"
-        when "done" then "bg-green-100 text-green-800"
-        when "failed" then "bg-red-100 text-red-800"
-        else "bg-gray-100 text-gray-800"
-      end %>
-      <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium <%= status_class %>"><%= favorite.status %></span>
-      <span class="text-xs text-gray-400"><%= favorite.content_type == "youtube" ? "YouTube" : "Web" %></span>
+      <span style="<%= status_style %>padding:2px 8px;border-radius:9999px;font-size:12px;font-weight:600;letter-spacing:0.125px;">
+        <%= status_label %>
+      </span>
+      <span style="font-size:12px;color:var(--notion-gray-300);">
+        <%= favorite.content_type == "youtube" ? "YouTube" : "웹" %>
+      </span>
     </div>
     <% if favorite.analysis&.tags.present? %>
-      <div class="flex flex-wrap gap-1 mt-2">
+      <div class="flex flex-wrap gap-1 mt-3">
         <% favorite.analysis.tags.first(3).each do |tag| %>
-          <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs"><%= tag %></span>
+          <span style="background:var(--notion-warm-white);color:var(--notion-gray-500);padding:2px 8px;border-radius:9999px;font-size:12px;font-weight:500;border:var(--notion-border);">
+            <%= tag %>
+          </span>
         <% end %>
       </div>
     <% end %>

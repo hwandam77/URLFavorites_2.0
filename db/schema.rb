@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_07_000005) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_07_000006) do
   create_table "analyses", force: :cascade do |t|
     t.datetime "analyzed_at"
     t.datetime "created_at", null: false
@@ -65,4 +65,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_000005) do
   add_foreign_key "analyses", "favorites"
   add_foreign_key "collection_memberships", "collections"
   add_foreign_key "collection_memberships", "favorites"
-end
+
+  # Virtual tables defined in this database.
+  # Note that virtual tables may not work with other database engines. Be careful if changing database.

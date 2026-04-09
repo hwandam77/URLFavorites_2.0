@@ -1,0 +1,90 @@
+{
+  "project_type": "webapp",
+  "pass_threshold": 8,
+  "criteria": [
+    {
+      "name": "Design & UI",
+      "weight": 0.25,
+      "threshold": 7,
+      "description": "시각적 품질, 일관성, 사용자 경험",
+      "checklist": [
+        "색상 팔레트 일관성 — 그린 accent (#2D6A4F), 따뜻한 오프화이트 배경 (#FAFAF8)",
+        "타이포그래피 계층 — h1 > h2 > body 명확, Pretendard 폰트",
+        "반응형 레이아웃 — 모바일 1열, 데스크탑 2-3열 그리드",
+        "AI 뻔한 패턴 탈피 — 보라색 그라데이션 + 흰 카드 금지, 에디토리얼 스타일",
+        "라이트 모드 기본, 다크 모드 지원",
+        "카드 hover 시 border-accent + shadow-sm",
+        "사이드바 스타일 — 크림색 배경 (#F0EFE9), 240px 고정"
+      ]
+    },
+    {
+      "name": "Functionality",
+      "weight": 0.30,
+      "threshold": 7,
+      "description": "핵심 기능 동작 여부",
+      "checklist": [
+        "F01: URL 저장 — 입력 후 pending 카드 즉시 표시",
+        "F01: 중복 URL 검사 — '이미 저장된 URL입니다' 오류",
+        "F02: 사설 IP 차단 — 10.x.x.x, 192.168.x.x 등 차단",
+        "F03: 콘텐츠 타입 감지 — YouTube URL 자동 분류",
+        "F06: AI 분석 완료 시 Turbo Stream으로 카드 업데이트",
+        "F08: FTS5 검색 — 키워드 입력 시 실시간 결과",
+        "F09: 필터 칩 동작 — 태그/타입/상태별 필터링",
+        "F10: 상세 페이지 — AI 요약/태그/핵심포인트 표시",
+        "F11: 컬렉션 CRUD — 생성/편집/삭제 가능",
+        "CRUD 완전성 — 생성-읽기-수정-삭제 모두 동작",
+        "빈 입력 처리 — URL 없이 저장 버튼 비활성화",
+        "에러 발생 시 사용자에게 명확한 피드백"
+      ]
+    },
+    {
+      "name": "Craft",
+      "weight": 0.20,
+      "threshold": 6,
+      "description": "완성도, 세밀함",
+      "checklist": [
+        "로딩 상태 표시 — 분석 중 pulse 애니메이션",
+        "빈 상태(empty state) — '아직 저장된 URL이 없습니다' 메시지",
+        "애니메이션/트랜지션 — 카드 slide-in, hover transition 200ms",
+        "콘솔 에러 0개 — 개발자 도구 Network/Console 탭 확인",
+        "404 페이지 존재",
+        "상태 뱃지 명확 — pending(회색), analyzing(파랑 pulse), done(에메랄드), failed(빨강)",
+        "파비콘 + 도메인 표시 — 카드 상단",
+        "FAB 버튼 (모바일) — + 저장 플로팅 버튼"
+      ]
+    },
+    {
+      "name": "Data Integrity",
+      "weight": 0.25,
+      "threshold": 7,
+      "description": "데이터 정합성, 영속성",
+      "checklist": [
+        "새로고침 후 데이터 유지 — SQLite 영속",
+        "URL 정규화 — 쿼리스트링 정리, 트레일링 슬래시 통일",
+        "분석 실패 시 3회 재시도 후 failed 상태",
+        "메모 저장 시 FTS5 인덱스 갱신",
+        "컬렉션 삭제 시 연쇄 삭제 (cascade)",
+        "동시 요청 처리 —同一 URL 중복 저장 방지"
+      ]
+    }
+  ],
+  "project_type_additional": {
+    "type": "bookmark-manager",
+    "specific_criteria": [
+      {
+        "name": "Bookmark-Specific UX",
+        "weight": 0.15,
+        "threshold": 7,
+        "description": "북마크 매니저로서의 사용자 경험",
+        "checklist": [
+          "URL 입력만으로 저장 완료 — 별도 폼 없음",
+          "AI 태그 클릭 시 해당 태그로 필터링",
+          "카드/리스트 뷰 전환 기억",
+          "컬렉션 사이드바 — 모든 컬렉션 목록 표시",
+          "상세 페이지에서 컬렉션 추가/제거",
+          "재분석 버튼 동작 확인"
+        ]
+      }
+    ]
+  }
+}

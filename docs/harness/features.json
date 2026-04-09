@@ -1,0 +1,303 @@
+{
+  "project_type": "webapp",
+  "pass_threshold": 8,
+  "max_cycles": 5,
+  "project_name": "urlf2",
+  "project_description": "개인용 URL 북마크 매니저 + AI 자동 분석. Rails 8 + SQLite + Solid Queue + Hotwire + Tailwind.",
+  "tech_stack": {
+    "backend": "Rails 8 / Ruby 3.3+ / SQLite + FTS5 / Solid Queue",
+    "frontend": "Hotwire (Turbo + Stimulus) / Tailwind CSS",
+    "ai": "llama-server (local LLM)",
+    "pwa": "manifest.json + Service Worker"
+  },
+  "features": [
+    {
+      "id": "F01",
+      "name": "URL 저장",
+      "priority": "P0",
+      "user_story": "개발자로서, URL을 붙여넣기만 해서 즉시 저장하고 싶다. 나머지는 자동으로 처리되길 원한다.",
+      "acceptance_criteria": [
+        "홈 통합 입력바에 URL 입력 후 Enter 또는 저장 버튼으로 저장",
+        "저장 즉시 pending 상태 카드가 목록에 추가됨 (Turbo Stream)",
+        "동일 URL 재저장 시 '이미 저장된 URL입니다' 메시지 표시",
+        "URL 정규화: 쿼리스트링 정리, 트레일링 슬래시 통일",
+        "저장 가능한 스킴: http, https만 허용"
+      ],
+      "screens": ["S01"],
+      "routes": ["POST /favorites"],
+      "data_models": ["favorites"]
+    },
+    {
+      "id": "F02",
+      "name": "URL 안전성 검증",
+      "priority": "P0",
+      "user_story": "개발자로서, 내부 네트워크 주소나 악의적 URL이 저장되지 않길 원한다.",
+      "acceptance_criteria": [
+        "사설 IP 범위 차단: 10.x.x.x, 172.16-31.x.x, 192.168.x.x, 127.x.x.x, ::1",
+        "localhost, 0.0.0.0 차단",
+        "file://, ftp:// 등 비허용 스킴 차단",
+        "차단된 URL 저장 시 명확한 오류 메시지 반환"
+      ],
+      "screens": ["S01"],
+      "routes": ["POST /favorites"],
+      "data_models": []
+    },
+    {
+      "id": "F03",
+      "name": "콘텐츠 타입 감지",
+      "priority": "P0",
+      "user_story": "개발자로서, YouTube URL과 일반 웹페이지를 자동으로 구분해서 처리하길 원한다.",
+      "acceptance_criteria": [
+        "youtube.com/watch, youtu.be 패턴 → content_type: youtube",
+        "그 외 → content_type: webpage",
+        "타입에 따라 적절한 Job 큐잉"
+      ],
+      "screens": ["S01"],
+      "routes": ["POST /favorites"],
+      "data_models": []
+    },
+    {
+      "id": "F04",
+      "name": "웹페이지 스크래핑",
+      "priority": "P0",
+      "user_story": "개발자로서, 저장한 웹페이지의 본문이 자동으로 추출되어 AI 분석에 사용되길 원한다.",
+      "acceptance_criteria": [
+        "Nokogiri로 HTML 파싱, 본문 텍스트 추출",
+        "8000자 초과 시 앞 8000자만 사용",
+        "파비콘, OG 이미지, 페이지 타이틀 추출",
+        "추출 실패 시 error_message 기록 후 failed 상태"
+      ],
+      "screens": ["S02"],
+      "routes": ["GET /favorites/:id"],
+      "data_models": ["favorites"]
+    },
+    {
+      "id": "F05",
+      "name": "YouTube 콘텐츠 추출",
+      "priority": "P0",
+      "user_story": "개발자로서, YouTube 영상의 자막이나 설명을 자동으로 추출해서 AI가 분석할 수 있길 원한다.",
+      "acceptance_criteria": [
+        "yt-dlp로 영상 메타데이터 + 자막 추출",
+        "한국어 자막 우선, 없으면 영어, 없으면 auto-generated",
+        "자막 없을 경우 description으로 fallback",
+        "12000자 초과 시 앞 12000자 사용"
+      ],
+      "screens": ["S02"],
+      "routes": ["GET /favorites/:id"],
+      "data_models": ["analyses"]
+    },
+    {
+      "id": "F06",
+      "name": "AI 비동기 분석",
+      "priority": "P0",
+      "user_story": "개발자로서, URL 저장 직후 AI가 백그라운드에서 자동으로 콘텐츠를 분석해주길 원한다.",
+      "acceptance_criteria": [
+        "저장 즉시 Solid Queue에 분석 Job 큐잉",
+        "llama-server 로컬 API 호출 (120초 timeout)",
+        "분석 결과: summary, tags(JSON 배열), key_points(JSON 배열)",
+        "분석 완료 시 status: done, 실패 시 자동 3회 재시도",
+        "3회 재시도 후 실패 시 status: failed"
+      ],
+      "screens": ["S01", "S02"],
+      "routes": [],
+      "data_models": ["analyses"]
+    },
+    {
+      "id": "F07",
+      "name": "상태 머신",
+      "priority": "P0",
+      "user_story": "개발자로서, 각 URL의 분석 상태를 명확하게 파악하고 싶다.",
+      "acceptance_criteria": [
+        "상태: pending → analyzing → done / failed",
+        "상태별 UI 표시 (뱃지/아이콘)"
+      ],
+      "screens": ["S01", "S02"],
+      "routes": [],
+      "data_models": []
+    },
+    {
+      "id": "F08",
+      "name": "FTS5 검색",
+      "priority": "P0",
+      "user_story": "개발자로서, 저장한 콘텐츠를 키워드로 빠르게 검색하고 싶다.",
+      "acceptance_criteria": [
+        "검색 대상: title, summary, tags, note",
+        "FTS5 가상 테이블 활용",
+        "정확 일치 우선, 부분 일치 보조",
+        "검색어 입력 후 즉시 결과 갱신 (Turbo Frame)",
+        "검색 결과 없을 시 '검색 결과가 없습니다' 표시"
+      ],
+      "screens": ["S01"],
+      "routes": ["GET /favorites"],
+      "data_models": ["favorites_fts"]
+    },
+    {
+      "id": "F09",
+      "name": "카드형 홈 화면",
+      "priority": "P0",
+      "user_story": "개발자로서, 저장한 모든 URL을 카드 형태로 한눈에 볼 수 있길 원한다.",
+      "acceptance_criteria": [
+        "통합 입력바: URL 입력 시 저장, 키워드 입력 시 검색",
+        "필터 칩: 태그/콘텐츠타입/분석상태 필터",
+        "카드 목록: 최신순 정렬",
+        "카드에 표시: 파비콘, 제목, 도메인, AI 태그, 분석 상태",
+        "카드/리스트 뷰 전환 버튼"
+      ],
+      "screens": ["S01"],
+      "routes": ["GET /favorites"],
+      "data_models": []
+    },
+    {
+      "id": "F10",
+      "name": "상세 페이지",
+      "priority": "P0",
+      "user_story": "개발자로서, 특정 URL의 AI 분석 결과를 상세히 보고 싶다.",
+      "acceptance_criteria": [
+        "AI 요약 (3-5문장)",
+        "핵심포인트 (bullet list)",
+        "AI 태그 (클릭 시 해당 태그 필터)",
+        "메모 편집 (선택적)",
+        "컬렉션 추가/제거",
+        "재분석 버튼",
+        "원본 URL 링크"
+      ],
+      "screens": ["S02"],
+      "routes": ["GET /favorites/:id", "PATCH /favorites/:id", "POST /favorites/:id/reanalyze"],
+      "data_models": []
+    },
+    {
+      "id": "F11",
+      "name": "컬렉션 CRUD",
+      "priority": "P1",
+      "user_story": "개발자로서, 관련 URL들을 컬렉션으로 그룹핑하고 싶다.",
+      "acceptance_criteria": [
+        "컬렉션 생성/이름 변경/삭제",
+        "사이드바에 컬렉션 목록 표시",
+        "상세 페이지에서 컬렉션 추가/제거",
+        "컬렉션 상세 페이지: 해당 컬렉션의 카드 목록"
+      ],
+      "screens": ["S01", "S03"],
+      "routes": ["GET /collections", "POST /collections", "GET /collections/:id", "PATCH /collections/:id", "DELETE /collections/:id"],
+      "data_models": ["collections", "collection_memberships"]
+    },
+    {
+      "id": "F12",
+      "name": "필터",
+      "priority": "P1",
+      "user_story": "개발자로서, 태그/타입/상태로 목록을 필터링하고 싶다.",
+      "acceptance_criteria": [
+        "태그 필터: AI 생성 태그로 필터",
+        "콘텐츠 타입 필터: webpage/youtube",
+        "분석 상태 필터: pending/done/failed",
+        "다중 필터 조합 가능",
+        "필터 초기화 버튼"
+      ],
+      "screens": ["S01"],
+      "routes": ["GET /favorites"],
+      "data_models": []
+    },
+    {
+      "id": "F13",
+      "name": "Turbo Stream 실시간 갱신",
+      "priority": "P1",
+      "user_story": "개발자로서, AI 분석이 완료되면 페이지 새로고침 없이 카드가 자동으로 업데이트되길 원한다.",
+      "acceptance_criteria": [
+        "분석 완료 시 해당 카드만 Turbo Stream으로 교체",
+        "분석 실패 시 failed 뱃지로 업데이트"
+      ],
+      "screens": ["S01"],
+      "routes": [],
+      "data_models": []
+    },
+    {
+      "id": "F14",
+      "name": "PWA + 공유 시트",
+      "priority": "P1",
+      "user_story": "개발자로서, iOS/Android에서 공유 시트로 URL을 저장하고 싶다.",
+      "acceptance_criteria": [
+        "PWA manifest.json 제공",
+        "share_target 등록",
+        "공유 시트에서 urlf2로 URL 전달 및 저장",
+        "오프라인 fallback 페이지"
+      ],
+      "screens": ["S04"],
+      "routes": ["POST /share"],
+      "data_models": []
+    },
+    {
+      "id": "F15",
+      "name": "urlf 데이터 이관",
+      "priority": "P2",
+      "user_story": "개발자로서, 기존 urlf 시스템 데이터를.urlf2로 이전하고 싶다.",
+      "acceptance_criteria": [
+        "기존 urlf 시스템 데이터 1회 임포트",
+        "멱등성 보장 (중복 실행 안전)",
+        "이관 결과 리포트 출력"
+      ],
+      "screens": [],
+      "routes": [],
+      "data_models": []
+    },
+    {
+      "id": "F16",
+      "name": "메모 편집",
+      "priority": "P2",
+      "user_story": "개발자로서, 특정 URL에 개인 메모를 추가하고 싶다.",
+      "acceptance_criteria": [
+        "상세 페이지에서 메모 추가/수정/삭제",
+        "메모는 FTS5 검색 인덱스에 포함"
+      ],
+      "screens": ["S02"],
+      "routes": ["PATCH /favorites/:id"],
+      "data_models": []
+    }
+  ],
+  "screens": [
+    {
+      "id": "S01",
+      "name": "홈 (아카이브)",
+      "route": "GET / 或 GET /favorites",
+      "description": "메인 화면, 통합 입력바 + 카드 목록"
+    },
+    {
+      "id": "S02",
+      "name": "상세 페이지",
+      "route": "GET /favorites/:id",
+      "description": "개별 URL 상세 + AI 분석 결과"
+    },
+    {
+      "id": "S03",
+      "name": "컬렉션 상세",
+      "route": "GET /collections/:id",
+      "description": "컬렉션 내 카드 목록"
+    },
+    {
+      "id": "S04",
+      "name": "공유 수신",
+      "route": "POST /share",
+      "description": "PWA share_target 수신 화면"
+    }
+  ],
+  "data_models": [
+    {
+      "name": "favorites",
+      "description": "URL 저장, 메타데이터, 분석 상태"
+    },
+    {
+      "name": "analyses",
+      "description": "AI 분석 결과 (summary, tags, key_points)"
+    },
+    {
+      "name": "collections",
+      "description": "북마크 그룹"
+    },
+    {
+      "name": "collection_memberships",
+      "description": "favorites-collections 다대다 관계"
+    },
+    {
+      "name": "favorites_fts",
+      "description": "FTS5 가상 테이블 (검색용)"
+    }
+  ]
+}
