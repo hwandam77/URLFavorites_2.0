@@ -3,12 +3,12 @@
     <h1 style="font-size:24px;font-weight:700;color:var(--color-text);letter-spacing:-0.5px;">컬렉션</h1>
   </div>
 
-  <%# New Collection Form %>
   <%= form_with url: collections_path, method: :post, class: "flex gap-2 mb-6" do |f| %>
     <input type="text" name="collection[name]" placeholder="새 컬렉션 이름..."
       style="flex:1;border:1px solid var(--color-border);border-radius:var(--radius-md);padding:8px 16px;font-size:15px;color:var(--color-text);background:var(--color-surface);outline:none;transition:border-color 0.15s;"
       class="focus:ring-2 focus:ring-offset-1">
-    <button type="submit" style="background:var(--color-accent);color:#fff;border-radius:var(--radius-md);padding:8px 20px;font-size:15px;font-weight:600;cursor:pointer;transition:background 0.15s;border:none;"
+    <button type="submit"
+      style="background:var(--color-accent);color:#fff;border-radius:var(--radius-md);padding:8px 20px;font-size:15px;font-weight:600;cursor:pointer;transition:background 0.15s;border:none;"
       class="hover:opacity-90">만들기</button>
   <% end %>
 
@@ -18,7 +18,7 @@
         <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-4);box-shadow:var(--shadow-sm);display:flex;justify-content:space-between;align-items:center;transition:box-shadow 0.15s;"
           class="hover:shadow-md">
           <div>
-            <%= link_to collection.name, collection_path(collection), style: "font-weight:600;color:var(--color-text);" class: "hover:underline" %>
+            <%= link_to collection.name, collection_path(collection) %>
             <% if collection.description.present? %>
               <p style="font-size:14px;color:var(--color-text-muted);margin-top:2px;"><%= collection.description %></p>
             <% end %>

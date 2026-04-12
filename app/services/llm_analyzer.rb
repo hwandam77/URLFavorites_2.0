@@ -4,7 +4,13 @@ class LlmAnalyzer
 
   # Primary/backup backends: Nexus LLM → Local llama-server → Cloud API
   # URL은 환경변수 LLM_BACKENDS로 덮어쓰기 가능, 없으면 ENV["LLAMA_SERVER_URL"] 또는 localhost 사용
-  DEFAULT_BASE_URL = ENV.fetch("LLAMA_SERVER_URL", "http://localhost:8080")
+  DEFAULT_BASE_URL = "http://localhost:8080"
+
+  # Default backend configuration (used when LLM_BACKENDS env var is not set)
+  # Note: URL is resolved lazily in resolve_backends to respect runtime ENV changes
+  DEFAULT_BACKENDS = [
+    { model: "local", timeout: 120 }
+  ].freeze
 
   def self.call(content, type:)
     backends = resolve_backends
@@ -94,7 +100,7 @@ class LlmAnalyzer
         end
       end
     else
-      BACKENDS.select { |b| b[:url].present? }
+      DEFAULT_BACKENDS.map { |b| b.merge(url: ENV["LLAMA_SERVER_URL"]) }.select { |b| b[:url].present? }
     end
   end
 

@@ -1,8 +1,19 @@
 # test/services/favorite_search_test.rb
 require 'test_helper'
+require 'webmock/minitest'
 
 class FavoriteSearchTest < ActiveSupport::TestCase
+  EMBEDDING_TEST_URL = "http://localhost:8080"
+
   def setup
+    ENV["EMBEDDING_URL"] = EMBEDDING_TEST_URL
+    WebMock.enable!
+    WebMock.disable_net_connect!
+    # EmbeddingService stub
+    @embedding_response = { embedding: [0.1, 0.2, 0.3] * 384 }.to_json
+    stub_request(:post, EMBEDDING_TEST_URL + "/v1/embeddings")
+      .to_return(status: 200, body: @embedding_response, headers: { "Content-Type" => "application/json" })
+
     # fav1 생성 및 관련 Analysis 생성
     @fav1 = Favorite.create!(
       title: "Ruby on Rails Guide",
@@ -40,6 +51,11 @@ class FavoriteSearchTest < ActiveSupport::TestCase
 
     # 모두 FTS에 인덱싱
     FavoriteSearchIndexer.reindex_all
+  end
+
+  def teardown
+    ENV.delete("EMBEDDING_URL")
+    WebMock.reset!
   end
 
   def test_returns_favorites_matching_title_keyword

@@ -33,11 +33,12 @@ class LlmAnalyzerTest < ActiveSupport::TestCase
     assert_equal "positive", result[:sentiment]
   end
 
-  def test_call_raises_parse_error_on_invalid_json
+  def test_call_raises_server_error_on_invalid_json
     stub_request(:post, ENV.fetch("LLAMA_SERVER_URL", "http://localhost:8080") + "/v1/chat/completions")
       .to_return(status: 200, body: "invalid json", headers: { "Content-Type" => "application/json" })
 
-    assert_raises LlmAnalyzer::ParseError do
+    # With multi-backend fallback, invalid JSON raises ServerError wrapping the ParseError
+    assert_raises LlmAnalyzer::ServerError do
       LlmAnalyzer.call("test content", type: "webpage")
     end
   end

@@ -16,9 +16,7 @@
   domain = host&.sub(/^www\./, "") || favorite.url
   favicon_url = "https://www.google.com/s2/favicons?domain=#{host || favorite.url}&sz=32"
 
-  description = favorite.analysis&.description.presence
-  excerpt = favorite.analysis&.excerpt.presence
-  display_text = description || excerpt
+  summary = favorite.analysis&.summary.presence
 %>
 <div style="background:var(--color-surface);border:1px solid var(--color-border);border-left:4px solid var(--color-accent);border-radius:0 12px 12px 0;padding:var(--space-4);transition:box-shadow 0.2s ease,transform 0.18s cubic-bezier(0.16,1,0.3,1),border-color 0.2s ease;position:relative;"
      class="hover:shadow-md hover:-translate-y-0.5 group">
@@ -76,10 +74,10 @@
       <%= domain %>
     </p>
 
-    <%# Description excerpt %>
-    <% if display_text %>
+    <%# Summary excerpt %>
+    <% if summary %>
       <p style="font-size:13px;color:var(--color-text-muted);line-height:1.55;margin-bottom:12px;" class="line-clamp-2">
-        <%= display_text %>
+        <%= summary %>
       </p>
     <% end %>
 
