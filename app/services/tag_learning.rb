@@ -42,18 +42,48 @@ class TagLearning
   private
 
   def build_tag_stats
-    all_corrections = TagFeedback.all.to_a
-
     {
-      total_corrections: all_corrections.size,
-      unique_favorites: all_corrections.map(&:favorite_id).uniq.size,
-      popular_additions: tag_frequencies(all_corrections, :added),
-      popular_removals: tag_frequencies(all_corrections, :removed)
+      total_corrections: TagFeedback.count,
+      unique_favorites: TagFeedback.select(:favorite_id).distinct.count,
+      popular_additions: popular_tag_additions,
+      popular_removals: popular_tag_removals
     }
   end
 
+  def popular_tag_additions
+    additions = Hash.new(0)
+    TagFeedback.select(:id, :original_tags, :corrected_tags)
+      .find_each do |tf|
+        original_set = Set.new(Array(tf.original_tags))
+        corrected_set = Set.new(Array(tf.corrected_tags))
+        (corrected_set - original_set).each do |tag|
+          additions[tag] += 1
+        end
+      end
+    additions.sort_by { |_, count| -count }.first(20).to_h
+  end
+
+  def popular_tag_removals
+    removals = Hash.new(0)
+    TagFeedback.select(:id, :original_tags, :corrected_tags)
+      .find_each do |tf|
+        original_set = Set.new(Array(tf.original_tags))
+        corrected_set = Set.new(Array(tf.corrected_tags))
+        (original_set - corrected_set).each do |tag|
+          removals[tag] += 1
+        end
+      end
+    removals.sort_by { |_, count| -count }.first(20).to_h
+  end
+
   def find_similar_corrections(favorite)
-    domain = URI(favorite.url).host rescue nil
+    begin
+      uri = URI(favorite.url)
+      domain = uri.host
+    rescue URI::InvalidURIError => e
+      Rails.logger.warn "[TagLearning] Invalid URL skipped: #{favorite.url} - #{e.message}"
+      return []
+    end
     return [] unless domain
 
     similar_favorites = Favorite.where(
@@ -67,14 +97,4 @@ class TagLearning
       .to_a
   end
 
-  def tag_frequencies(corrections, diff_type)
-    corrections
-      .flat_map { |c| c.tag_diff[diff_type].to_a }
-      .compact
-      .group_by(&:itself)
-      .transform_values(&:count)
-      .sort_by { |_, count| -count }
-      .first(20)
-      .to_h
-  end
 end
