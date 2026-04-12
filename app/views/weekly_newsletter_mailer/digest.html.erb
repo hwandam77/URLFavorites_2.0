@@ -25,7 +25,7 @@
   <% @digest[:favorites].each do |fav| %>
     <div class="card">
       <h3 class="card-title">
-        <a href="<%= fav[:url] %>" target="_blank"><%= fav[:title] %></a>
+        <a href="<%= ERB::Util.h(fav[:url]) %>" target="_blank" rel="noopener"><%= fav[:title] %></a>
       </h3>
       <% if fav[:summary].present? %>
         <p class="card-summary"><%= fav[:summary] %></p>
@@ -42,7 +42,7 @@
 
   <div class="footer">
     <p>URLFavorites 2.0에서 자동 생성됨</p>
-    <p><a href="<%= favorites_url %>">모든 저장된 링크 보기</a></p>
+    <p><a href="<%= ERB::Util.h(favorites_url) %>">모든 저장된 링크 보기</a></p>
   </div>
 </body>
 </html>

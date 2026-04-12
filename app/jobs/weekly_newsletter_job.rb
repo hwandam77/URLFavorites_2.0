@@ -2,22 +2,15 @@ class WeeklyNewsletterJob < ApplicationJob
   queue_as :default
 
   def perform
-    return unless should_send?
-
     recent_favorites = fetch_recent_unread_favorites
     return if recent_favorites.empty?
+    return if recent_favorites.count < 3
 
     mailer_digest = build_digest(recent_favorites)
     WeeklyNewsletterMailer.digest(mailer_digest).deliver_later
   end
 
   private
-
-  def should_send?
-    # Check if there are enough new bookmarks (minimum 3)
-    recent_count = fetch_recent_unread_favorites.count
-    recent_count >= 3
-  end
 
   def fetch_recent_unread_favorites
     FavoriteSearch.call(

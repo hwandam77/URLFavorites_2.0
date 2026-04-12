@@ -35,7 +35,9 @@ class SemanticSearchTest < ActiveSupport::TestCase
   test "falls back to FTS when embedding fails" do
     # embedding이 없을 때 FTS fallback 테스트
     conn = ActiveRecord::Base.connection
-    conn.execute("DELETE FROM favorites_fts WHERE favorite_id = #{@favorite.id}")
+    conn.execute(ActiveRecord::Base.send(:sanitize_sql_array, [
+      "DELETE FROM favorites_fts WHERE favorite_id = ?", @favorite.id
+    ]))
     conn.execute(
       ActiveRecord::Base.send(:sanitize_sql_array, [
         "INSERT INTO favorites_fts (favorite_id, title, summary, tags, note, content_embedding) VALUES (?, ?, ?, ?, ?, ?)",

@@ -23,7 +23,7 @@ class SemanticSearch
     query_embedding = EmbeddingService.call(@query)
     return fts_search if query_embedding.empty?
 
-    # Get all candidates with embeddings
+    # Get candidates with embeddings (limited batch)
     candidates = fetch_candidates_with_embeddings
 
     # Calculate cosine similarity
@@ -35,11 +35,23 @@ class SemanticSearch
       candidate.merge(similarity: similarity)
     end.compact
 
-    # Sort by similarity and apply filters
-    scored
-      .sort_by { |c| -c[:similarity] }
-      .first(@limit)
-      .map { |c| Favorite.find(c[:favorite_id]) }
+    # Sort by similarity
+    scored = scored.sort_by { |c| -c[:similarity] }
+
+    return [] if scored.empty?
+
+    # Batch fetch favorites and preserve similarity order
+    favorite_ids = scored.map { |c| c[:favorite_id] }
+    favorites_map = Favorite.where(id: favorite_ids).index_by(&:id)
+
+    results = scored.map { |c| favorites_map[c[:favorite_id]] }.compact
+
+    # Apply filters (content_type, status, collection_id)
+    results = filter_by_content_type(results)
+    results = filter_by_status(results)
+    results = filter_by_collection_id(results)
+
+    results.first(@limit)
   end
 
   private
@@ -55,7 +67,7 @@ class SemanticSearch
   end
 
   def fetch_candidates_with_embeddings
-    sql = "SELECT favorite_id, content_embedding FROM favorites_fts WHERE content_embedding IS NOT NULL"
+    sql = "SELECT favorite_id, content_embedding FROM favorites_fts WHERE content_embedding IS NOT NULL LIMIT 1000"
     rows = ActiveRecord::Base.connection.execute(sql)
     rows.map { |r| { favorite_id: r["favorite_id"], content_embedding: r["content_embedding"] } }
   end
@@ -74,5 +86,20 @@ class SemanticSearch
     magnitude_b = Math.sqrt(b.map { |x| x**2 }.sum)
     return 0 if magnitude_a.zero? || magnitude_b.zero?
     dot_product / (magnitude_a * magnitude_b)
+  end
+
+  def filter_by_content_type(favorites)
+    return favorites unless @content_type.present?
+    favorites.select { |f| f.content_type == @content_type }
+  end
+
+  def filter_by_status(favorites)
+    return favorites unless @status.present?
+    favorites.select { |f| f.status == @status }
+  end
+
+  def filter_by_collection_id(favorites)
+    return favorites unless @collection_id.present?
+    favorites.select { |f| f.collection_memberships.any? { |m| m.collection_id == @collection_id } }
   end
 end

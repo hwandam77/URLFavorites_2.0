@@ -1,6 +1,8 @@
 require "test_helper"
 
 class WeeklyNewsletterJobTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   def setup
     ActionMailer::Base.deliveries.clear
     # Clean up any existing test data
@@ -12,7 +14,7 @@ class WeeklyNewsletterJobTest < ActiveSupport::TestCase
     Favorite.where("url LIKE ?", "%example.com/article-%").destroy_all
   end
 
-  test "should_send returns true when 3+ recent favorites" do
+  test "perform sends email when 3+ recent favorites" do
     3.times do |i|
       fav = Favorite.create!(
         url: "https://example.com/send-#{i}-#{SecureRandom.hex(4)}",
@@ -24,10 +26,12 @@ class WeeklyNewsletterJobTest < ActiveSupport::TestCase
     end
 
     job = WeeklyNewsletterJob.new
-    assert job.send(:should_send?)
+    perform_enqueued_jobs { job.perform }
+
+    assert_equal 1, ActionMailer::Base.deliveries.count
   end
 
-  test "should_send returns false when fewer than 3 recent favorites" do
+  test "perform does not send email when fewer than 3 recent favorites" do
     fav = Favorite.create!(
       url: "https://example.com/no-send-#{SecureRandom.hex(4)}",
       content_type: "webpage",
@@ -37,12 +41,34 @@ class WeeklyNewsletterJobTest < ActiveSupport::TestCase
     fav.create_analysis!(summary: "Test summary", tags: ["test"])
 
     job = WeeklyNewsletterJob.new
-    refute job.send(:should_send?)
+    job.perform
+
+    assert_equal 0, ActionMailer::Base.deliveries.count
   end
 
-  test "should_send returns false when 0 recent favorites" do
+  test "perform does not send email when 0 recent favorites" do
     job = WeeklyNewsletterJob.new
-    refute job.send(:should_send?)
+    job.perform
+
+    assert_equal 0, ActionMailer::Base.deliveries.count
+  end
+
+  test "does not send when fewer than 3 recent favorites" do
+    # Only 2 favorites created in setup, should not send
+    assert_difference "ActionMailer::Base.deliveries.count", 0 do
+      WeeklyNewsletterJob.perform_now
+    end
+  end
+
+  test "handles nil summary gracefully" do
+    fav = Favorite.create!(url: "https://example.com/nil-summary", content_type: "webpage", status: "done")
+    fav.create_analysis!(summary: nil, tags: [])
+
+    assert_nothing_raised do
+      digest = WeeklyNewsletterJob.new.send(:build_digest, [fav])
+      assert_nil digest[:favorites][0][:summary]
+      assert_equal [], digest[:favorites][0][:tags]
+    end
   end
 
   test "build_digest formats favorites correctly" do
