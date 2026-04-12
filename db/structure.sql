@@ -19,27 +19,29 @@ CREATE UNIQUE INDEX "index_collection_memberships_on_favorite_id_and_collection_
 CREATE INDEX "index_collection_memberships_on_favorite_id" ON "collection_memberships" ("favorite_id") /*application='UrlFavorites20'*/;
 CREATE TABLE IF NOT EXISTS "schema_migrations" ("version" varchar NOT NULL PRIMARY KEY);
 CREATE TABLE IF NOT EXISTS "ar_internal_metadata" ("key" varchar NOT NULL PRIMARY KEY, "value" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
-CREATE VIRTUAL TABLE favorites_fts USING fts5(
-  favorite_id UNINDEXED,
-  title,
-  summary,
-  tags,
-  note,
-  tokenize='porter ascii'
-)
-/* favorites_fts(favorite_id,title,summary,tags,note) */;
-CREATE TABLE IF NOT EXISTS 'favorites_fts_data'(id INTEGER PRIMARY KEY, block BLOB);
-CREATE TABLE IF NOT EXISTS 'favorites_fts_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID;
-CREATE TABLE IF NOT EXISTS 'favorites_fts_content'(id INTEGER PRIMARY KEY, c0, c1, c2, c3, c4);
-CREATE TABLE IF NOT EXISTS 'favorites_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
-CREATE TABLE IF NOT EXISTS 'favorites_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS "tag_feedbacks" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "favorite_id" integer NOT NULL, "user_id" integer, "original_tags" text NOT NULL, "corrected_tags" text NOT NULL, "reason" varchar(500), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_82d6c64491"
 FOREIGN KEY ("favorite_id")
   REFERENCES "favorites" ("id")
 );
 CREATE INDEX "index_tag_feedbacks_on_favorite_id" ON "tag_feedbacks" ("favorite_id") /*application='UrlFavorites20'*/;
 CREATE INDEX "index_tag_feedbacks_on_user_id" ON "tag_feedbacks" ("user_id") /*application='UrlFavorites20'*/;
+CREATE VIRTUAL TABLE favorites_fts USING fts5(
+  favorite_id UNINDEXED,
+  title,
+  summary,
+  tags,
+  note,
+  content_embedding,
+  tokenize='porter ascii'
+)
+/* favorites_fts(favorite_id,title,summary,tags,note,content_embedding) */;
+CREATE TABLE IF NOT EXISTS 'favorites_fts_data'(id INTEGER PRIMARY KEY, block BLOB);
+CREATE TABLE IF NOT EXISTS 'favorites_fts_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS 'favorites_fts_content'(id INTEGER PRIMARY KEY, c0, c1, c2, c3, c4, c5);
+CREATE TABLE IF NOT EXISTS 'favorites_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
+CREATE TABLE IF NOT EXISTS 'favorites_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260413000001'),
 ('20260412141412'),
 ('20260407000006'),
 ('20260407000005'),

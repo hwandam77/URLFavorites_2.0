@@ -1,7 +1,7 @@
 # app/services/favorite_search_indexer.rb
 class FavoriteSearchIndexer
   # favorites_fts 가상 테이블을 위한 FTS5 인덱스 관리
-  # favorites_fts 열: favorite_id INTEGER, title TEXT, summary TEXT, tags TEXT, note TEXT
+  # favorites_fts 열: favorite_id INTEGER, title TEXT, summary TEXT, tags TEXT, note TEXT, content_embedding TEXT
 
   # 단일 즐겨찾기를 인덱싱하거나 재인덱싱
   def self.index(favorite)
@@ -12,14 +12,19 @@ class FavoriteSearchIndexer
 
     conn = ActiveRecord::Base.connection
 
+    # Generate embedding for semantic search
+    content_for_embedding = [favorite.title, summary, note].compact.join(" ")
+    embedding = EmbeddingService.call(content_for_embedding)
+    embedding_json = embedding.present? ? embedding.to_json : nil
+
     # 먼저 기존 행을 삭제 (delete+insert 를 통한 upsert)
     conn.execute("DELETE FROM favorites_fts WHERE favorite_id = #{favorite.id}")
 
     # 새 행 삽입
     conn.execute(
       ActiveRecord::Base.send(:sanitize_sql_array, [
-        "INSERT INTO favorites_fts (favorite_id, title, summary, tags, note) VALUES (?, ?, ?, ?, ?)",
-        favorite.id, favorite.title, summary, tags, note
+        "INSERT INTO favorites_fts (favorite_id, title, summary, tags, note, content_embedding) VALUES (?, ?, ?, ?, ?, ?)",
+        favorite.id, favorite.title, summary, tags, note, embedding_json
       ])
     )
   end
