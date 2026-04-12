@@ -1,8 +1,10 @@
 <%= form_with url: favorite_note_path(favorite), method: :patch, class: "space-y-2" do |f| %>
   <textarea name="favorite[note]" rows="3"
-    class="w-full rounded border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-    placeholder="Add a note..."><%= favorite.note %></textarea>
-  <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer">
-    Save Note
+    style="width:100%;border:1px solid var(--color-border);border-radius:var(--radius-md);padding:12px;font-size:14px;color:var(--color-text);background:var(--color-surface);outline:none;resize:vertical;transition:border-color 0.15s;"
+    class="focus:ring-2 focus:ring-offset-1"
+    placeholder="메모를 입력하세요..."><%= favorite.note %></textarea>
+  <button type="submit" style="background:var(--color-accent);color:#fff;padding:8px 16px;border-radius:var(--radius-md);font-size:14px;font-weight:600;cursor:pointer;border:none;transition:background 0.15s;"
+    class="hover:opacity-90">
+    메모 저장
   </button>
 <% end %>

@@ -50,6 +50,52 @@ class LlmAnalyzerFallbackTest < ActiveSupport::TestCase
     end
   end
 
+  test "falls back when first backend returns 500" do
+    ENV["LLM_BACKENDS"] = [
+      { "url" => "http://localhost:9998", "model" => "test", "timeout" => 5 }.to_json,
+      { "url" => "http://localhost:9999", "model" => "test", "timeout" => 5 }.to_json
+    ].to_json
+
+    stub_request(:post, "http://localhost:9998/v1/chat/completions")
+      .to_return(status: 500, body: "Internal Server Error")
+    stub_request(:post, "http://localhost:9999/v1/chat/completions")
+      .to_return(status: 200, body: valid_response.to_json)
+
+    result = LlmAnalyzer.call("test content", type: "webpage")
+    assert_equal "Test summary", result[:summary]
+  end
+
+  test "falls back when first backend returns ParseError due to missing keys" do
+    ENV["LLM_BACKENDS"] = [
+      { "url" => "http://localhost:9998", "model" => "test", "timeout" => 5 }.to_json,
+      { "url" => "http://localhost:9999", "model" => "test", "timeout" => 5 }.to_json
+    ].to_json
+
+    # Response is valid JSON but missing required keys
+    stub_request(:post, "http://localhost:9998/v1/chat/completions")
+      .to_return(status: 200, body: { summary: "Only summary" }.to_json)
+    stub_request(:post, "http://localhost:9999/v1/chat/completions")
+      .to_return(status: 200, body: valid_response.to_json)
+
+    result = LlmAnalyzer.call("test content", type: "webpage")
+    assert_equal "Test summary", result[:summary]
+  end
+
+  test "falls back when first backend times out" do
+    ENV["LLM_BACKENDS"] = [
+      { "url" => "http://localhost:9998", "model" => "test", "timeout" => 1 }.to_json,
+      { "url" => "http://localhost:9999", "model" => "test", "timeout" => 5 }.to_json
+    ].to_json
+
+    stub_request(:post, "http://localhost:9998/v1/chat/completions")
+      .to_timeout
+    stub_request(:post, "http://localhost:9999/v1/chat/completions")
+      .to_return(status: 200, body: valid_response.to_json)
+
+    result = LlmAnalyzer.call("test content", type: "webpage")
+    assert_equal "Test summary", result[:summary]
+  end
+
   private
 
   def valid_response

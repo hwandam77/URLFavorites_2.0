@@ -31,35 +31,115 @@
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
 
     <style>
-      /* Editorial Design Tokens — Light Mode */
+      /* ================================================
+         URLFavorites 2.0 — Design System
+         Archetype: Editorial / Magazine
+         Differentiator: Warm Amber + Generous Whitespace
+      ================================================ */
+
+      /* ── Spacing Scale ── */
+      :root {
+        --space-1: 0.25rem;  /* 4px */
+        --space-2: 0.5rem;   /* 8px */
+        --space-3: 0.75rem;  /* 12px */
+        --space-4: 1rem;      /* 16px */
+        --space-5: 1.25rem;   /* 20px */
+        --space-6: 1.5rem;    /* 24px */
+        --space-8: 2rem;      /* 32px */
+        --space-10: 2.5rem;   /* 40px */
+        --space-12: 3rem;     /* 48px */
+        --space-16: 4rem;     /* 64px */
+      }
+
+      /* ── Border Radius ── */
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      --radius-full: 9999px;
+
+      /* ── Elevation / Shadow ── */
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+
+      /* ── Color Tokens — Light Mode ── */
       :root {
         --color-bg: #faf7f2;
         --color-surface: #fffbf5;
+        --color-surface-hover: #fef3e2;
         --color-border: #e8ddd0;
+        --color-border-strong: #d4c4b0;
         --color-accent: #c2410c;
+        --color-accent-hover: #9a3412;
+        --color-accent-subtle: #fff7ed;
         --color-text: #1c1917;
         --color-text-muted: #78716c;
+        --color-text-placeholder: #a8a29e;
+
+        /* Status */
+        --color-success-bg: #fefce8;
+        --color-success-text: #713f12;
+        --color-success-border: #fde68a;
+        --color-error-bg: #fef2f2;
+        --color-error-text: #991b1b;
+        --color-error-border: #fecaca;
+        --color-warning-bg: #fff7ed;
+        --color-warning-text: #9a3412;
+        --color-warning-border: #fed7aa;
+
+        /* Tags */
         --color-tag-bg: #fef3c7;
         --color-tag-text: #92400e;
+
+        /* Interactive */
+        --color-focus-ring: #c2410c;
+        --color-overlay: rgb(0 0 0 / 0.4);
       }
+
       body {
         font-family: 'Inter', -apple-system, system-ui, 'Segoe UI', Helvetica, Arial, sans-serif;
         background-color: var(--color-bg);
         color: var(--color-text);
       }
-      /* Editorial Design Tokens — Dark Mode */
+
+      /* ── Color Tokens — Dark Mode ── */
       .dark {
         --color-bg: #1c1917;
         --color-surface: #292524;
+        --color-surface-hover: #32302a;
         --color-border: #44403c;
+        --color-border-strong: #57534e;
         --color-accent: #f59e0b;
+        --color-accent-hover: #fbbf24;
+        --color-accent-subtle: #29221a;
         --color-text: #faf7f2;
         --color-text-muted: #a8a29e;
+        --color-text-placeholder: #78716c;
+
+        /* Status */
+        --color-success-bg: #14532d;
+        --color-success-text: #fef9c3;
+        --color-success-border: #365314;
+        --color-error-bg: #450a0a;
+        --color-error-text: #fef2f2;
+        --color-error-border: #7f1d1d;
+        --color-warning-bg: #431407;
+        --color-warning-text: #fed7aa;
+        --color-warning-border: #7c2d12;
+
+        /* Tags */
         --color-tag-bg: #451a03;
         --color-tag-text: #fed7aa;
+
+        /* Interactive */
+        --color-focus-ring: #f59e0b;
+        --color-overlay: rgb(0 0 0 / 0.6);
         color-scheme: dark;
       }
-      /* 앱 셸 레이아웃 */
+
+      /* ── App Shell ── */
       .app-shell {
         display: flex;
         height: 100dvh;
@@ -67,30 +147,41 @@
       }
       .sidebar {
         flex-shrink: 0;
+        width: 240px;
         background-color: var(--color-surface);
-        border-color: var(--color-border);
+        border-right: 1px solid var(--color-border);
       }
       .main-content {
         flex: 1;
         overflow-y: auto;
         background-color: var(--color-bg);
       }
-      /* 모바일: 사이드바 드로어 */
+
+      /* ── Mobile: Sidebar Drawer ── */
       @media (max-width: 768px) {
         .sidebar {
           position: fixed;
           top: 0; left: 0; bottom: 0;
           z-index: 50;
           transform: translateX(-100%);
-          transition: transform 0.2s ease;
+          transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
         body.sidebar-open .sidebar {
           transform: translateX(0);
         }
+      }
+
+      /* ── Focus Ring ── */
+      :focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
+      }
+
+      /* ── Animations ── */
       @keyframes animate-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
     </style>
 
     <%# 다크 모드 초기화 (FOUC 방지) %>

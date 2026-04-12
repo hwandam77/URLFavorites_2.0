@@ -1,19 +1,40 @@
-<div class="text-center py-16 px-8">
-  <%# Editorial empty state illustration %>
-  <div class="mb-6">
-    <svg class="mx-auto" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="8" y="12" width="64" height="56" rx="4" fill="var(--color-surface)" stroke="var(--color-border)" stroke-width="2"/>
-      <rect x="16" y="24" width="48" height="4" rx="2" fill="var(--color-border)"/>
-      <rect x="16" y="34" width="32" height="4" rx="2" fill="var(--color-border)"/>
-      <rect x="16" y="44" width="40" height="4" rx="2" fill="var(--color-border)"/>
-      <circle cx="60" cy="20" r="12" fill="var(--color-accent)" opacity="0.15"/>
-      <path d="M60 15V25M55 20H65" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round"/>
+<div class="flex flex-col items-center py-20 px-8">
+
+  <%# Accent line — editorial signature %>
+  <div style="width:40px;height:4px;background:var(--color-accent);border-radius:2px;margin-bottom:2rem;"></div>
+
+  <%# Illustration %>
+  <div style="margin-bottom:2rem;">
+    <svg width="140" height="116" viewBox="0 0 140 116" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <%# Shadow page (back) %>
+      <rect x="28" y="22" width="68" height="86" rx="5" fill="var(--color-border)" opacity="0.5"/>
+      <%# Main page %>
+      <rect x="20" y="14" width="68" height="86" rx="5" fill="var(--color-surface)" stroke="var(--color-border)" stroke-width="1.5"/>
+      <%# Text lines on page %>
+      <rect x="32" y="32" width="44" height="3" rx="1.5" fill="var(--color-border)"/>
+      <rect x="32" y="42" width="33" height="3" rx="1.5" fill="var(--color-border)"/>
+      <rect x="32" y="52" width="38" height="3" rx="1.5" fill="var(--color-border)"/>
+      <rect x="32" y="62" width="28" height="3" rx="1.5" fill="var(--color-border)"/>
+      <%# Bookmark ribbon on page %>
+      <path d="M60 14 L80 14 L80 42 L70 35 L60 42 Z" fill="var(--color-accent)"/>
+      <%# AI sparkle dots — suggests analysis %>
+      <circle cx="98" cy="26" r="3" fill="var(--color-accent)" opacity="0.5"/>
+      <circle cx="108" cy="18" r="2" fill="var(--color-accent)" opacity="0.35"/>
+      <circle cx="104" cy="36" r="1.5" fill="var(--color-accent)" opacity="0.25"/>
+      <%# Plus circle (CTA hint) %>
+      <circle cx="106" cy="88" r="22" fill="var(--color-accent-subtle)" stroke="var(--color-accent)" stroke-width="1.5"/>
+      <path d="M106 78 V98 M96 88 H116" stroke="var(--color-accent)" stroke-width="2.5" stroke-linecap="round"/>
     </svg>
   </div>
-  <p style="font-size:18px;font-weight:700;color:var(--color-text);letter-spacing:-0.3px;margin-bottom:8px;">
-    즐겨찾기가 없습니다
+
+  <%# Heading %>
+  <p style="font-size:20px;font-weight:700;color:var(--color-text);letter-spacing:-0.5px;margin-bottom:10px;text-align:center;line-height:1.25;">
+    첫 북마크를 추가하세요
   </p>
-  <p style="font-size:14px;color:var(--color-text-muted);">
-    위에 URL을 입력하여 첫 북마크를 추가하세요
+
+  <%# Supporting copy %>
+  <p style="font-size:13px;color:var(--color-text-muted);line-height:1.65;text-align:center;max-width:260px;margin-bottom:0;">
+    URL을 위에 입력하면 AI가 자동으로<br>내용을 분석하고 태그를 붙여줍니다.
   </p>
+
 </div>

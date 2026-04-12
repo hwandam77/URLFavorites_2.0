@@ -3,10 +3,8 @@ class LlmAnalyzer
   class ServerError < StandardError; end
 
   # Primary/backup backends: Nexus LLM → Local llama-server → Cloud API
-  BACKENDS = [
-    { url: "http://10.10.0.3:8081", model: "qwen3-30b", timeout: 60 },   # Nexus 30B
-    { url: "http://10.10.0.3:8082", model: "qwen3-48b", timeout: 120 }, # Nexus 48B
-  ].freeze
+  # URL은 환경변수 LLM_BACKENDS로 덮어쓰기 가능, 없으면 ENV["LLAMA_SERVER_URL"] 또는 localhost 사용
+  DEFAULT_BASE_URL = ENV.fetch("LLAMA_SERVER_URL", "http://localhost:8080")
 
   def self.call(content, type:)
     backends = resolve_backends
@@ -23,17 +21,26 @@ class LlmAnalyzer
     raise ServerError, "All LLM backends failed. Last error: #{last_error&.message}"
   end
 
+  # Class-level connection cache to avoid repeated connection creation
+  # Keyed by base_url to support multiple backends
+  @@connection_cache = {}
+  cattr_accessor :connection_cache, instance_reader: false, instance_writer: false
+
   def self.attempt_backend(backend, content, type)
     base_url = backend[:url]
     timeout = backend[:timeout] || 120
     model = backend[:model] || "local"
 
-    conn = Faraday.new(base_url) do |f|
+    # Reuse cached connection or create new one
+    @@connection_cache[base_url] ||= Faraday.new(base_url) do |f|
       f.options.timeout      = timeout
       f.options.open_timeout = 10
       f.request :json
       f.response :raise_error
     end
+    conn = @@connection_cache[base_url]
+    # Update timeout for this specific request
+    conn.options.timeout = timeout
 
     body = {
       model: model,
@@ -49,7 +56,10 @@ class LlmAnalyzer
 
     response = conn.post("/v1/chat/completions", body)
 
-    return nil if response.status >= 500
+    if response.status >= 500
+      Rails.logger.warn "[LlmAnalyzer] Backend #{base_url} returned #{response.status}"
+      return nil
+    end
 
     parsed = JSON.parse(response.body, symbolize_names: true)
 
@@ -70,7 +80,18 @@ class LlmAnalyzer
     env_backends = ENV["LLM_BACKENDS"]
     if env_backends.present?
       JSON.parse(env_backends).map do |b|
-        b.is_a?(Hash) ? b.symbolize_keys : JSON.parse(b).symbolize_keys
+        if b.is_a?(Hash)
+          b.symbolize_keys
+        elsif b.is_a?(String)
+          # If it's a string that looks like JSON, parse it; otherwise treat as URL
+          begin
+            JSON.parse(b).symbolize_keys
+          rescue JSON::ParserError
+            { url: b, model: "default", timeout: 60 }
+          end
+        else
+          raise ParseError, "Invalid backend config: #{b.inspect}"
+        end
       end
     else
       BACKENDS.select { |b| b[:url].present? }

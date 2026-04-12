@@ -1,0 +1,9 @@
+{
+  "enabledMcpjsonServers": [
+    "tavily-mcp"
+  ],
+  "enableAllProjectMcpServers": true,
+  "enabledPlugins": {
+    "claude-mem@claude-mem": true
+  }
+}

@@ -1,7 +1,7 @@
 <div class="max-w-5xl mx-auto px-6 py-10">
   <!-- Header -->
   <div class="flex justify-between items-center mb-8">
-    <h1 style="font-size:2rem;font-weight:700;letter-spacing:-0.625px;color:var(--notion-black);line-height:1.23;">
+    <h1 style="font-size:2rem;font-weight:700;letter-spacing:-0.625px;color:var(--color-text);line-height:1.23;">
       URLFavorites
     </h1>
   </div>
@@ -10,10 +10,10 @@
   <%= form_with url: favorites_path, method: :post, class: "flex gap-2 mb-8" do |f| %>
     <%= f.text_field :url, name: "favorite[url]",
       placeholder: "URL을 입력하세요...",
-      style: "border:var(--notion-border);border-radius:4px;padding:8px 12px;font-size:15px;font-weight:500;color:var(--notion-black);background:#fff;outline:none;flex:1;",
-      class: "focus:ring-2 focus:ring-blue-500" %>
+      style: "border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:8px 12px;font-size:15px;font-weight:500;color:var(--color-text);background:var(--color-surface);outline:none;flex:1;transition:border-color 0.15s;",
+      class: "focus:ring-2 focus:ring-offset-1" %>
     <%= f.submit "추가",
-      style: "background:var(--notion-blue);color:#fff;padding:8px 20px;border-radius:4px;font-size:15px;font-weight:600;cursor:pointer;border:none;transition:background 0.15s;",
+      style: "background:var(--color-accent);color:#fff;padding:8px 20px;border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:background 0.15s;",
       class: "hover:opacity-90 cursor-pointer" %>
   <% end %>
 
@@ -32,7 +32,7 @@
         <input type="hidden" name="status" value="<%= params[:status] %>">
         <select name="sort"
           onchange="this.form.requestSubmit()"
-          style="border:var(--color-border) 1px solid;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:500;color:var(--color-text);background:var(--color-surface);outline:none;cursor:pointer;">
+          style="border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:6px 10px;font-size:13px;font-weight:500;color:var(--color-text);background:var(--color-surface);outline:none;cursor:pointer;">
           <option value="recent" <%= "selected" if params[:sort] == "recent" || params[:sort].blank? %>>최근 추가</option>
           <option value="oldest" <%= "selected" if params[:sort] == "oldest" %>>오래된 순</option>
           <option value="title" <%= "selected" if params[:sort] == "title" %>>제목 순</option>
@@ -43,7 +43,7 @@
     <%# View Mode Toggle %>
     <div class="flex items-center gap-1 p-1 rounded-lg" style="background:var(--color-surface);border:1px solid var(--color-border);" data-controller="view-mode">
       <button type="button"
-        style="padding:6px 12px;border-radius:6px;font-size:13px;font-weight:500;transition:all 0.15s;background:var(--color-accent);color:#fff;border:none;cursor:pointer;"
+        style="padding:6px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;transition:all 0.15s;background:var(--color-accent);color:#fff;border:none;cursor:pointer;"
         data-view-mode-target="cardButton"
         data-action="view-mode#switchToCard">
         <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -52,7 +52,7 @@
         카드
       </button>
       <button type="button"
-        style="padding:6px 12px;border-radius:6px;font-size:13px;font-weight:500;transition:all 0.15s;background:transparent;color:var(--color-text-muted);border:none;cursor:pointer;"
+        style="padding:6px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;transition:all 0.15s;background:transparent;color:var(--color-text-muted);border:none;cursor:pointer;"
         data-view-mode-target="listButton"
         data-action="view-mode#switchToList">
         <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,7 +73,7 @@
         <%= render partial: "favorite_card", collection: @favorites, as: :favorite %>
       </div>
       <%# List View (Table) %>
-      <div class="hidden rounded-lg overflow-hidden" style="border:1px solid var(--color-border);" data-view-mode-target="listView">
+      <div class="hidden rounded-lg overflow-hidden" style="border:1px solid var(--color-border);border-radius:var(--radius-lg);" data-view-mode-target="listView">
         <table class="w-full" style="background:var(--color-surface);">
           <thead>
             <tr style="border-bottom:1px solid var(--color-border);background:var(--color-surface);">

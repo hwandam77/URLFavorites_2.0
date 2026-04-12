@@ -17,7 +17,7 @@
 ### tmux 2계층 병렬 실행
 
 ```
-Layer 1: Claude Workers (omc-teams, tmux pane별)
+Layer 1: Claude Workers (tmux pane별)
   Pane 1: Orchestrator (Opus) — GSD 명령, 조율
   Pane 2: rails-core (Sonnet) — 백엔드
   Pane 3: rails-ui (Sonnet) — 프론트
@@ -121,10 +121,72 @@ DISPATCH="/Users/hwandam/workspace/infrastructure/llm-orchestration/dispatch.sh"
         └── SKILL.md         # GSD 브릿지 오케스트레이터
 ```
 
+---
+
+## 배포 가이드
+
+### 서버 정보
+
+| 항목 | 값 |
+|------|-----|
+| SSH 호스트 | `vps-server` (`~/.ssh/config`) |
+| 앱 경로 | `/home/hwandam/URLFavorites_2.0/` |
+| 서비스 | `rails-puma@URLFavorites_2.0.service` |
+| 포트 | `3001` (3000은 구버전 urlfavorites 점유) |
+| URL | `https://urlf.hwandam.kr/ver2.0/` |
+| nginx 설정 | `/etc/nginx/sites-enabled/URLF.hwandam.kr` |
+
+### systemd 환경변수 (drop-in)
+
+위치: `/etc/systemd/system/rails-puma@URLFavorites_2.0.service.d/env.conf`
+
+```ini
+[Service]
+Environment=LLAMA_SERVER_URL=http://100.99.181.122:8282
+Environment=PORT=3001
+Environment=RAILS_RELATIVE_URL_ROOT=/ver2.0
+```
+
+변경 시: `sudo systemctl daemon-reload && sudo systemctl restart rails-puma@URLFavorites_2.0`
+
+### 배포 명령
+
+```bash
+# 전체 배포 (bundle + migrate + assets + restart, ~30초)
+deploy URLFavorites_2.0
+
+# 빠른 배포 (코드 sync + restart만, ~5초)
+deploy --quick URLFavorites_2.0
+```
+
+### 배포 후 검증
+
+```bash
+# 서비스 상태
+systemctl status rails-puma@URLFavorites_2.0
+
+# 헬스체크
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3001/ver2.0/favorites
+# → 200 이면 정상
+
+# 최근 로그
+journalctl -u rails-puma@URLFavorites_2.0 -n 30 --no-pager
+```
+
+### 트러블슈팅
+
+| 증상 | 원인 | 해결 |
+|------|------|------|
+| `EADDRINUSE port 3000` | PORT env 미설정 → 기본값 3000 충돌 | drop-in에 `PORT=3001` 확인 |
+| `LLAMA_SERVER_URL is required` | env.conf 미존재 또는 daemon-reload 누락 | drop-in 재생성 후 daemon-reload |
+| 404 `/ver2.0/favorites` | `RAILS_RELATIVE_URL_ROOT` 미설정 | drop-in에 `/ver2.0` 확인 |
+| 500 ERB syntax error | 뷰 파일 `link_to` 옵션 쉼표 누락 | 해당 파일 수정 후 quick deploy |
+
 ### 변경 이력
 
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |------|----------|------|------|
 | 2026-04-07 | 초기 구성 — 4 에이전트 + 오케스트레이터 | 전체 | 하네스 신규 구축 |
 | 2026-04-07 | GSD 통합 — .planning/ + ROADMAP 10 Phase | 전체 | GSD phase 관리 연결 |
-| 2026-04-07 | tmux 2계층 병렬 — omc-teams + Nexus LLM | 전체 에이전트 + 오케스트레이터 | Claude Workers + 30B/48B 코드 생성 조합 |
+| 2026-04-07 | tmux 2계층 병렬 — Claude Workers + Nexus LLM | 전체 에이전트 + 오케스트레이터 | Claude Workers + 30B/48B 코드 생성 조합 |
+| 2026-04-10 | 배포 가이드 추가 — 서버 설정, 환경변수, 트러블슈팅 | CLAUDE.md | 첫 운영 배포 경험 문서화 |

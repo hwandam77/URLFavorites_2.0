@@ -1,35 +1,39 @@
 <div class="max-w-4xl mx-auto px-4 py-8">
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">Collections</h1>
+    <h1 style="font-size:24px;font-weight:700;color:var(--color-text);letter-spacing:-0.5px;">컬렉션</h1>
   </div>
 
-  <!-- New Collection Form -->
+  <%# New Collection Form %>
   <%= form_with url: collections_path, method: :post, class: "flex gap-2 mb-6" do |f| %>
-    <input type="text" name="collection[name]" placeholder="New collection name..."
-      class="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 cursor-pointer">Create</button>
+    <input type="text" name="collection[name]" placeholder="새 컬렉션 이름..."
+      style="flex:1;border:1px solid var(--color-border);border-radius:var(--radius-md);padding:8px 16px;font-size:15px;color:var(--color-text);background:var(--color-surface);outline:none;transition:border-color 0.15s;"
+      class="focus:ring-2 focus:ring-offset-1">
+    <button type="submit" style="background:var(--color-accent);color:#fff;border-radius:var(--radius-md);padding:8px 20px;font-size:15px;font-weight:600;cursor:pointer;transition:background 0.15s;border:none;"
+      class="hover:opacity-90">만들기</button>
   <% end %>
 
   <% if @collections.any? %>
     <div class="space-y-3">
       <% @collections.each do |collection| %>
-        <div class="bg-white rounded-lg shadow-sm border p-4 flex justify-between items-center">
+        <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-4);box-shadow:var(--shadow-sm);display:flex;justify-content:space-between;align-items:center;transition:box-shadow 0.15s;"
+          class="hover:shadow-md">
           <div>
-            <%= link_to collection.name, collection_path(collection), class: "font-semibold text-gray-900 hover:text-blue-600" %>
+            <%= link_to collection.name, collection_path(collection), style: "font-weight:600;color:var(--color-text);" class: "hover:underline" %>
             <% if collection.description.present? %>
-              <p class="text-sm text-gray-500"><%= collection.description %></p>
+              <p style="font-size:14px;color:var(--color-text-muted);margin-top:2px;"><%= collection.description %></p>
             <% end %>
-            <span class="text-xs text-gray-400"><%= collection.favorites.count %> favorites</span>
+            <span style="font-size:12px;color:var(--color-text-muted);"><%= collection.favorites.count %>개</span>
           </div>
-          <%= button_to "Delete", collection_path(collection), method: :delete,
-            data: { turbo_confirm: "Delete this collection?" },
-            class: "text-red-500 hover:text-red-700 text-sm" %>
+          <%= button_to "삭제", collection_path(collection), method: :delete,
+            data: { turbo_confirm: "컬렉션을 삭제하시겠습니까?" },
+            style: "color:#dc2626;font-size:14px;background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:var(--radius-sm);transition:background 0.15s;",
+            class: "hover:bg-red-50 dark:hover:bg-red-900/20" %>
         </div>
       <% end %>
     </div>
   <% else %>
-    <div class="text-center py-12">
-      <p class="text-gray-500">No collections yet. Create one above.</p>
+    <div style="text-align:center;padding:48px 24px;">
+      <p style="font-size:16px;color:var(--color-text-muted);">컬렉션이 없습니다. 위에서 만들어보세요.</p>
     </div>
   <% end %>
 </div>

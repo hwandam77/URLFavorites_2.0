@@ -1,0 +1,284 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1775629055291,
+  "projectRoot": "/Users/hwandam/workspace/URLFavorites_2.0",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Ruby",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Gemfile"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "bundler",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "app",
+      "bin",
+      "docs",
+      "lib",
+      "public",
+      "test"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "app": {
+      "path": "app",
+      "purpose": "Application code",
+      "fileCount": 0,
+      "lastAccessed": 1775629055269,
+      "keyFiles": []
+    },
+    "bin": {
+      "path": "bin",
+      "purpose": "Executable scripts",
+      "fileCount": 10,
+      "lastAccessed": 1775629055271,
+      "keyFiles": [
+        "brakeman",
+        "bundler-audit",
+        "ci",
+        "dev",
+        "docker-entrypoint"
+      ]
+    },
+    "config": {
+      "path": "config",
+      "purpose": "Configuration files",
+      "fileCount": 14,
+      "lastAccessed": 1775629055272,
+      "keyFiles": [
+        "application.rb",
+        "application.rb.bak",
+        "boot.rb",
+        "bundler-audit.yml",
+        "cable.yml"
+      ]
+    },
+    "db": {
+      "path": "db",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1775629055272,
+      "keyFiles": [
+        "queue_schema.rb",
+        "queue_structure.sql",
+        "schema.rb",
+        "seeds.rb",
+        "structure.sql"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 2,
+      "lastAccessed": 1775629055273,
+      "keyFiles": [
+        "research-distributed-inference.md",
+        "research-github-similar.md"
+      ]
+    },
+    "lib": {
+      "path": "lib",
+      "purpose": "Library code",
+      "fileCount": 0,
+      "lastAccessed": 1775629055273,
+      "keyFiles": []
+    },
+    "log": {
+      "path": "log",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1775629055274,
+      "keyFiles": [
+        "development.log",
+        "test.log"
+      ]
+    },
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 12,
+      "lastAccessed": 1775629055275,
+      "keyFiles": [
+        "400.html",
+        "404.html",
+        "406-unsupported-browser.html",
+        "422.html",
+        "500.html"
+      ]
+    },
+    "script": {
+      "path": "script",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1775629055279,
+      "keyFiles": []
+    },
+    "storage": {
+      "path": "storage",
+      "purpose": null,
+      "fileCount": 33,
+      "lastAccessed": 1775629055279,
+      "keyFiles": [
+        "development.sqlite3",
+        "development_queue.sqlite3",
+        "test.sqlite3",
+        "test.sqlite3_0",
+        "test.sqlite3_1"
+      ]
+    },
+    "test": {
+      "path": "test",
+      "purpose": "Test files",
+      "fileCount": 2,
+      "lastAccessed": 1775629055280,
+      "keyFiles": [
+        "test_helper.rb",
+        "test_helper.rb.bak"
+      ]
+    },
+    "tmp": {
+      "path": "tmp",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1775629055280,
+      "keyFiles": []
+    },
+    "vendor": {
+      "path": "vendor",
+      "purpose": "Third-party code",
+      "fileCount": 1,
+      "lastAccessed": 1775629055280,
+      "keyFiles": []
+    },
+    "app/assets": {
+      "path": "app/assets",
+      "purpose": "Static assets",
+      "fileCount": 0,
+      "lastAccessed": 1775629055281,
+      "keyFiles": []
+    },
+    "app/controllers": {
+      "path": "app/controllers",
+      "purpose": "Controllers",
+      "fileCount": 10,
+      "lastAccessed": 1775629055281,
+      "keyFiles": [
+        "application_controller.rb",
+        "application_controller.rb.bak",
+        "collection_memberships_controller.rb"
+      ]
+    },
+    "app/helpers": {
+      "path": "app/helpers",
+      "purpose": "Helper functions",
+      "fileCount": 1,
+      "lastAccessed": 1775629055282,
+      "keyFiles": [
+        "application_helper.rb"
+      ]
+    },
+    "app/models": {
+      "path": "app/models",
+      "purpose": "Data models",
+      "fileCount": 9,
+      "lastAccessed": 1775629055282,
+      "keyFiles": [
+        "analysis.rb",
+        "analysis.rb.bak",
+        "application_record.rb"
+      ]
+    },
+    "app/services": {
+      "path": "app/services",
+      "purpose": "Business logic services",
+      "fileCount": 16,
+      "lastAccessed": 1775629055283,
+      "keyFiles": [
+        "favorite_search.rb",
+        "favorite_search.rb.bak",
+        "favorite_search_indexer.rb"
+      ]
+    },
+    "app/views": {
+      "path": "app/views",
+      "purpose": "View templates",
+      "fileCount": 0,
+      "lastAccessed": 1775629055283,
+      "keyFiles": []
+    },
+    "test/controllers": {
+      "path": "test/controllers",
+      "purpose": "Controllers",
+      "fileCount": 8,
+      "lastAccessed": 1775629055284,
+      "keyFiles": [
+        "collection_memberships_controller_test.rb",
+        "collection_memberships_controller_test.rb.bak",
+        "collections_controller_test.rb"
+      ]
+    },
+    "test/fixtures": {
+      "path": "test/fixtures",
+      "purpose": "Test fixtures",
+      "fileCount": 0,
+      "lastAccessed": 1775629055285,
+      "keyFiles": []
+    },
+    "test/helpers": {
+      "path": "test/helpers",
+      "purpose": "Helper functions",
+      "fileCount": 1,
+      "lastAccessed": 1775629055285,
+      "keyFiles": []
+    },
+    "test/models": {
+      "path": "test/models",
+      "purpose": "Data models",
+      "fileCount": 9,
+      "lastAccessed": 1775629055285,
+      "keyFiles": [
+        "analysis_test.rb",
+        "analysis_test.rb.bak",
+        "collection_membership_test.rb"
+      ]
+    },
+    "test/services": {
+      "path": "test/services",
+      "purpose": "Business logic services",
+      "fileCount": 16,
+      "lastAccessed": 1775629055285,
+      "keyFiles": [
+        "favorite_search_indexer_test.rb",
+        "favorite_search_indexer_test.rb.bak",
+        "favorite_search_test.rb"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}

@@ -9,8 +9,7 @@
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
     </svg>
-    <span style="font-size:15px;font-weight:700;letter-spacing:-0.25px;"
-          class="text-stone-900 dark:text-stone-100">URLFavorites</span>
+    <span style="font-size:15px;font-weight:700;letter-spacing:-0.25px;color:var(--color-text);">URLFavorites</span>
   </div>
 
   <%# 메인 네비게이션 %>
@@ -51,8 +50,7 @@
   <%# 컬렉션 %>
   <% if @collections.present? %>
     <div class="px-4 pt-4 pb-1">
-      <p style="font-size:11px;font-weight:600;letter-spacing:0.5px;"
-         class="text-stone-400 dark:text-stone-500 uppercase">컬렉션</p>
+      <p style="font-size:11px;font-weight:600;letter-spacing:0.5px;color:var(--color-text-muted);text-transform:uppercase;">컬렉션</p>
     </div>
     <div class="px-2 space-y-0.5 pb-3">
       <% @collections.each do |collection| %>

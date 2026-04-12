@@ -1,52 +1,54 @@
 <div class="max-w-2xl mx-auto px-4 py-8">
-  <!-- Back link -->
+  <%# Back link %>
   <div class="mb-4">
-    <%= link_to "← Back to Archive", favorites_path, class: "text-blue-600 hover:text-blue-800 inline-block" %>
+    <%= link_to "← 아카이브로 돌아가기", favorites_path, style: "color:var(--color-accent);font-size:14px;font-weight:500;" %>
   </div>
 
-  <!-- Title -->
-  <h1 class="text-2xl font-bold text-gray-900 mb-2">
-    <%= @favorite.title %>
+  <%# Title %>
+  <h1 style="font-size:24px;font-weight:700;letter-spacing:-0.5px;color:var(--color-text);margin-bottom:8px;">
+    <%= @favorite.title.presence || "제목 없음" %>
   </h1>
 
-  <!-- URL -->
-  <div class="text-sm break-all mb-4">
-    <%= link_to @favorite.url, @favorite.url, target: "_blank", rel: "noopener noreferrer", class: "text-gray-500 hover:text-blue-600" %>
+  <%# URL %>
+  <div style="font-size:14px;word-break:break-all;margin-bottom:16px;">
+    <%= link_to @favorite.url, @favorite.url, target: "_blank", rel: "noopener noreferrer", style: "color:var(--color-text-muted);" %>
   </div>
 
-  <!-- Status and Content Type badges -->
+  <%# Status and Content Type badges %>
   <div class="flex flex-wrap gap-2 mb-4">
-    <% status_class = case @favorite.status
-      when "pending" then "bg-yellow-100 text-yellow-800"
-      when "analyzing" then "bg-blue-100 text-blue-800"
-      when "done" then "bg-green-100 text-green-800"
-      when "failed" then "bg-red-100 text-red-800"
-      else "bg-gray-100 text-gray-800"
-    end %>
-    <span class="inline-flex px-2 py-1 rounded-full text-xs font-medium <%= status_class %>">
+    <%
+      status_style = case @favorite.status
+        when "pending"   then "background:var(--color-tag-bg);color:var(--color-tag-text);"
+        when "analyzing" then "background:var(--color-tag-bg);color:var(--color-tag-text);"
+        when "done"      then "background:var(--color-success-bg);color:var(--color-success-text);border:1px solid var(--color-success-border);"
+        when "failed"    then "background:var(--color-error-bg);color:var(--color-error-text);border:1px solid var(--color-error-border);"
+        else                  "background:var(--color-surface);color:var(--color-text-muted);"
+      end
+    %>
+    <span style="<%= status_style %>padding:2px 8px;border-radius:var(--radius-full);font-size:12px;font-weight:600;display:inline-flex;align-items:center;">
       <%= @favorite.status %>
     </span>
-    <span class="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-      <%= @favorite.content_type == "youtube" ? "YouTube" : "Webpage" %>
+    <span style="background:var(--color-tag-bg);color:var(--color-tag-text);padding:2px 8px;border-radius:var(--radius-full);font-size:12px;font-weight:600;display:inline-flex;align-items:center;">
+      <%= @favorite.content_type == "youtube" ? "YouTube" : "웹페이지" %>
     </span>
   </div>
 
-  <!-- Analysis section -->
+  <%# Analysis section %>
   <% if @favorite.analysis.present? %>
-    <div class="mt-6 border-t pt-4">
-      <h2 class="text-lg font-semibold text-gray-800 mb-3">Analysis</h2>
-      <p class="text-gray-700 mb-3"><%= @favorite.analysis.summary %></p>
+    <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--color-border);">
+      <h2 style="font-size:18px;font-weight:600;color:var(--color-text);margin-bottom:12px;">분석</h2>
+      <p style="color:var(--color-text-muted);margin-bottom:12px;line-height:1.6;"><%= @favorite.analysis.summary %></p>
 
       <% if @favorite.analysis.tags.present? %>
         <div class="flex flex-wrap gap-1 mb-3">
           <% @favorite.analysis.tags.each do |tag| %>
-            <span class="inline-flex bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-sm"><%= tag %></span>
+            <span style="background:var(--color-tag-bg);color:var(--color-tag-text);padding:2px 8px;border-radius:var(--radius-full);font-size:12px;font-weight:500;display:inline-flex;align-items:center;"><%= tag %></span>
           <% end %>
         </div>
       <% end %>
 
       <% if @favorite.analysis.key_points.present? %>
-        <ul class="list-disc list-inside text-gray-700 space-y-1">
+        <ul style="list-style:disc;list-position:inside;color:var(--color-text-muted);line-height:1.8;">
           <% @favorite.analysis.key_points.each do |point| %>
             <li><%= point %></li>
           <% end %>
@@ -55,21 +57,23 @@
     </div>
   <% end %>
 
-  <!-- Note section -->
-  <div class="mt-6 border-t pt-4">
-    <h2 class="text-lg font-semibold text-gray-800 mb-3">Note</h2>
-    <p class="text-gray-700 whitespace-pre-wrap mb-3"><%= @favorite.note.presence || "No note added." %></p>
+  <%# Note section %>
+  <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--color-border);">
+    <h2 style="font-size:18px;font-weight:600;color:var(--color-text);margin-bottom:12px;">메모</h2>
+    <p style="color:var(--color-text-muted);white-space:pre-wrap;margin-bottom:12px;line-height:1.6;"><%= @favorite.note.presence || "메모가 없습니다." %></p>
     <%= render "note_form", favorite: @favorite %>
   </div>
 
-  <!-- Actions -->
-  <div class="mt-6 flex gap-3">
+  <%# Actions %>
+  <div class="flex gap-3" style="margin-top:24px;">
     <% if @favorite.status == "failed" %>
-      <%= button_to "Retry", retry_favorite_path(@favorite), method: :post,
-        class: "bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600" %>
+      <%= button_to "재시도", retry_favorite_path(@favorite), method: :post,
+        style: "background:#d97706;color:#fff;padding:8px 16px;border-radius:var(--radius-md);font-size:14px;font-weight:600;cursor:pointer;border:none;transition:background 0.15s;",
+        class: "hover:opacity-90" %>
     <% end %>
-    <%= button_to "Delete", favorite_path(@favorite), method: :delete,
-      data: { turbo_confirm: "Are you sure?" },
-      class: "bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" %>
+    <%= button_to "삭제", favorite_path(@favorite), method: :delete,
+      data: { turbo_confirm: "정말 삭제하시겠습니까?" },
+      style: "background:#dc2626;color:#fff;padding:8px 16px;border-radius:var(--radius-md);font-size:14px;font-weight:600;cursor:pointer;border:none;transition:background 0.15s;",
+      class: "hover:opacity-90" %>
   </div>
 </div>
