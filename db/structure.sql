@@ -33,7 +33,14 @@ CREATE TABLE IF NOT EXISTS 'favorites_fts_idx'(segid, term, pgno, PRIMARY KEY(se
 CREATE TABLE IF NOT EXISTS 'favorites_fts_content'(id INTEGER PRIMARY KEY, c0, c1, c2, c3, c4);
 CREATE TABLE IF NOT EXISTS 'favorites_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
 CREATE TABLE IF NOT EXISTS 'favorites_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS "tag_feedbacks" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "favorite_id" integer NOT NULL, "user_id" integer, "original_tags" text NOT NULL, "corrected_tags" text NOT NULL, "reason" varchar(500), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_82d6c64491"
+FOREIGN KEY ("favorite_id")
+  REFERENCES "favorites" ("id")
+);
+CREATE INDEX "index_tag_feedbacks_on_favorite_id" ON "tag_feedbacks" ("favorite_id") /*application='UrlFavorites20'*/;
+CREATE INDEX "index_tag_feedbacks_on_user_id" ON "tag_feedbacks" ("user_id") /*application='UrlFavorites20'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260412141412'),
 ('20260407000006'),
 ('20260407000005'),
 ('20260407000004'),
