@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 12px; margin-bottom: 24px; }
+    .title { font-size: 24px; font-weight: bold; margin: 0; }
+    .subtitle { opacity: 0.9; margin-top: 8px; }
+    .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .card-title { font-size: 16px; font-weight: 600; color: #1f2937; margin: 0 0 8px 0; }
+    .card-title a { color: #2563eb; text-decoration: none; }
+    .card-summary { font-size: 14px; color: #6b7280; margin: 0 0 12px 0; line-height: 1.5; }
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag { background: #f3f4f6; color: #374151; padding: 4px 10px; border-radius: 16px; font-size: 12px; }
+    .footer { text-align: center; color: #9ca3af; font-size: 12px; margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 class="title">📚 주간 링크 요약</h1>
+    <p class="subtitle"><%= @digest[:date] %> · <%= @digest[:favorites_count] %>개 저장</p>
+  </div>
+
+  <% @digest[:favorites].each do |fav| %>
+    <div class="card">
+      <h3 class="card-title">
+        <a href="<%= fav[:url] %>" target="_blank"><%= fav[:title] %></a>
+      </h3>
+      <% if fav[:summary].present? %>
+        <p class="card-summary"><%= fav[:summary] %></p>
+      <% end %>
+      <% if fav[:tags].any? %>
+        <div class="tags">
+          <% fav[:tags].first(5).each do |tag| %>
+            <span class="tag"><%= tag %></span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="footer">
+    <p>URLFavorites 2.0에서 자동 생성됨</p>
+    <p><a href="<%= favorites_url %>">모든 저장된 링크 보기</a></p>
+  </div>
+</body>
+</html>
