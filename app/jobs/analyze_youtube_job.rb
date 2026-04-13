@@ -6,29 +6,31 @@ class AnalyzeYoutubeJob < ApplicationJob
     favorite.update!(status: "analyzing")
 
     extractor_result = YoutubeExtractor.call(favorite.url)
-    raw_content = extractor_result[:transcript]
+    raw_content     = extractor_result[:transcript]
+    thumbnail_url   = extractor_result[:thumbnail_url]
+    subtitle_source = extractor_result[:subtitle_source]
+    extracted_title = extractor_result[:title]
 
     analysis_result = LlmAnalyzer.call(raw_content, type: favorite.content_type)
 
+    analysis_attrs = {
+      raw_content:    raw_content,
+      summary:        analysis_result[:summary],
+      key_points:     analysis_result[:key_points],
+      tags:           analysis_result[:tags],
+      sentiment:      analysis_result[:sentiment],
+      subtitle_source: subtitle_source
+    }
     if favorite.analysis
-      favorite.analysis.update!(
-        raw_content: raw_content,
-        summary:     analysis_result[:summary],
-        key_points:  analysis_result[:key_points],
-        tags:        analysis_result[:tags],
-        sentiment:   analysis_result[:sentiment]
-      )
+      favorite.analysis.update!(**analysis_attrs)
     else
-      favorite.create_analysis!(
-        raw_content: raw_content,
-        summary:     analysis_result[:summary],
-        key_points:  analysis_result[:key_points],
-        tags:        analysis_result[:tags],
-        sentiment:   analysis_result[:sentiment]
-      )
+      favorite.create_analysis!(**analysis_attrs)
     end
 
-    favorite.update!(status: "done")
+    favorite_attrs = { status: "done" }
+    favorite_attrs[:thumbnail_url] = thumbnail_url if thumbnail_url.present?
+    favorite_attrs[:title] = extracted_title if extracted_title.present? && favorite.title.blank?
+    favorite.update!(**favorite_attrs)
   rescue => e
     favorite&.update!(status: "failed")
     Rails.logger.error "[AnalyzeYoutubeJob] #{e.class}: #{e.message}"

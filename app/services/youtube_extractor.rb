@@ -14,12 +14,15 @@ class YoutubeExtractor
 
     data = JSON.parse(stdout)
 
-    title       = data["title"].to_s
-    description = data["description"].to_s
-    transcript  = extract_transcript(data)
-    transcript  = transcript[0...12_000]
+    title         = data["title"].to_s
+    description   = data["description"].to_s
+    thumbnail_url = data["thumbnail"].to_s.presence
+    transcript_result = extract_transcript(data)
+    transcript    = transcript_result[:text][0...12_000]
+    subtitle_source = transcript_result[:source]
 
-    { title: title, description: description, transcript: transcript }
+    { title: title, description: description, transcript: transcript,
+      thumbnail_url: thumbnail_url, subtitle_source: subtitle_source }
   rescue JSON::ParserError => e
     raise ExtractionError, "JSON parse failed: #{e.message}"
   end
@@ -28,16 +31,20 @@ class YoutubeExtractor
     subtitles   = data["subtitles"] || {}
     auto_caps   = data["automatic_captions"] || {}
 
-    # 1순위: subtitles
-    result = captions_text(subtitles, "en") ||
+    # 1순위: 수동 자막 (ko, en 순)
+    result = captions_text(subtitles, "ko") ||
+             captions_text(subtitles, "en") ||
              captions_text(subtitles, subtitles.keys.first)
+    return { text: result, source: "manual" } if result
 
-    # 2순위: automatic_captions
-    result ||= captions_text(auto_caps, "en") ||
-               captions_text(auto_caps, auto_caps.keys.first)
+    # 2순위: 자동 자막 (ko, en 순)
+    result = captions_text(auto_caps, "ko") ||
+             captions_text(auto_caps, "en") ||
+             captions_text(auto_caps, auto_caps.keys.first)
+    return { text: result, source: "auto" } if result
 
-    # 3순위: description
-    result || data["description"].to_s
+    # 3순위: description fallback
+    { text: data["description"].to_s, source: "description" }
   end
 
   def self.captions_text(captions_hash, lang_key)
