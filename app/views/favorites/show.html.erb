@@ -34,16 +34,7 @@
         <%= @favorite.content_type == "youtube" ? "YouTube" : "웹페이지" %>
       </span>
       <span style="flex:1"></span>
-      <%= link_to @favorite.url, @favorite.url, target: "_blank", rel: "noopener noreferrer",
-            class: "inline-flex items-center gap-1 text-sm transition-colors",
-            style: "color:var(--color-text-tertiary);",
-            onmouseover: "this.style.color='var(--color-accent)'",
-            onmouseout: "this.style.color='var(--color-text-tertiary)'" do %>
-        원본 링크 열기
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-        </svg>
-      <% end %>
+      <a href="<%= @favorite.url %>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sm" style="color:var(--color-text-tertiary);">원본 링크 열기</a>
       <% if @favorite.status == "failed" %>
         <%= button_to "재시도", retry_favorite_path(@favorite), method: :post,
               class: "transition-all",
@@ -153,24 +144,4 @@
     </div>
     <%= render "note_form", favorite: @favorite %>
   </section>
-
-  <%# 연관 아이템 %>
-  <% related = Favorite.where(category: @favorite.category).where.not(id: @favorite.id).where(status: "done").order(created_at: :desc).limit(10) %>
-  <% if related.any? %>
-    <section>
-      <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-        <span>📂</span> 같은 분류 (<%= @favorite.category %>)
-      </h2>
-      <div class="flex flex-col gap-2">
-        <% related.each do |rel| %>
-          <%= link_to favorite_path(rel, selected: rel.id), class: "flex items-center gap-3 p-3 rounded-lg transition-colors", style: "background:var(--color-surface);border:1px solid var(--color-border);text-decoration:none;", onmouseover: "this.style.borderColor='var(--color-accent)';this.style.background='var(--color-surface-raised)';", onmouseout: "this.style.borderColor='var(--color-border)';this.style.background='var(--color-surface)';", data: { turbo_frame: "_top" } do %>
-            <span style="background:var(--color-accent-muted);color:var(--color-accent-text);padding:2px 8px;border-radius:var(--radius-sm);font-size:var(--text-xs);font-weight:600;flex-shrink:0;">
-              <%= rel.content_type == "youtube" ? "YT" : "WEB" %>
-            </span>
-            <span style="color:var(--color-text-secondary);font-size:var(--text-sm);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= rel.title&.truncate(60) || rel.url %></span>
-          <% end %>
-        <% end %>
-      </div>
-    </section>
-  <% end %>
 </div>
