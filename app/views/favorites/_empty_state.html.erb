@@ -1,40 +1,35 @@
-<div class="flex flex-col items-center py-20 px-8">
+<div class="flex flex-col items-center py-24 px-8">
 
-  <%# Accent line — editorial signature %>
-  <div style="width:40px;height:4px;background:var(--color-accent);border-radius:2px;margin-bottom:2rem;"></div>
-
-  <%# Illustration %>
-  <div style="margin-bottom:2rem;">
-    <svg width="140" height="116" viewBox="0 0 140 116" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <%# Shadow page (back) %>
-      <rect x="28" y="22" width="68" height="86" rx="5" fill="var(--color-border)" opacity="0.5"/>
-      <%# Main page %>
-      <rect x="20" y="14" width="68" height="86" rx="5" fill="var(--color-surface)" stroke="var(--color-border)" stroke-width="1.5"/>
-      <%# Text lines on page %>
-      <rect x="32" y="32" width="44" height="3" rx="1.5" fill="var(--color-border)"/>
-      <rect x="32" y="42" width="33" height="3" rx="1.5" fill="var(--color-border)"/>
-      <rect x="32" y="52" width="38" height="3" rx="1.5" fill="var(--color-border)"/>
-      <rect x="32" y="62" width="28" height="3" rx="1.5" fill="var(--color-border)"/>
-      <%# Bookmark ribbon on page %>
-      <path d="M60 14 L80 14 L80 42 L70 35 L60 42 Z" fill="var(--color-accent)"/>
-      <%# AI sparkle dots — suggests analysis %>
-      <circle cx="98" cy="26" r="3" fill="var(--color-accent)" opacity="0.5"/>
-      <circle cx="108" cy="18" r="2" fill="var(--color-accent)" opacity="0.35"/>
-      <circle cx="104" cy="36" r="1.5" fill="var(--color-accent)" opacity="0.25"/>
-      <%# Plus circle (CTA hint) %>
-      <circle cx="106" cy="88" r="22" fill="var(--color-accent-subtle)" stroke="var(--color-accent)" stroke-width="1.5"/>
-      <path d="M106 78 V98 M96 88 H116" stroke="var(--color-accent)" stroke-width="2.5" stroke-linecap="round"/>
+  <%# 아이콘 — 미니멀 북마크 %>
+  <div class="mb-8 flex items-center justify-center w-16 h-16 rounded-xl"
+       style="background:var(--color-accent-muted);">
+    <svg class="w-7 h-7" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24" stroke-width="1.8">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
     </svg>
   </div>
 
-  <%# Heading %>
-  <p style="font-size:20px;font-weight:700;color:var(--color-text);letter-spacing:-0.5px;margin-bottom:10px;text-align:center;line-height:1.25;">
-    첫 북마크를 추가하세요
+  <%# 제목 %>
+  <p style="
+    font-size:var(--text-xl);
+    font-weight:700;
+    color:var(--color-text);
+    letter-spacing:-0.3px;
+    margin-bottom:8px;
+    text-align:center;
+  ">
+    아직 북마크가 없습니다
   </p>
 
-  <%# Supporting copy %>
-  <p style="font-size:13px;color:var(--color-text-muted);line-height:1.65;text-align:center;max-width:260px;margin-bottom:0;">
-    URL을 위에 입력하면 AI가 자동으로<br>내용을 분석하고 태그를 붙여줍니다.
+  <%# 설명 %>
+  <p style="
+    font-size:var(--text-sm);
+    color:var(--color-text-tertiary);
+    line-height:1.6;
+    text-align:center;
+    max-width:260px;
+    font-weight:400;
+  ">
+    URL을 추가하면 AI가 자동으로 분석하여 요약과 태그를 생성합니다
   </p>
 
 </div>

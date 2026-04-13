@@ -1,15 +1,28 @@
-<div class="max-w-4xl mx-auto px-4 py-8">
-  <div class="mb-4">
-    <%= link_to "← 컬렉션으로 돌아가기", collections_path, style: "color:var(--color-accent);font-size:14px;font-weight:500;" %>
+<div class="max-w-5xl mx-auto px-6 py-10">
+
+  <%# 뒤로가기 %>
+  <div class="mb-8">
+    <%= link_to collections_path,
+          class: "inline-flex items-center gap-1.5 text-sm transition-colors",
+          style: "color:var(--color-text-tertiary);font-weight:500;",
+          onmouseover: "this.style.color='var(--color-accent)'",
+          onmouseout: "this.style.color='var(--color-text-tertiary)'" do %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+      컬렉션으로 돌아가기
+    <% end %>
   </div>
 
-  <div class="flex justify-between items-center mb-6">
-    <div>
-      <h1 style="font-size:24px;font-weight:700;letter-spacing:-0.5px;color:var(--color-text);"><%= @collection.name %></h1>
-      <% if @collection.description.present? %>
-        <p style="font-size:14px;color:var(--color-text-muted);margin-top:4px;"><%= @collection.description %></p>
-      <% end %>
+  <%# 컬렉션 헤더 %>
+  <div class="mb-8">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="w-2.5 h-2.5 rounded-full" style="background:var(--color-accent);"></div>
+      <h1 style="font-size:var(--text-2xl);font-weight:700;letter-spacing:-0.5px;color:var(--text);"><%= @collection.name %></h1>
     </div>
+    <% if @collection.description.present? %>
+      <p style="font-size:var(--text-sm);color:var(--color-text-tertiary);margin-left:22px;"><%= @collection.description %></p>
+    <% end %>
   </div>
 
   <% if @favorites.any? %>
@@ -19,8 +32,13 @@
       <% end %>
     </div>
   <% else %>
-    <div style="text-align:center;padding:48px 24px;">
-      <p style="font-size:16px;color:var(--color-text-muted);">이 컬렉션에 즐겨찾기가 없습니다.</p>
+    <div class="py-20 text-center">
+      <div class="mb-4 flex items-center justify-center w-12 h-12 mx-auto rounded-xl" style="background:var(--color-accent-muted);">
+        <svg class="w-5 h-5" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+        </svg>
+      </div>
+      <p style="font-size:var(--text-sm);color:var(--color-text-tertiary);">이 컬렉션에 북마크가 없습니다</p>
     </div>
   <% end %>
 </div>

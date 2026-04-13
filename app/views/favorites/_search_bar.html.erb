@@ -1,12 +1,16 @@
-<%= form_with url: favorites_path, method: :get, class: "mb-4", data: { turbo_frame: "favorites" } do %>
-  <input
-    type="text"
-    name="q"
-    value="<%= params[:q] %>"
-    placeholder="즐겨찾기 검색..."
-    data-controller="auto-submit"
-    data-action="input->auto-submit#submit"
-    style="width:100%;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:8px 12px;font-size:15px;font-weight:500;color:var(--color-text);background:var(--color-surface);outline:none;transition:border-color 0.15s;"
-    class="focus:ring-2 focus:ring-offset-1"
-  >
+<%= form_with url: favorites_path, method: :get, class: "mb-5", data: { turbo_frame: "favorites" } do %>
+  <div class="relative">
+    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style="color:var(--color-text-tertiary);" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+    </svg>
+    <input
+      type="text"
+      name="q"
+      value="<%= params[:q] %>"
+      placeholder="북마크 검색..."
+      data-controller="auto-submit"
+      data-action="input->auto-submit#submit"
+      style="width:100%;border:1px solid var(--color-border);border-radius:var(--radius-md);padding:9px 12px 9px 36px;font-size:var(--text-sm);font-weight:500;color:var(--color-text);background:var(--color-surface);outline:none;transition:border-color 0.2s;"
+    >
+  </div>
 <% end %>
