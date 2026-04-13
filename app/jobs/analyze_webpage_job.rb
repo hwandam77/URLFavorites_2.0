@@ -28,7 +28,7 @@ class AnalyzeWebpageJob < ApplicationJob
       )
     end
 
-    favorite.update!(status: "done")
+    favorite.update!(title: scraper_result[:title], status: "done")
   rescue => e
     favorite&.update!(status: "failed")
     Rails.logger.error "[AnalyzeWebpageJob] #{e.class}: #{e.message}"
