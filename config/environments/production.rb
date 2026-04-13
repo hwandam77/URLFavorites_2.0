@@ -50,7 +50,8 @@ Rails.application.configure do
   # config.cache_store = :mem_cache_store
 
   # Active Job 의 기본 인-프로세스 및 비영구 큐잉 백엔드를 교체합니다.
-  # config.active_job.queue_adapter = :resque
+  config.active_job.queue_adapter = :solid_queue
+  config.solid_queue.connects_to = { database: { writing: :queue } }
 
   # 잘못된 이메일 주소를 무시하고 이메일 전달 오류를 발생시키지 않습니다.
   # 즉시 전달을 위해 이메일 서버를 구성하고 전달 오류를 발생시키려면 이 값을 true 로 설정합니다.
@@ -78,10 +79,11 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [ :id ]
 
   # DNS 리바인딩 보호 및 기타 `Host` 헤더 공격을 활성화합니다.
-  # config.hosts = [
-  #   "example.com",     # example.com 에서 오는 요청 허용
-  #   /.*\.example\.com/ # www.example.com 과 같은 서브도메인 요청 허용
-  # ]
+  config.hosts = [
+    "urlf.hwandam.kr",
+    "localhost",
+    "127.0.0.1"
+  ]
   #
   # 기본 건강 상태 확인 엔드포인트에 대해 DNS 리바인딩 보호를 건너뜁니다.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
