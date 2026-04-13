@@ -182,6 +182,93 @@ journalctl -u rails-puma@URLFavorites_2.0 -n 30 --no-pager
 | 404 `/ver2.0/favorites` | `RAILS_RELATIVE_URL_ROOT` 미설정 | drop-in에 `/ver2.0` 확인 |
 | 500 ERB syntax error | 뷰 파일 `link_to` 옵션 쉼표 누락 | 해당 파일 수정 후 quick deploy |
 
+---
+
+## UI/디자인 시스템
+
+### 현재 테마: Warm Archive (Editorial Swiss)
+
+디자인 토큰은 `app/views/layouts/application.html.erb`의 `<style>` 블록에 정의.
+Tailwind 유틸리티 + CSS 커스텀 프로퍼티 혼용. 모든 색상/스페이싱/타이포그래피는 토큰 경유.
+
+### CSS 토큰 네이밍 규칙
+
+```
+색상:     --color-{역할}[-상태]          예: --color-accent, --color-accent-hover
+서피스:   --color-surface[-레벨]         예: --color-surface, --color-surface-raised
+상태:     --color-{status}-{prop}        예: --color-done-bg, --color-failed-text
+타이포:   --text-{사이즈}                예: --text-xs, --text-base, --text-2xl
+스페이스: --space-{N}                    예: --space-2, --space-4, --space-8
+라운드:   --radius-{사이즈}              예: --radius-sm, --radius-md, --radius-full
+```
+
+### 다크/라이트 모드
+
+- 다크 모드가 기본 (`:root`에 정의)
+- 라이트 모드는 `.light` 클래스 오버라이드
+- `theme_controller.js`가 `localStorage.theme` 기반으로 `html` 클래스 토글
+- FOUC 방지: `<head>` 내 인라인 스크립트로 초기화
+
+### 상태 색상 패턴
+
+각 상태(pending/analyzing/done/failed)별로 bg/text/border 3종 세트:
+```css
+--color-pending-bg / --color-pending-text / --color-pending-border
+--color-analyzing-bg / --color-analyzing-text / --color-analyzing-border
+--color-done-bg / --color-done-text / --color-done-border
+--color-failed-bg / --color-failed-text / --color-failed-border
+```
+
+뷰에서는 Hash 맵으로 매핑:
+```erb
+<% status_map = {
+  "pending" => { bg: "var(--color-pending-bg)", text: "var(--color-pending-text)", ... },
+  ...
+} %>
+```
+
+### hover/focus 패턴
+
+CSS 변수는 Tailwind `hover:` 프리픽스에서 직접 사용 불가하므로 인라인 `onmouseover`/`onmouseout` 사용:
+```erb
+onmouseover="this.style.borderColor='var(--color-accent-muted)'"
+onmouseout="this.style.borderColor='var(--color-border)'"
+```
+
+### 뷰 파일 구조
+
+| 파일 | 역할 |
+|------|------|
+| `layouts/application.html.erb` | 디자인 토큰 + 앱 셸 |
+| `shared/_sidebar.html.erb` | 네비게이션 + 컬렉션 리스트 |
+| `favorites/index.html.erb` | 메인: 헤더 + URL 추가 + 검색 + 필터 툴바 + 그리드 |
+| `favorites/_favorite_card.html.erb` | 카드뷰 아이템 |
+| `favorites/_favorite_row.html.erb` | 리스트뷰 행 |
+| `favorites/_search_bar.html.erb` | 돋보기 검색 인풋 |
+| `favorites/_filter_bar.html.erb` | index에 통합됨 (placeholder) |
+| `favorites/show.html.erb` | 상세페이지 |
+| `favorites/_empty_state.html.erb` | 빈 상태 |
+| `collections/index.html.erb` | 컬렉션 목록 |
+| `collections/show.html.erb` | 컬렉션 상세 |
+
+### UI 변경 시 워크플로우
+
+1. 로컬에서 뷰 파일 수정
+2. `bin/rails tailwindcss:build` 로 CSS 빌드
+3. `bin/rails assets:precompile` 로 에셋 검증
+4. `bin/rails server` 로 시각 확인
+5. `git add` + `git commit` (deploy 스크립트가 untracked/staged 파일 차단)
+6. `deploy --quick URLFavorites_2.0` 로 배포
+7. https://urlf.hwandam.kr/ver2.0/favorites 에서 확인
+
+### 디자인 금지 패턴
+
+- 템플릿 느낌의 균일한 카드 그리드
+- 라이브러리 기본값을 그대로 사용
+- 모든 요소에 동일한 radius/spacing/shadow
+- 장식용 액센트 컬러 하나만 던지는 gray-on-white/dark
+- inline style에 하드코딩 색상 (반드시 CSS 변수 사용)
+
 ### 변경 이력
 
 | 날짜 | 변경 내용 | 대상 | 사유 |
@@ -190,3 +277,4 @@ journalctl -u rails-puma@URLFavorites_2.0 -n 30 --no-pager
 | 2026-04-07 | GSD 통합 — .planning/ + ROADMAP 10 Phase | 전체 | GSD phase 관리 연결 |
 | 2026-04-07 | tmux 2계층 병렬 — Claude Workers + Nexus LLM | 전체 에이전트 + 오케스트레이터 | Claude Workers + 30B/48B 코드 생성 조합 |
 | 2026-04-10 | 배포 가이드 추가 — 서버 설정, 환경변수, 트러블슈팅 | CLAUDE.md | 첫 운영 배포 경험 문서화 |
+| 2026-04-13 | Warm Archive 테마 전면 리디자인 | 전체 뷰 + 디자인 토큰 | Neo-Brutalist → Editorial Swiss |

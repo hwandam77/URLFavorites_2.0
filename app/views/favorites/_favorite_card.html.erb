@@ -15,7 +15,7 @@
   tags = favorite.analysis&.tags
 %>
 
-<div class="group relative rounded-lg overflow-hidden transition-all duration-200"
+<div id="<%= dom_id(favorite) %>" class="group relative rounded-lg overflow-hidden transition-all duration-200"
      style="background:var(--color-surface);border:1px solid var(--color-border);"
      onmouseover="this.style.borderColor='var(--color-accent-muted)';this.style.boxShadow='var(--shadow-md)'"
      onmouseout="this.style.borderColor='var(--color-border)';this.style.boxShadow='none'">
