@@ -63,6 +63,11 @@
           <img src="<%= @favorite.thumbnail_url %>" class="w-40 h-24 object-cover rounded-md flex-shrink-0" style="border:1px solid var(--color-border);" alt="YouTube thumbnail">
         <% end %>
         <p style="color:var(--color-text-secondary);line-height:1.7;font-size:var(--text-sm);flex:1;"><%= @favorite.analysis.summary %></p>
+        <% if @favorite.content_type == "youtube" && @favorite.analysis.subtitle_source.present? %>
+          <span style="background:var(--color-accent-muted);color:var(--color-accent-text);padding:2px 8px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600;flex-shrink:0;">
+            자막: <%= @favorite.analysis.subtitle_source %>
+          </span>
+        <% end %>
       </div>
     </section>
 
@@ -146,4 +151,26 @@
     </div>
     <%= render "note_form", favorite: @favorite %>
   </section>
+
+  <%# 같은 분류 북마크 %>
+  <% related = @favorite.respond_to?(:collection_id) && @favorite.collection_id.present? \
+       ? Favorite.where(collection_id: @favorite.collection_id).where.not(id: @favorite.id).where(status: "done").order(created_at: :desc).limit(10) \
+       : Favorite.none %>
+  <% if related.any? %>
+    <section class="mb-8">
+      <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+        <span>📂</span> 같은 컬렉션
+      </h2>
+      <div class="flex flex-col gap-2">
+        <% related.each do |rel| %>
+          <%= link_to favorite_path(rel), class: "flex items-center gap-3 p-3 transition-all", style: "background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);", onmouseover: "this.style.borderColor='var(--color-accent-muted)'", onmouseout: "this.style.borderColor='var(--color-border)'" do %>
+            <span style="background:var(--color-accent-muted);color:var(--color-accent-text);padding:2px 8px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600;flex-shrink:0;">
+              <%= rel.content_type == "youtube" ? "YouTube" : "웹페이지" %>
+            </span>
+            <span style="color:var(--color-text-secondary);font-size:var(--text-sm);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= rel.title&.truncate(60) || rel.url %></span>
+          <% end %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
 </div>
