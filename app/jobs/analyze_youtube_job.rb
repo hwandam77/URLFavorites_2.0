@@ -29,7 +29,8 @@ class AnalyzeYoutubeJob < ApplicationJob
 
     favorite_attrs = { status: "done" }
     favorite_attrs[:thumbnail_url] = thumbnail_url if thumbnail_url.present?
-    favorite_attrs[:title] = extracted_title if extracted_title.present? && favorite.title.blank?
+    title_is_url = favorite.title.to_s.start_with?("http://", "https://")
+    favorite_attrs[:title] = extracted_title if extracted_title.present? && (favorite.title.blank? || title_is_url)
     favorite.update!(**favorite_attrs)
   rescue => e
     favorite&.update!(status: "failed")
