@@ -67,13 +67,20 @@ class LlmAnalyzer
       return nil
     end
 
-    parsed = JSON.parse(response.body, symbolize_names: true)
+    # Outer parse: API response envelope
+    envelope = JSON.parse(response.body, symbolize_names: true)
+
+    # Inner parse: LLM's JSON response nested in message.content
+    message_content = envelope.dig(:choices, 0, :message, :content)
+    raise ParseError, "Missing message.content in response" if message_content.blank?
+
+    inner = JSON.parse(message_content, symbolize_names: true)
 
     required = %i[summary key_points tags sentiment]
-    missing  = required - parsed.keys
+    missing  = required - inner.keys
     raise ParseError, "Missing keys: #{missing.join(", ")}" if missing.any?
 
-    parsed.slice(:summary, :key_points, :tags, :sentiment)
+    inner.slice(:summary, :key_points, :tags, :sentiment)
   rescue Faraday::ServerError => e
     raise ServerError, "HTTP server error: #{e.message}"
   rescue JSON::ParserError => e
