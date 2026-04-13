@@ -64,8 +64,9 @@
            class="w-4 h-4 mt-1 rounded flex-shrink-0"
            onerror="this.style.display='none'"
            loading="lazy">
+      <% display_title = favorite.url.to_s.include?("github.com") ? github_repo_name(favorite.url) : (favorite.title.presence || "제목 없음") %>
       <h3 style="font-size:var(--text-base);font-weight:600;letter-spacing:-0.2px;color:var(--color-text);line-height:1.4;" class="line-clamp-2 flex-1 pr-6">
-        <%= favorite.title.presence || "제목 없음" %>
+        <%= display_title %>
       </h3>
     </div>
 

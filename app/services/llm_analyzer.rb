@@ -76,11 +76,11 @@ class LlmAnalyzer
 
     inner = JSON.parse(message_content, symbolize_names: true)
 
-    required = %i[summary key_points tags sentiment]
+    required = %i[summary key_points tags sentiment detail_content]
     missing  = required - inner.keys
     raise ParseError, "Missing keys: #{missing.join(", ")}" if missing.any?
 
-    inner.slice(:summary, :key_points, :tags, :sentiment)
+    inner.slice(:summary, :key_points, :tags, :sentiment, :detail_content)
   rescue Faraday::ServerError => e
     raise ServerError, "HTTP server error: #{e.message}"
   rescue JSON::ParserError => e
@@ -119,12 +119,14 @@ class LlmAnalyzer
         "summary": "2-3 sentence summary in Korean",
         "key_points": ["point1", "point2", "point3"],
         "tags": ["tag1", "tag2", "tag3"],
-        "sentiment": "positive|neutral|negative"
+        "sentiment": "positive|neutral|negative",
+        "detail_content": "분석 대상의 상세 내용 3~5문단"
       }
       Rules:
       - tags: 3-7 lowercase English words or Korean words
       - summary: under 200 characters
       - key_points: max 5 items
+      - detail_content: 웹페이지 전체 핵심 내용 3~5문단으로 작성
     PROMPT
   end
 end

@@ -16,7 +16,8 @@ class AnalyzeWebpageJob < ApplicationJob
         summary:     analysis_result[:summary],
         key_points:  analysis_result[:key_points],
         tags:        analysis_result[:tags],
-        sentiment:   analysis_result[:sentiment]
+        sentiment:   analysis_result[:sentiment],
+        detail_content: analysis_result[:detail_content]
       )
     else
       favorite.create_analysis!(
@@ -24,7 +25,8 @@ class AnalyzeWebpageJob < ApplicationJob
         summary:     analysis_result[:summary],
         key_points:  analysis_result[:key_points],
         tags:        analysis_result[:tags],
-        sentiment:   analysis_result[:sentiment]
+        sentiment:   analysis_result[:sentiment],
+        detail_content: analysis_result[:detail_content]
       )
     end
 

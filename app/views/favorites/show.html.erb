@@ -16,8 +16,10 @@
 
   <%# 패널 헤더 %>
   <div class="flex flex-col gap-3 mb-8 pb-6" style="border-bottom:1px solid var(--color-border);">
+    <%# GitHub repos show just "owner/repo" from URL, otherwise use title %>
+    <% display_title = @favorite.url.to_s.include?("github.com") ? github_repo_name(@favorite.url) : (@favorite.title.presence || @favorite.url) %>
     <h1 style="font-size:var(--text-2xl);font-weight:700;letter-spacing:-0.5px;color:var(--color-text);line-height:1.3;">
-      <%= @favorite.title.presence || @favorite.url %>
+      <%= display_title %>
     </h1>
     <div class="flex flex-wrap gap-2 items-center">
       <% status_map = {
@@ -101,12 +103,12 @@
     <% end %>
 
     <%# 상세내용 섹션 %>
-    <% if @favorite.analysis.raw_content.present? %>
+    <% if @favorite.analysis.detail_content.present? %>
       <section class="mb-8">
         <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
           <span>📄</span> 상세내용
         </h2>
-        <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:16px;color:var(--color-text-secondary);line-height:1.8;font-size:var(--text-sm);white-space:pre-wrap;"><%= @favorite.analysis.raw_content %></div>
+        <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:16px;color:var(--color-text-secondary);line-height:1.8;font-size:var(--text-sm);white-space:pre-wrap;"><%= @favorite.analysis.detail_content %></div>
       </section>
     <% end %>
 
