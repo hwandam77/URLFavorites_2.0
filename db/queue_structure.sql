@@ -65,7 +65,6 @@ CREATE INDEX index_solid_queue_processes_on_last_heartbeat_at ON solid_queue_pro
 CREATE UNIQUE INDEX index_solid_queue_processes_on_name_and_supervisor_id ON solid_queue_processes (name, supervisor_id);
 CREATE INDEX index_solid_queue_processes_on_supervisor_id ON solid_queue_processes (supervisor_id);
 CREATE TABLE solid_queue_ready_executions (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   job_id bigint NOT NULL,
   queue_name varchar NOT NULL,
   priority integer DEFAULT 0 NOT NULL,

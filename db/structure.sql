@@ -1,12 +1,7 @@
 CREATE TABLE IF NOT EXISTS "collections" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "description" text, "name" varchar NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_collections_on_name" ON "collections" ("name") /*application='UrlFavorites20'*/;
-CREATE TABLE IF NOT EXISTS "favorites" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "content_type" varchar DEFAULT 'webpage' NOT NULL, "created_at" datetime(6) NOT NULL, "error_message" text, "favicon_url" varchar, "note" text, "raw_content" text, "retry_count" integer DEFAULT 0 NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "thumbnail_url" varchar, "title" varchar, "updated_at" datetime(6) NOT NULL, "url" varchar NOT NULL);
+CREATE TABLE IF NOT EXISTS "favorites" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "content_type" varchar DEFAULT 'webpage' NOT NULL, "created_at" datetime(6) NOT NULL, "error_message" text, "favicon_url" varchar, "note" text, "raw_content" text, "retry_count" integer DEFAULT 0 NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "thumbnail_url" varchar, "title" varchar, "updated_at" datetime(6) NOT NULL, "url" varchar NOT NULL, "category" varchar DEFAULT '기타' /*application='UrlFavorites20'*/, "pinned" boolean DEFAULT FALSE /*application='UrlFavorites20'*/);
 CREATE UNIQUE INDEX "index_favorites_on_url" ON "favorites" ("url") /*application='UrlFavorites20'*/;
-CREATE TABLE IF NOT EXISTS "analyses" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "analyzed_at" datetime(6), "created_at" datetime(6) NOT NULL, "favorite_id" integer NOT NULL, "key_points" text, "model_used" varchar, "raw_content" text, "sentiment" varchar, "subtitle_source" varchar, "summary" text, "tags" text, "transcript" text, "updated_at" datetime(6) NOT NULL, "video_metadata" text, CONSTRAINT "fk_rails_b11216332f"
-FOREIGN KEY ("favorite_id")
-  REFERENCES "favorites" ("id")
-);
-CREATE UNIQUE INDEX "index_analyses_on_favorite_id" ON "analyses" ("favorite_id") /*application='UrlFavorites20'*/;
 CREATE TABLE IF NOT EXISTS "collection_memberships" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "collection_id" integer NOT NULL, "created_at" datetime(6) NOT NULL, "favorite_id" integer NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_8a440d7672"
 FOREIGN KEY ("collection_id")
   REFERENCES "collections" ("id")
@@ -40,7 +35,16 @@ CREATE TABLE IF NOT EXISTS 'favorites_fts_idx'(segid, term, pgno, PRIMARY KEY(se
 CREATE TABLE IF NOT EXISTS 'favorites_fts_content'(id INTEGER PRIMARY KEY, c0, c1, c2, c3, c4, c5);
 CREATE TABLE IF NOT EXISTS 'favorites_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
 CREATE TABLE IF NOT EXISTS 'favorites_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS "analyses" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "analyzed_at" datetime(6), "created_at" datetime(6) NOT NULL, "favorite_id" integer NOT NULL, "key_points" text, "model_used" varchar, "raw_content" text, "sentiment" varchar, "subtitle_source" varchar, "summary" text, "tags" text, "transcript" text, "updated_at" datetime(6) NOT NULL, "video_metadata" text, "detail_content" text /*application='UrlFavorites20'*/, CONSTRAINT "fk_rails_b11216332f"
+FOREIGN KEY ("favorite_id")
+  REFERENCES "favorites" ("id")
+);
+CREATE UNIQUE INDEX "index_analyses_on_favorite_id" ON "analyses" ("favorite_id") /*application='UrlFavorites20'*/;
+CREATE INDEX "index_favorites_on_category" ON "favorites" ("category") /*application='UrlFavorites20'*/;
+CREATE INDEX "index_favorites_on_pinned" ON "favorites" ("pinned") /*application='UrlFavorites20'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260414000001'),
+('20260413000002'),
 ('20260413000001'),
 ('20260412141412'),
 ('20260407000006'),

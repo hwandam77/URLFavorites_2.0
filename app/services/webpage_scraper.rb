@@ -21,6 +21,10 @@ class WebpageScraper
   end
 
   def self.extract_title(doc)
+    # GitHub pages: <h1 class="heading-element" tabindex="-1">
+    if doc.at_css("h1.heading-element")
+      doc.at_css("h1.heading-element")&.text&.strip.presence
+    end ||
     doc.at_css("meta[property='og:title']")&.[]("content") ||
       doc.at_css("title")&.text&.strip ||
       ""

@@ -5,7 +5,8 @@ class FavoritesController < ApplicationController
       content_type: params[:content_type],
       status: params[:status],
       collection_id: params[:collection_id],
-      sort: params[:sort] || "recent"
+      sort: params[:sort] || "recent",
+      category: params[:category]
     )
     @view_mode = params[:view_mode] || "card"
   end
@@ -59,5 +60,11 @@ class FavoritesController < ApplicationController
       AnalyzeWebpageJob.perform_later(@favorite.id)
     end
     redirect_to favorite_url(@favorite), notice: "Retrying analysis"
+  end
+
+  def toggle_pin
+    @favorite = Favorite.find(params[:id])
+    @favorite.update!(pinned: !@favorite.pinned)
+    redirect_back_or_to favorites_url, notice: @favorite.pinned? ? "북마크가 핀されました" : "핀 해제되었습니다"
   end
 end

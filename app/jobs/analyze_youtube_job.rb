@@ -14,11 +14,12 @@ class AnalyzeYoutubeJob < ApplicationJob
     analysis_result = LlmAnalyzer.call(raw_content, type: favorite.content_type)
 
     analysis_attrs = {
-      raw_content:    raw_content,
+      raw_content:     raw_content,
       summary:        analysis_result[:summary],
       key_points:     analysis_result[:key_points],
       tags:           analysis_result[:tags],
       sentiment:      analysis_result[:sentiment],
+      detail_content: analysis_result[:detail_content],
       subtitle_source: subtitle_source
     }
     if favorite.analysis
@@ -31,6 +32,7 @@ class AnalyzeYoutubeJob < ApplicationJob
     favorite_attrs[:thumbnail_url] = thumbnail_url if thumbnail_url.present?
     title_is_url = favorite.title.to_s.start_with?("http://", "https://")
     favorite_attrs[:title] = extracted_title if extracted_title.present? && (favorite.title.blank? || title_is_url)
+    favorite_attrs[:category] = UrlCategoryDetector.call(favorite.url, "youtube")
     favorite.update!(**favorite_attrs)
   rescue => e
     favorite&.update!(status: "failed")

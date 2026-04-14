@@ -48,6 +48,17 @@
     </button>
     <div class="hidden absolute right-0 top-full mt-1 w-40 rounded-lg py-1 z-20"
          style="background:var(--color-surface-raised);border:1px solid var(--color-border);box-shadow:var(--shadow-lg);">
+      <%# 핀 토글 %>
+      <%= button_to toggle_pin_favorite_path(favorite, format: :turbo_stream),
+            method: :post,
+            data: { action_menu_target: "menuItem", action: "action-menu#close" },
+            class: "flex items-center gap-2.5 px-3 py-2 text-sm w-full transition-colors",
+            style: "color:var(--color-text-secondary);" do %>
+        <svg class="w-3.5 h-3.5 <%= favorite.pinned? ? 'text-yellow-500' : '' %>" fill="<%= favorite.pinned? ? 'currentColor' : 'none' %>" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+        </svg>
+        <%= favorite.pinned? ? "핀 해제" : "핀 등록" %>
+      <% end %>
       <%= link_to favorite_path(favorite, format: :turbo_stream), method: :delete, data: { action_menu_target: "menuItem", action: "action-menu#close", confirm: "삭제하시겠습니까?" }, class: "flex items-center gap-2.5 px-3 py-2 text-sm transition-colors", style: "color:var(--color-text-secondary);" do %>
         <svg class="w-3.5 h-3.5" style="color:var(--color-failed-text);" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -88,7 +99,7 @@
 
     <%# 요약 %>
     <% if summary %>
-      <p style="font-size:var(--text-sm);color:var(--color-text-secondary);line-height:1.55;margin-bottom:12px;" class="line-clamp-2">
+      <p style="font-size:17px;color:var(--color-text-secondary);line-height:1.55;margin-bottom:12px;" class="line-clamp-2">
         <%= summary %>
       </p>
     <% end %>

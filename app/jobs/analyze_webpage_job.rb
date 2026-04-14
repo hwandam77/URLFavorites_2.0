@@ -30,7 +30,11 @@ class AnalyzeWebpageJob < ApplicationJob
       )
     end
 
-    favorite.update!(title: scraper_result[:title], status: "done")
+    favorite.update!(
+      title: scraper_result[:title],
+      status: "done",
+      category: UrlCategoryDetector.call(favorite.url, favorite.content_type)
+    )
   rescue => e
     favorite&.update!(status: "failed")
     Rails.logger.error "[AnalyzeWebpageJob] #{e.class}: #{e.message}"

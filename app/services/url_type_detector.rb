@@ -5,8 +5,14 @@ class UrlTypeDetector
     /\Ahttps?:\/\/youtu\.be\//i
   ].freeze
 
+  GITHUB_PATTERNS = [
+    /\Ahttps?:\/\/(www\.)?github\.com\//i
+  ].freeze
+
   def self.call(url)
     return "webpage" unless url.is_a?(String) && url.match?(/\Ahttps?:\/\//i)
-    YOUTUBE_PATTERNS.any? { |pattern| url.match?(pattern) } ? "youtube" : "webpage"
+    return "youtube" if YOUTUBE_PATTERNS.any? { |pattern| url.match?(pattern) }
+    return "github" if GITHUB_PATTERNS.any? { |pattern| url.match?(pattern) }
+    "webpage"
   end
 end
