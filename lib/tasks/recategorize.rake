@@ -6,7 +6,7 @@ namespace :favorites do
     count = 0
     Favorite.find_each do |favorite|
       old_category = favorite.category
-      new_category = UrlCategoryDetector.call(favorite.url, favorite.content_type)
+      new_category = UrlFavorites::Domain::Urls::CategoryDetector.call(favorite.url, favorite.content_type)
 
       if old_category != new_category
         favorite.update!(category: new_category)
@@ -25,7 +25,7 @@ namespace :favorites do
 
     count = 0
     Favorite.find_each do |favorite|
-      detected = UrlTypeDetector.call(favorite.url)
+      detected = UrlFavorites::Domain::Urls::TypeDetector.call(favorite.url)
       if favorite.content_type != detected
         old = favorite.content_type
         favorite.update!(content_type: detected)
