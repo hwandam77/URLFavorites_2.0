@@ -11,7 +11,11 @@
       "Bash(bin/rails tailwindcss:build:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(deploy:*)"
+      "Bash(deploy:*)",
+      "Bash(git push:*)",
+      "Bash(ssh hwandam@vps-server:*)",
+      "Bash(rsync:*)",
+      "Bash(git status:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

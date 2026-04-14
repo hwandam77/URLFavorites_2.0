@@ -130,15 +130,15 @@ DISPATCH="/Users/hwandam/workspace/infrastructure/llm-orchestration/dispatch.sh"
 | 항목 | 값 |
 |------|-----|
 | SSH 호스트 | `vps-server` (`~/.ssh/config`) |
-| 앱 경로 | `/home/hwandam/URLFavorites_2.0/` |
-| 서비스 | `rails-puma@URLFavorites_2.0.service` |
+| 앱 경로 | `/home/hwandam/services/rails/urlfavorites_2.0/` |
+| 서비스 | `rails-puma@urlfavorites_2.0.service` |
 | 포트 | `3001` (3000은 구버전 urlfavorites 점유) |
 | URL | `https://urlf.hwandam.kr/ver2.0/` |
 | nginx 설정 | `/etc/nginx/sites-enabled/URLF.hwandam.kr` |
 
 ### systemd 환경변수 (drop-in)
 
-위치: `/etc/systemd/system/rails-puma@URLFavorites_2.0.service.d/env.conf`
+위치: `/etc/systemd/system/rails-puma@urlfavorites_2.0.service.d/env.conf`
 
 ```ini
 [Service]
@@ -147,30 +147,30 @@ Environment=PORT=3001
 Environment=RAILS_RELATIVE_URL_ROOT=/ver2.0
 ```
 
-변경 시: `sudo systemctl daemon-reload && sudo systemctl restart rails-puma@URLFavorites_2.0`
+변경 시: `sudo systemctl daemon-reload && sudo systemctl restart rails-puma@urlfavorites_2.0`
 
 ### 배포 명령
 
 ```bash
 # 전체 배포 (bundle + migrate + assets + restart, ~30초)
-deploy URLFavorites_2.0
+deploy urlfavorites_2.0
 
 # 빠른 배포 (코드 sync + restart만, ~5초)
-deploy --quick URLFavorites_2.0
+deploy --quick urlfavorites_2.0
 ```
 
 ### 배포 후 검증
 
 ```bash
 # 서비스 상태
-systemctl status rails-puma@URLFavorites_2.0
+systemctl status rails-puma@urlfavorites_2.0
 
 # 헬스체크
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3001/ver2.0/favorites
 # → 200 이면 정상
 
 # 최근 로그
-journalctl -u rails-puma@URLFavorites_2.0 -n 30 --no-pager
+journalctl -u rails-puma@urlfavorites_2.0 -n 30 --no-pager
 ```
 
 ### 트러블슈팅
