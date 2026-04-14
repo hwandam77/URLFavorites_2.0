@@ -253,6 +253,24 @@
           <span style="font-size:var(--text-base);font-weight:700;color:var(--color-text);letter-spacing:-0.3px;">URLFavorites</span>
         </div>
 
+        <%# Flash 메시지 %>
+        <% if notice || alert %>
+          <div class="mx-4 mt-3 px-4 py-3 rounded-lg text-sm font-medium"
+               style="
+                 <% if alert %>
+                   background:var(--color-failed-bg);
+                   color:var(--color-failed-text);
+                   border:1px solid var(--color-failed-border);
+                 <% else %>
+                   background:var(--color-done-bg);
+                   color:var(--color-done-text);
+                   border:1px solid var(--color-done-border);
+                 <% end %>
+               ">
+            <%= alert || notice %>
+          </div>
+        <% end %>
+
         <%= yield %>
       </main>
     </div>

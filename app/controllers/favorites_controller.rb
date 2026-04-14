@@ -38,9 +38,14 @@ class FavoritesController < ApplicationController
       else
         AnalyzeWebpageJob.perform_later(@favorite.id)
       end
-      redirect_to favorites_url, notice: "URL saved"
+      redirect_to favorites_url, notice: "URL이 저장되었습니다. 분석을 시작합니다."
     else
-      redirect_to favorites_url, alert: "Failed to save"
+      if Favorite.exists?(url: normalized)
+        existing = Favorite.find_by(url: normalized)
+        redirect_to favorite_url(existing), alert: "이미 등록된 URL입니다. 기존 북마크로 이동합니다."
+      else
+        redirect_to favorites_url, alert: "저장에 실패했습니다. 다시 시도해주세요."
+      end
     end
   end
 
