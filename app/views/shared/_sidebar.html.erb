@@ -1,5 +1,5 @@
 <nav class="sidebar flex flex-col h-full"
-     style="width:220px;background:var(--color-surface);border-right:1px solid var(--color-border);"
+     style="width:260px;background:var(--color-surface);border-right:1px solid var(--color-border);--text-xs:17px;font-size:21px;"
      data-sidebar-target="sidebar">
 
   <%# 브랜드 %>
@@ -11,8 +11,8 @@
       </svg>
     </div>
     <div>
-      <span style="font-size:14px;font-weight:700;letter-spacing:-0.3px;color:var(--color-text);">URLFAV</span>
-      <span style="font-size:10px;font-weight:500;color:var(--color-text-tertiary);margin-left:4px;">v2.0</span>
+      <span style="font-size:21px;font-weight:700;letter-spacing:-0.3px;color:var(--color-text);">URLFAV</span>
+      <span style="font-size:15px;font-weight:500;color:var(--color-text-tertiary);margin-left:4px;">v2.0</span>
     </div>
   </div>
 
@@ -54,7 +54,7 @@
     <% is_favorites_active = current_path == favorites_path && current_params.except(:q, :sort, :content_type, :status).empty? %>
 
     <%= link_to favorites_path,
-          class: "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all",
+          class: "flex items-center gap-2.5 px-3 py-2 rounded-md transition-all",
           style: is_favorites_active ? "background:var(--color-accent-muted);color:var(--color-accent-text);font-weight:600;" : "color:var(--color-text-secondary);",
           data: { turbo_frame: "_self" } do
     %>
@@ -65,7 +65,7 @@
     <% end %>
 
     <%= link_to favorites_path(pinned: true),
-          class: "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all",
+          class: "flex items-center gap-2.5 px-3 py-2 rounded-md transition-all",
           style: "color:var(--color-text-secondary);" do
     %>
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
@@ -76,7 +76,7 @@
     <% end %>
 
     <%= link_to favorites_path(archived: true),
-          class: "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all",
+          class: "flex items-center gap-2.5 px-3 py-2 rounded-md transition-all",
           style: "color:var(--color-text-secondary);" do
     %>
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
@@ -95,7 +95,7 @@
     <div class="px-3 space-y-0.5 pb-3">
       <% @collections.each do |collection| %>
         <%= link_to collection_path(collection),
-              class: "flex items-center gap-2.5 px-3 py-1.5 rounded-md text-sm transition-all",
+              class: "flex items-center gap-2.5 px-3 py-1.5 rounded-md transition-all",
               style: "color:var(--color-text-secondary);" do
         %>
           <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:var(--color-accent);"></span>
@@ -113,7 +113,7 @@
     <button type="button"
             data-controller="theme"
             data-action="click->theme#toggle"
-            class="flex items-center gap-2.5 w-full px-3 py-2 rounded-md text-sm transition-all"
+            class="flex items-center gap-2.5 w-full px-3 py-2 rounded-md transition-all"
             style="color:var(--color-text-secondary);"
             onmouseover="this.style.background='var(--color-surface-hover)'"
             onmouseout="this.style.background='transparent'">
