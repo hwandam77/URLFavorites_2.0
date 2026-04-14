@@ -5,33 +5,71 @@ class UrlCategoryDetector
 
   CATEGORY_PATTERNS = {
     "AI에이전트" => [
+      # 도메인 우선 매칭
+      /langchain\.ai|llamaindex\.ai|crewai\.com|autogen\.ai/i,
+      /claude\.ai|openai\.com\.agent|gemini\.google\.com|vertex\.ai/i,
+      /mcp\.run|mcp\.iit|modelcontextprotocol\.github/i,
+      /pinecone\.io|weaviate\.io|chroma\.dev|qdrant\.tech|milvus\.ai/i,
+      /crewai\.co|multiagent\.ai|agentica\.ai/i,
+      # 경로 매칭
       /langchain|llamaindex|crewai|autogen|multiagent|agent.?framework/i,
       /claude.?api|openai.?agent|gemini.?agent|mcp.?server/i,
       /agent.?loop|reasoning.?engine|autonomous.?agent/i,
       /pinecone|weaviate|chroma.?db|vector.?db|rag.?retrieval/i
     ],
     "AI코딩" => [
+      # 도메인
+      /cursor\.sh|windsurf\.ai|claude\.dev|nextjs\.ai|v0\.dev/i,
+      /bolt\.diagrams\.net|replit\.com|lovable\.dev|devin\.ai/i,
+      /github\.com\/.*copilot/i,
+      # 경로
       /github\.copilot|cursor|windsurf|claude.?dev|nextjs.?ai/i,
       /v0\.dev|bolt\.new|replit|lovable|devin| SWE.?bench/i,
       /code.?generation|ai.?code.?review|automated.?refactor/i
     ],
     "튜토리얼" => [
+      # 도메인
+      /tutorial\.example|scrimba\.com|egghead\.io|coursera\.org/i,
+      /udemy\.com|udacity\.com|khanacademy\.org|freecodecamp\.org/i,
+      /docs\.readme\.io|guides\.github|iHerb\.com/i,
+      /blog\.post|cheatsheet|quickstart/i,
+      # 경로
       /tutorial|course|guide|how.?to|learn|getting.?started/i,
       /docs\.readme|blog\.post|cheatsheet|quickstart/i,
       /example|demo|sandbox|playground/i
     ],
     "AI모델" => [
+      # 도메인
+      /huggingface\.co|ollama\.ai|vllm\.github|anthropic\.com/i,
+      /openai\.com|gptstore\.openai|chatgpt\.com|cohere\.ai/i,
+      /mistral\.ai|qwen\.tongyi|deepseek\.ai|groq\.com/i,
+      /lepton\.ai|replicate\.com|sAMBAmultiLLM/i,
+      # 경로
       /hugging.?face|transformers|llama|gemini|claude|gpt|ollama/i,
       /model.?hub|pretrained|fine.?tuning|rlhf|llm.?benchmark/i,
       /mistral|qwen|deepseek|command[_-]?r|Yi.?34B|Starling/i
     ],
     "개발도구" => [
+      # 도메인
+      /github\.com|gitlab\.com|bitbucket\.org/i,
+      /docker\.com|traefik\.io|kubernetes\.io|terraform\.io/i,
+      /jetbrains\.com|neovim\.io|vim\.org|reddit\.com\/r\/vim/i,
+      /postman\.com|insomnia\.rest|swagger\.io|openapi-generator/i,
+      %r{argoproj|argocd|github/actions|github/pages}i,
+      # 경로
       /github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]*\.git|gitlab|bitbucket/i,
       /docker|kubernetes|terraform|ansible|ci\/cd|pipeline/i,
       /vscode|jetbrains|vim|neovim|terminal|cli/i,
       /postman|insomnia|swagger|openapi|api.?design/i
     ],
     "뉴스/커뮤니티" => [
+      # 도메인
+      /medium\.com|dev\.to|hashnode\.com|newsletter\.producthunt/i,
+      /reddit\.com|hackernews\.ycombinator|lobste\.rs/i,
+      /twitter\.com|x\.com|linkedin\.com|discord\.gg/i,
+      /arxiv\.org|papers\.withcode|research\.google|deepmind\.com/i,
+      /feedly\.com|inoreader\.com|bloglovin|rss\./i,
+      # 경로
       /newsletter|blog|rss|medium|dev\.to|hashnode/i,
       /reddit|hacker.?news|lobsters|product.?hunt/i,
       /twitter\.com|x\.com|linkedin|discord|slack\.com/i,
