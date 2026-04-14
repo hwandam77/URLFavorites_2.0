@@ -32,7 +32,7 @@ class AnalyzeYoutubeJob < ApplicationJob
     favorite_attrs[:thumbnail_url] = thumbnail_url if thumbnail_url.present?
     title_is_url = favorite.title.to_s.start_with?("http://", "https://")
     favorite_attrs[:title] = extracted_title if extracted_title.present? && (favorite.title.blank? || title_is_url)
-    favorite_attrs[:category] = UrlCategoryDetector.call(favorite.url, "youtube")
+    favorite_attrs[:category] = UrlFavorites::Domain::Urls::CategoryDetector.call(favorite.url, "youtube")
     favorite.update!(**favorite_attrs)
   rescue => e
     favorite&.update!(status: "failed")

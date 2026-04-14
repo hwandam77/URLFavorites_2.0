@@ -17,14 +17,14 @@ class FavoritesController < ApplicationController
 
   def create
     url = params.dig(:favorite, :url).to_s.strip
-    normalized = UrlNormalizer.call(url)
+    normalized = UrlFavorites::Domain::Urls::Normalizer.call(url)
 
-    unless UrlSafetyValidator.call(normalized)
+    unless UrlFavorites::Domain::Urls::SafetyPolicy.allowed?(normalized)
       redirect_to favorites_url, alert: "Unsafe URL"
       return
     end
 
-    content_type = UrlTypeDetector.call(normalized)
+    content_type = UrlFavorites::Domain::Urls::TypeDetector.call(normalized)
     @favorite = Favorite.new(
       url: normalized,
       title: normalized,

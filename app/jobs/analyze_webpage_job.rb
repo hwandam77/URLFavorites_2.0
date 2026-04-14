@@ -33,7 +33,7 @@ class AnalyzeWebpageJob < ApplicationJob
     favorite.update!(
       title: scraper_result[:title],
       status: "done",
-      category: UrlCategoryDetector.call(favorite.url, favorite.content_type)
+      category: UrlFavorites::Domain::Urls::CategoryDetector.call(favorite.url, favorite.content_type)
     )
   rescue => e
     favorite&.update!(status: "failed")

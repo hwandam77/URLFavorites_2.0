@@ -16,7 +16,7 @@ module Importers
       db.results_as_hash = true
 
       db.execute("SELECT url, title, created_at FROM bookmarks").each do |row|
-        url = UrlNormalizer.call(row["url"].to_s)
+        url = UrlFavorites::Domain::Urls::Normalizer.call(row["url"].to_s)
         next if url.blank?
 
         if Favorite.exists?(url: url)
@@ -24,7 +24,7 @@ module Importers
           next
         end
 
-        content_type = UrlTypeDetector.call(url)
+        content_type = UrlFavorites::Domain::Urls::TypeDetector.call(url)
         Favorite.create!(
           url: url,
           title: row["title"].presence || url,
