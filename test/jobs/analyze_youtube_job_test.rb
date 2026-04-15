@@ -29,7 +29,7 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
 
   test "성공 시 pending → analyzing → done 상태 전이 및 Analysis 생성" do
     UrlFavorites::Integrations::Youtube::Extractor.stub(:call, @extractor_result) do
-      LlmAnalyzer.stub(:call, @analyzer_result) do
+      UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @analyzer_result) do
         AnalyzeYoutubeJob.perform_now(@favorite.id)
 
         @favorite.reload
@@ -44,7 +44,7 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
 
   test "raw_content에 transcript를 캐싱한다" do
     UrlFavorites::Integrations::Youtube::Extractor.stub(:call, @extractor_result) do
-      LlmAnalyzer.stub(:call, @analyzer_result) do
+      UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @analyzer_result) do
         AnalyzeYoutubeJob.perform_now(@favorite.id)
 
         assert_includes @favorite.reload.analysis.raw_content, "Rails 8"
@@ -63,7 +63,7 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
 
   test "LLM 분석 실패 시 status = failed" do
     UrlFavorites::Integrations::Youtube::Extractor.stub(:call, @extractor_result) do
-      LlmAnalyzer.stub(:call, ->(*_args) { raise LlmAnalyzer::ServerError, "llm error" }) do
+      UrlFavorites::Integrations::LlamaServer::Client.stub(:call, ->(*_args) { raise UrlFavorites::Integrations::LlamaServer::Client::ServerError, "llm error" }) do
         AnalyzeYoutubeJob.perform_now(@favorite.id)
 
         @favorite.reload
@@ -74,7 +74,7 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
 
   test "재실행 시 Analysis를 덮어쓴다 (upsert)" do
     UrlFavorites::Integrations::Youtube::Extractor.stub(:call, @extractor_result) do
-      LlmAnalyzer.stub(:call, @analyzer_result) do
+      UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @analyzer_result) do
         AnalyzeYoutubeJob.perform_now(@favorite.id)
         AnalyzeYoutubeJob.perform_now(@favorite.id)
 

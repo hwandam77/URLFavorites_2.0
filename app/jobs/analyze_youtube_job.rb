@@ -11,7 +11,7 @@ class AnalyzeYoutubeJob < ApplicationJob
     subtitle_source = extractor_result[:subtitle_source]
     extracted_title = extractor_result[:title]
 
-    analysis_result = LlmAnalyzer.call(raw_content, type: favorite.content_type)
+    analysis_result = UrlFavorites::Integrations::LlamaServer::Client.call(raw_content, type: favorite.content_type)
 
     analysis_attrs = {
       raw_content:     raw_content,

@@ -1,7 +1,7 @@
 require "test_helper"
 require "webmock/minitest"
 
-class LlmAnalyzerTest < ActiveSupport::TestCase
+class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestCase
   LLAMA_TEST_URL = "http://localhost:8080"
 
   def setup
@@ -25,7 +25,7 @@ class LlmAnalyzerTest < ActiveSupport::TestCase
     stub_request(:post, ENV.fetch("LLAMA_SERVER_URL", "http://localhost:8080") + "/v1/chat/completions")
       .to_return(status: 200, body: @valid_response, headers: { "Content-Type" => "application/json" })
 
-    result = LlmAnalyzer.call("test content", type: "webpage")
+    result = UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "webpage")
 
     assert_equal "This is a summary", result[:summary]
     assert_includes result[:key_points], "key point 1"
@@ -38,8 +38,8 @@ class LlmAnalyzerTest < ActiveSupport::TestCase
       .to_return(status: 200, body: "invalid json", headers: { "Content-Type" => "application/json" })
 
     # With multi-backend fallback, invalid JSON raises ServerError wrapping the ParseError
-    assert_raises LlmAnalyzer::ServerError do
-      LlmAnalyzer.call("test content", type: "webpage")
+    assert_raises UrlFavorites::Integrations::LlamaServer::Client::ServerError do
+      UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "webpage")
     end
   end
 
@@ -47,8 +47,8 @@ class LlmAnalyzerTest < ActiveSupport::TestCase
     stub_request(:post, ENV.fetch("LLAMA_SERVER_URL", "http://localhost:8080") + "/v1/chat/completions")
       .to_return(status: 500)
 
-    assert_raises LlmAnalyzer::ServerError do
-      LlmAnalyzer.call("test content", type: "webpage")
+    assert_raises UrlFavorites::Integrations::LlamaServer::Client::ServerError do
+      UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "webpage")
     end
   end
 
@@ -58,7 +58,7 @@ class LlmAnalyzerTest < ActiveSupport::TestCase
 
     # 타임아웃 설정이 있어도 정상 응답은 통과해야 한다
     assert_nothing_raised do
-      LlmAnalyzer.call("test content", type: "webpage")
+      UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "webpage")
     end
   end
 end

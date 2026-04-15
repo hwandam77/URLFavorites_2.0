@@ -8,7 +8,7 @@ class AnalyzeWebpageJob < ApplicationJob
     scraper_result = UrlFavorites::Integrations::Webpage::Scraper.call(favorite.url)
     raw_content = [ scraper_result[:title], scraper_result[:body_text] ].compact.join(" ")
 
-    analysis_result = LlmAnalyzer.call(raw_content, type: favorite.content_type)
+    analysis_result = UrlFavorites::Integrations::LlamaServer::Client.call(raw_content, type: favorite.content_type)
 
     if favorite.analysis
       favorite.analysis.update!(

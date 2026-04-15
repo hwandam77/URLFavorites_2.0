@@ -1,7 +1,7 @@
 require "test_helper"
 require "webmock/minitest"
 
-class LlmAnalyzerFallbackTest < ActiveSupport::TestCase
+class UrlFavorites::Integrations::LlamaServer::ClientFallbackTest < ActiveSupport::TestCase
   def setup
     @original_backends = ENV["LLM_BACKENDS"]
   end
@@ -18,7 +18,7 @@ class LlmAnalyzerFallbackTest < ActiveSupport::TestCase
     stub_request(:post, "http://localhost:9999/v1/chat/completions")
       .to_return(status: 200, body: valid_response.to_json)
 
-    result = LlmAnalyzer.call("test content", type: "webpage")
+    result = UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "webpage")
     assert_equal "Test summary", result[:summary]
   end
 
@@ -33,7 +33,7 @@ class LlmAnalyzerFallbackTest < ActiveSupport::TestCase
     stub_request(:post, "http://localhost:9999/v1/chat/completions")
       .to_return(status: 200, body: valid_response.to_json)
 
-    result = LlmAnalyzer.call("test content", type: "webpage")
+    result = UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "webpage")
     assert_equal "Test summary", result[:summary]
   end
 
@@ -45,8 +45,8 @@ class LlmAnalyzerFallbackTest < ActiveSupport::TestCase
     stub_request(:post, "http://localhost:9998/v1/chat/completions")
       .to_raise(Faraday::ConnectionFailed.new("Connection refused"))
 
-    assert_raises(LlmAnalyzer::ServerError) do
-      LlmAnalyzer.call("test content", type: "webpage")
+    assert_raises(UrlFavorites::Integrations::LlamaServer::Client::ServerError) do
+      UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "webpage")
     end
   end
 
@@ -61,7 +61,7 @@ class LlmAnalyzerFallbackTest < ActiveSupport::TestCase
     stub_request(:post, "http://localhost:9999/v1/chat/completions")
       .to_return(status: 200, body: valid_response.to_json)
 
-    result = LlmAnalyzer.call("test content", type: "webpage")
+    result = UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "webpage")
     assert_equal "Test summary", result[:summary]
   end
 
@@ -77,7 +77,7 @@ class LlmAnalyzerFallbackTest < ActiveSupport::TestCase
     stub_request(:post, "http://localhost:9999/v1/chat/completions")
       .to_return(status: 200, body: valid_response.to_json)
 
-    result = LlmAnalyzer.call("test content", type: "webpage")
+    result = UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "webpage")
     assert_equal "Test summary", result[:summary]
   end
 
@@ -92,7 +92,7 @@ class LlmAnalyzerFallbackTest < ActiveSupport::TestCase
     stub_request(:post, "http://localhost:9999/v1/chat/completions")
       .to_return(status: 200, body: valid_response.to_json)
 
-    result = LlmAnalyzer.call("test content", type: "webpage")
+    result = UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "webpage")
     assert_equal "Test summary", result[:summary]
   end
 
