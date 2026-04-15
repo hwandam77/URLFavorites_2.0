@@ -29,7 +29,7 @@ class FavoritesController < ApplicationController
       url: normalized,
       title: normalized,
       content_type: content_type,
-      status: "pending"
+      status: "analyzing"
     )
 
     if @favorite.save
@@ -38,7 +38,11 @@ class FavoritesController < ApplicationController
       else
         AnalyzeWebpageJob.perform_later(@favorite.id)
       end
-      redirect_to favorites_url, notice: "URL이 저장되었습니다. 분석을 시작합니다."
+
+      respond_to do |format|
+        format.turbo_stream
+        format.html { redirect_to favorites_url, notice: "URL이 저장되었습니다. 분석을 시작합니다." }
+      end
     else
       if Favorite.exists?(url: normalized)
         existing = Favorite.find_by(url: normalized)

@@ -1,3 +1,4 @@
+<%= turbo_stream_from :favorites %>
 <div class="max-w-6xl mx-auto px-6 py-8">
 
   <%# ── 헤더: Editorial 계층 ── %>
@@ -16,7 +17,7 @@
   </div>
 
   <%# ── URL 추가 폼 ── %>
-  <div class="mb-8 p-4 rounded-lg" style="background:var(--color-surface);border:1px solid var(--color-border);">
+  <div id="url-form" class="mb-8 p-4 rounded-lg" style="background:var(--color-surface);border:1px solid var(--color-border);">
     <%= form_with url: favorites_path, method: :post, class: "flex gap-3" do |f| %>
       <%= f.text_field :url, name: "favorite[url]",
         placeholder: "분석할 URL을 붙여넣으세요...",
@@ -180,31 +181,30 @@
 
   <%# ── 북마크 그리드 ── %>
   <%= turbo_frame_tag "favorites" do %>
-    <% if @favorites.respond_to?(:empty?) ? @favorites.empty? : @favorites.blank? %>
+    <% has_favorites = @favorites.respond_to?(:empty?) ? !@favorites.empty? : @favorites.present? %>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="favorites-grid" data-view-mode-target="cardView">
+      <%= render partial: "favorite_card", collection: @favorites, as: :favorite %>
+    </div>
+    <div id="empty-state" class="<%= 'hidden' if has_favorites %>">
       <%= render "empty_state" %>
-    <% else %>
-      <%# 카드 그리드 %>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-view-mode-target="cardView">
-        <%= render partial: "favorite_card", collection: @favorites, as: :favorite %>
-      </div>
-      <%# 리스트 뷰 %>
-      <div class="hidden rounded-lg overflow-hidden" style="border:1px solid var(--color-border);" data-view-mode-target="listView">
-        <table class="w-full" style="background:var(--color-surface);">
-          <thead>
-            <tr style="border-bottom:1px solid var(--color-border);">
-              <th class="py-3 px-4 text-left" style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-tertiary);letter-spacing:0.3px;">북마크</th>
-              <th class="py-3 px-4 text-left hidden md:table-cell" style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-tertiary);letter-spacing:0.3px;">유형</th>
-              <th class="py-3 px-4 text-left" style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-tertiary);letter-spacing:0.3px;">상태</th>
-              <th class="py-3 px-4 text-left hidden lg:table-cell" style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-tertiary);letter-spacing:0.3px;">태그</th>
-              <th class="py-3 px-4 text-left hidden sm:table-cell" style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-tertiary);letter-spacing:0.3px;">날짜</th>
-              <th class="py-3 px-4" style="width:80px;"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <%= render partial: "favorite_row", collection: @favorites, as: :favorite %>
-          </tbody>
-        </table>
-      </div>
-    <% end %>
+    </div>
+    <%# 리스트 뷰 %>
+    <div class="hidden rounded-lg overflow-hidden" style="border:1px solid var(--color-border);" data-view-mode-target="listView">
+      <table class="w-full" style="background:var(--color-surface);">
+        <thead>
+          <tr style="border-bottom:1px solid var(--color-border);">
+            <th class="py-3 px-4 text-left" style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-tertiary);letter-spacing:0.3px;">북마크</th>
+            <th class="py-3 px-4 text-left hidden md:table-cell" style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-tertiary);letter-spacing:0.3px;">유형</th>
+            <th class="py-3 px-4 text-left" style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-tertiary);letter-spacing:0.3px;">상태</th>
+            <th class="py-3 px-4 text-left hidden lg:table-cell" style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-tertiary);letter-spacing:0.3px;">태그</th>
+            <th class="py-3 px-4 text-left hidden sm:table-cell" style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-tertiary);letter-spacing:0.3px;">날짜</th>
+            <th class="py-3 px-4" style="width:80px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= render partial: "favorite_row", collection: @favorites, as: :favorite %>
+        </tbody>
+      </table>
+    </div>
   <% end %>
 </div>

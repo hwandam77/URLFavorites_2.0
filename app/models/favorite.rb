@@ -12,10 +12,10 @@ class Favorite < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
   validates :category, inclusion: { in: CATEGORIES }
 
-  # Turbo Stream: 분석 완료/실패 시 자동으로 갱신 (일시 비활성화)
-  # after_update_commit -> {
-  #   broadcast_replace_to :favorites
-  # }
+  # Turbo Stream: 분석 완료/실패 시 자동으로 카드 갱신
+  after_update_commit -> {
+    broadcast_replace_to :favorites
+  }
 
   # Instance predicates for statuses
   STATUSES.each do |s|
