@@ -5,7 +5,7 @@ class AnalyzeYoutubeJob < ApplicationJob
     favorite = Favorite.find(favorite_id)
     favorite.update!(status: "analyzing")
 
-    extractor_result = YoutubeExtractor.call(favorite.url)
+    extractor_result = UrlFavorites::Integrations::Youtube::Extractor.call(favorite.url)
     raw_content     = extractor_result[:transcript]
     thumbnail_url   = extractor_result[:thumbnail_url]
     subtitle_source = extractor_result[:subtitle_source]

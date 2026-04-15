@@ -1,7 +1,7 @@
 require "test_helper"
 require "webmock/minitest"
 
-class WebpageScraperTest < ActiveSupport::TestCase
+class UrlFavorites::Integrations::Webpage::ScraperTest < ActiveSupport::TestCase
   setup do
     WebMock.enable!
     WebMock.disable_net_connect!
@@ -45,7 +45,7 @@ class WebpageScraperTest < ActiveSupport::TestCase
     stub_request(:get, "https://example.com/page")
       .to_return(status: 200, body: HTML_WITH_OG, headers: { "Content-Type" => "text/html" })
 
-    result = WebpageScraper.call("https://example.com/page")
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/page")
 
     assert_equal "OG 제목", result[:title]
     assert_equal "OG 설명입니다.", result[:description]
@@ -56,7 +56,7 @@ class WebpageScraperTest < ActiveSupport::TestCase
     stub_request(:get, "https://example.com/no-og")
       .to_return(status: 200, body: HTML_WITHOUT_OG, headers: { "Content-Type" => "text/html" })
 
-    result = WebpageScraper.call("https://example.com/no-og")
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/no-og")
 
     assert_equal "일반 타이틀", result[:title]
     assert_equal "메타 설명", result[:description]
@@ -67,7 +67,7 @@ class WebpageScraperTest < ActiveSupport::TestCase
     stub_request(:get, "https://example.com/page")
       .to_return(status: 200, body: HTML_WITH_OG, headers: { "Content-Type" => "text/html" })
 
-    result = WebpageScraper.call("https://example.com/page")
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/page")
 
     assert_includes result[:body_text], "본문 내용 첫 번째 단락"
     assert_includes result[:body_text], "본문 내용 두 번째 단락"
@@ -77,7 +77,7 @@ class WebpageScraperTest < ActiveSupport::TestCase
     stub_request(:get, "https://example.com/no-og")
       .to_return(status: 200, body: HTML_WITHOUT_OG, headers: { "Content-Type" => "text/html" })
 
-    result = WebpageScraper.call("https://example.com/no-og")
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/no-og")
 
     assert_includes result[:body_text], "메인 본문"
   end
@@ -87,26 +87,26 @@ class WebpageScraperTest < ActiveSupport::TestCase
     stub_request(:get, "https://example.com/long")
       .to_return(status: 200, body: long_body, headers: { "Content-Type" => "text/html" })
 
-    result = WebpageScraper.call("https://example.com/long")
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/long")
 
     assert result[:body_text].length <= 8_000
   end
 
-  test "HTTP 오류 시 WebpageScraper::FetchError 발생" do
+  test "HTTP 오류 시 Scraper::FetchError 발생" do
     stub_request(:get, "https://example.com/error")
       .to_return(status: 500)
 
-    assert_raises(WebpageScraper::FetchError) do
-      WebpageScraper.call("https://example.com/error")
+    assert_raises(UrlFavorites::Integrations::Webpage::Scraper::FetchError) do
+      UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/error")
     end
   end
 
-  test "네트워크 타임아웃 시 WebpageScraper::FetchError 발생" do
+  test "네트워크 타임아웃 시 Scraper::FetchError 발생" do
     stub_request(:get, "https://example.com/timeout")
       .to_timeout
 
-    assert_raises(WebpageScraper::FetchError) do
-      WebpageScraper.call("https://example.com/timeout")
+    assert_raises(UrlFavorites::Integrations::Webpage::Scraper::FetchError) do
+      UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/timeout")
     end
   end
 end

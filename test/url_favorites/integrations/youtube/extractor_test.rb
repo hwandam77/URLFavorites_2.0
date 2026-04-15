@@ -1,6 +1,6 @@
 require "test_helper"
 
-class YoutubeExtractorTest < ActiveSupport::TestCase
+class UrlFavorites::Integrations::Youtube::ExtractorTest < ActiveSupport::TestCase
   VALID_JSON = JSON.generate({
     "title" => "Test Video Title",
     "description" => "This is a test video description.",
@@ -46,7 +46,7 @@ class YoutubeExtractorTest < ActiveSupport::TestCase
 
   test "title과 description을 반환한다" do
     Open3.stub(:capture3, [ VALID_JSON, "", ok_status ]) do
-      result = YoutubeExtractor.call("https://youtube.com/watch?v=test")
+      result = UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=test")
       assert_equal "Test Video Title", result[:title]
       assert_equal "This is a test video description.", result[:description]
     end
@@ -54,21 +54,21 @@ class YoutubeExtractorTest < ActiveSupport::TestCase
 
   test "subtitles 가 있으면 자막을 transcript 로 사용" do
     Open3.stub(:capture3, [ VALID_JSON, "", ok_status ]) do
-      result = YoutubeExtractor.call("https://youtube.com/watch?v=test")
+      result = UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=test")
       assert_includes result[:transcript], "First subtitle line"
     end
   end
 
   test "subtitles 없으면 automatic_captions fallback" do
     Open3.stub(:capture3, [ AUTO_CAPTIONS_JSON, "", ok_status ]) do
-      result = YoutubeExtractor.call("https://youtube.com/watch?v=auto")
+      result = UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=auto")
       assert_includes result[:transcript], "Auto caption 1"
     end
   end
 
   test "자막 없으면 description 을 transcript 로 사용" do
     Open3.stub(:capture3, [ NO_SUBTITLES_JSON, "", ok_status ]) do
-      result = YoutubeExtractor.call("https://youtube.com/watch?v=nodesc")
+      result = UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=nodesc")
       assert_includes result[:transcript], "Fallback description"
     end
   end
@@ -80,23 +80,23 @@ class YoutubeExtractorTest < ActiveSupport::TestCase
     })
 
     Open3.stub(:capture3, [ long_json, "", ok_status ]) do
-      result = YoutubeExtractor.call("https://youtube.com/watch?v=long")
+      result = UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=long")
       assert result[:transcript].length <= 12_000
     end
   end
 
   test "exit 실패 시 ExtractionError 발생" do
     Open3.stub(:capture3, [ "", "error", fail_status ]) do
-      assert_raises(YoutubeExtractor::ExtractionError) do
-        YoutubeExtractor.call("https://youtube.com/watch?v=fail")
+      assert_raises(UrlFavorites::Integrations::Youtube::Extractor::ExtractionError) do
+        UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=fail")
       end
     end
   end
 
   test "JSON 파싱 실패 시 ExtractionError 발생" do
     Open3.stub(:capture3, [ "{ invalid }", "", ok_status ]) do
-      assert_raises(YoutubeExtractor::ExtractionError) do
-        YoutubeExtractor.call("https://youtube.com/watch?v=badjson")
+      assert_raises(UrlFavorites::Integrations::Youtube::Extractor::ExtractionError) do
+        UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=badjson")
       end
     end
   end

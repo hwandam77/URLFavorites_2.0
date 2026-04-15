@@ -28,7 +28,7 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
   end
 
   test "성공 시 pending → analyzing → done 상태 전이 및 Analysis 생성" do
-    YoutubeExtractor.stub(:call, @extractor_result) do
+    UrlFavorites::Integrations::Youtube::Extractor.stub(:call, @extractor_result) do
       LlmAnalyzer.stub(:call, @analyzer_result) do
         AnalyzeYoutubeJob.perform_now(@favorite.id)
 
@@ -43,7 +43,7 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
   end
 
   test "raw_content에 transcript를 캐싱한다" do
-    YoutubeExtractor.stub(:call, @extractor_result) do
+    UrlFavorites::Integrations::Youtube::Extractor.stub(:call, @extractor_result) do
       LlmAnalyzer.stub(:call, @analyzer_result) do
         AnalyzeYoutubeJob.perform_now(@favorite.id)
 
@@ -53,7 +53,7 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
   end
 
   test "YouTube 추출 실패 시 status = failed" do
-    YoutubeExtractor.stub(:call, ->(_url) { raise YoutubeExtractor::ExtractionError, "yt-dlp failed" }) do
+    UrlFavorites::Integrations::Youtube::Extractor.stub(:call, ->(_url) { raise UrlFavorites::Integrations::Youtube::Extractor::ExtractionError, "yt-dlp failed" }) do
       AnalyzeYoutubeJob.perform_now(@favorite.id)
 
       @favorite.reload
@@ -62,7 +62,7 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
   end
 
   test "LLM 분석 실패 시 status = failed" do
-    YoutubeExtractor.stub(:call, @extractor_result) do
+    UrlFavorites::Integrations::Youtube::Extractor.stub(:call, @extractor_result) do
       LlmAnalyzer.stub(:call, ->(*_args) { raise LlmAnalyzer::ServerError, "llm error" }) do
         AnalyzeYoutubeJob.perform_now(@favorite.id)
 
@@ -73,7 +73,7 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
   end
 
   test "재실행 시 Analysis를 덮어쓴다 (upsert)" do
-    YoutubeExtractor.stub(:call, @extractor_result) do
+    UrlFavorites::Integrations::Youtube::Extractor.stub(:call, @extractor_result) do
       LlmAnalyzer.stub(:call, @analyzer_result) do
         AnalyzeYoutubeJob.perform_now(@favorite.id)
         AnalyzeYoutubeJob.perform_now(@favorite.id)
