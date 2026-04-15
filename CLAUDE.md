@@ -7,6 +7,18 @@
 - 에이전트 지침 정본: `AGENTS.md`
 - 설계 문서: `docs/plans/2026-04-07-urlf2-design.md`
 - 구현 플랜: `docs/plans/2026-04-07-urlf2-implementation.md`
+- **DDD 아키텍처 스펙**: `docs/superpowers/specs/2026-04-15-ddd-refactor-architecture-design.md`
+
+### DDD 아키텍처 개발 원칙 (MANDATORY)
+
+신규 코드 작성 시 DDD 아키텍처 스펙을 준수한다. 기존 `app/services/` 패턴은 사용하지 않는다.
+
+- **코드 배치**: `app/url_favorites/{domain,integrations,use_cases}/` 레이어에 맞게 배치
+- **의존성 방향**: `Controller/Job → UseCase → Domain + Integrations` (Domain은 어디에도 의존하지 않음)
+- **컨트롤러/잡**: UseCase 하나만 호출, 비즈니스 로직 금지
+- **외부 의존성**: Integrations 레이어로 격리 (LLM, 스크래핑, 임베딩 등)
+- **네이밍**: `UrlFavorites::` 루트 네임스페이스, Zeitwerk 규칙 준수
+- **새 서비스 생성 전**: 스펙 §4(디렉토리), §8(매핑 가이드) 확인 필수
 
 ---
 
@@ -130,7 +142,7 @@ DISPATCH="/Users/hwandam/workspace/infrastructure/llm-orchestration/dispatch.sh"
 | 항목 | 값 |
 |------|-----|
 | SSH 호스트 | `vps-server` (`~/.ssh/config`) |
-| 앱 경로 | `/home/hwandam/services/rails/urlfavorites_2.0/` |
+| 앱 경로 | `/home/hwandam/urlfavorites_2.0/` (symlink → `/home/hwandam/services/rails/urlfavorites_2.0/`) |
 | 서비스 | `rails-puma@urlfavorites_2.0.service` |
 | 포트 | `3001` (3000은 구버전 urlfavorites 점유) |
 | URL | `https://urlf.hwandam.kr/ver2.0/` |
@@ -256,10 +268,9 @@ onmouseout="this.style.borderColor='var(--color-border)'"
 1. 로컬에서 뷰 파일 수정
 2. `bin/rails tailwindcss:build` 로 CSS 빌드
 3. `bin/rails assets:precompile` 로 에셋 검증
-4. `bin/rails server` 로 시각 확인
-5. `git add` + `git commit` (deploy 스크립트가 untracked/staged 파일 차단)
-6. `deploy --quick URLFavorites_2.0` 로 배포
-7. https://urlf.hwandam.kr/ver2.0/favorites 에서 확인
+4. `git add` + `git commit` (deploy 스크립트가 untracked/staged 파일 차단)
+5. `deploy --quick URLFavorites_2.0` 로 배포
+6. https://urlf.hwandam.kr/ver2.0/favorites 에서 시각 확인
 
 ### 디자인 금지 패턴
 
@@ -271,10 +282,4 @@ onmouseout="this.style.borderColor='var(--color-border)'"
 
 ### 변경 이력
 
-| 날짜 | 변경 내용 | 대상 | 사유 |
-|------|----------|------|------|
-| 2026-04-07 | 초기 구성 — 4 에이전트 + 오케스트레이터 | 전체 | 하네스 신규 구축 |
-| 2026-04-07 | GSD 통합 — .planning/ + ROADMAP 10 Phase | 전체 | GSD phase 관리 연결 |
-| 2026-04-07 | tmux 2계층 병렬 — Claude Workers + Nexus LLM | 전체 에이전트 + 오케스트레이터 | Claude Workers + 30B/48B 코드 생성 조합 |
-| 2026-04-10 | 배포 가이드 추가 — 서버 설정, 환경변수, 트러블슈팅 | CLAUDE.md | 첫 운영 배포 경험 문서화 |
-| 2026-04-13 | Warm Archive 테마 전면 리디자인 | 전체 뷰 + 디자인 토큰 | Neo-Brutalist → Editorial Swiss |
+별도 관리: `docs/CHANGELOG.md`
