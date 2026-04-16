@@ -71,7 +71,7 @@
     <% has_youtube_thumbnail = @favorite.content_type == "youtube" && @favorite.thumbnail_url.present? %>
 
     <%# 요약 섹션 %>
-    <section class="mb-8">
+    <section class="mb-8 pb-8" style="border-bottom:1px solid var(--color-border);">
       <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
         <span>📝</span> 요약
       </h2>
@@ -90,7 +90,7 @@
 
     <%# 태그 섹션 %>
     <% if @favorite.analysis.parsed_tags.any? %>
-      <section class="mb-8">
+      <section class="mb-8 pb-8" style="border-bottom:1px solid var(--color-border);">
         <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
           <span>🏷</span> 태그
         </h2>
@@ -104,7 +104,7 @@
 
     <%# 핵심 인사이트 섹션 %>
     <% if @favorite.analysis.parsed_key_points.any? %>
-      <section class="mb-8">
+      <section class="mb-8 pb-8" style="border-bottom:1px solid var(--color-border);">
         <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
           <span>💡</span> 핵심 인사이트
         </h2>
@@ -126,7 +126,7 @@
 
     <%# 상세내용 섹션 %>
     <% if @favorite.analysis.detail_content.present? %>
-      <section class="mb-8">
+      <section class="mb-8 pb-8" style="border-bottom:1px solid var(--color-border);">
         <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
           <span>📄</span> 상세내용
         </h2>
@@ -135,7 +135,7 @@
     <% end %>
 
     <%# 메타 섹션 %>
-    <section class="mb-8">
+    <section class="mb-8 pb-8" style="border-bottom:1px solid var(--color-border);">
       <div class="flex flex-wrap gap-4 text-xs" style="color:var(--color-text-tertiary);">
         <% if @favorite.analysis.sentiment.present? %>
           <span>🎭 감정: <%= @favorite.analysis.sentiment %></span>
