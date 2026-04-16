@@ -24,7 +24,7 @@
            onerror="this.style.display='none'"
            loading="lazy">
       <div class="min-w-0 flex-1">
-        <% display_title = favorite.url.to_s.include?("github.com") ? github_repo_name(favorite.url) : (favorite.title.presence || "제목 없음") %>
+        <% display_title = favorite.title.presence || (favorite.url.to_s.include?("github.com") ? github_repo_name(favorite.url) : "제목 없음") %>
         <%= link_to favorite_path(favorite), class: "block truncate transition-colors", style: "font-size:var(--text-sm);font-weight:600;color:var(--color-text);", onmouseover: "this.style.color='var(--color-accent)'", onmouseout: "this.style.color='var(--color-text)'" do %>
           <%= display_title %>
         <% end %>
