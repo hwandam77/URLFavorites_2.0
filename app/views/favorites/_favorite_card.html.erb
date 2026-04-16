@@ -104,8 +104,35 @@
       </p>
     <% end %>
 
-    <%# 하단: 상태 + 유형 + 태그 %>
+    <%# 하단: 카테고리 + 상태 + 유형 + 태그 %>
     <div class="flex items-center gap-2 flex-wrap">
+      <%= form_with url: update_category_favorite_path(favorite, format: :turbo_stream), method: :patch, class: "inline" do |f| %>
+        <input type="hidden" name="view_mode" value="card">
+        <%= f.select :category, Favorite::SELECTABLE_CATEGORIES,
+              { selected: favorite.category },
+              {
+                onchange: "this.form.requestSubmit()",
+                style: "
+                  appearance:none;
+                  -webkit-appearance:none;
+                  -moz-appearance:none;
+                  background-color:var(--color-surface-hover);
+                  background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22 viewBox=%220 0 10 6%22><path d=%22M1 1l4 4 4-4%22 stroke=%22%23888%22 stroke-width=%221.5%22 fill=%22none%22 stroke-linecap=%22round%22/></svg>');
+                  background-repeat:no-repeat;
+                  background-position:right 6px center;
+                  background-size:10px;
+                  color:var(--color-text-secondary);
+                  border:1px solid var(--color-border);
+                  padding:2px 20px 2px 8px;
+                  border-radius:var(--radius-full);
+                  font-size:var(--text-xs);
+                  font-weight:500;
+                  cursor:pointer;
+                  outline:none;
+                  transition:border-color 0.2s;
+                "
+              } %>
+      <% end %>
       <span style="background:<%= s[:bg] %>;color:<%= s[:text] %>;border:1px solid <%= s[:border] %>;padding:2px 8px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600;<%= s[:pulse] ? 'animation:animate-pulse 2s infinite;' : '' %>">
         <%= s[:label] %>
       </span>

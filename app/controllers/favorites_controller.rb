@@ -85,6 +85,18 @@ class FavoritesController < ApplicationController
     redirect_back_or_to favorites_url, notice: @favorite.pinned? ? "북마크가 핀되었습니다" : "핀 해제되었습니다"
   end
 
+  def update_category
+    @favorite = Favorite.find(params[:id])
+    @favorite.update!(category: params.dig(:favorite, :category))
+
+    partial = params[:view_mode] == "list" ? "favorites/favorite_row" : "favorites/favorite_card"
+    render turbo_stream: turbo_stream.replace(
+      @favorite,
+      partial: partial,
+      locals: { favorite: @favorite }
+    )
+  end
+
   private
 
   def render_url_error(message)

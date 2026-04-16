@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   resources :favorites, only: %i[index create show destroy] do
     resource :note, only: %i[update], controller: "favorite_notes"
     resource :collection_membership, only: %i[create destroy]
+    patch :update_category, on: :member
     post :retry, on: :member
     post :toggle_pin, on: :member
   end
