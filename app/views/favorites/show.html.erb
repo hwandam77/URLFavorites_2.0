@@ -15,7 +15,7 @@
   </div>
 
   <%# 패널 헤더 %>
-  <div class="flex flex-col gap-3 mb-8 pb-6" style="border-bottom:1px solid var(--color-border);">
+  <div class="flex flex-col gap-3 pb-6" style="border-bottom:1px solid var(--color-border);margin-bottom:0;">
     <% display_title = @favorite.title.presence || (@favorite.url.to_s.include?("github.com") ? github_repo_name(@favorite.url) : @favorite.url) %>
     <h1 style="font-size:var(--text-2xl);font-weight:700;letter-spacing:-0.5px;color:var(--color-text);line-height:1.3;">
       <%= display_title %>
@@ -72,7 +72,7 @@
 
     <%# 요약 섹션 %>
     <section class="mb-10">
-      <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:16px;display:flex;align-items:center;gap:6px;padding-bottom:8px;margin-bottom:16px;border-bottom:1.5px solid var(--color-accent);">
+      <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:16px;display:flex;align-items:center;gap:6px;padding:12px 0 8px;border-bottom:1.5px solid var(--color-accent);">
         <span>📝</span> 요약
       </h2>
       <div class="<%= has_youtube_thumbnail ? 'flex gap-4' : '' %>" style="<%= has_youtube_thumbnail ? 'align-items:flex-start;' : '' %>">
@@ -91,7 +91,7 @@
     <%# 태그 섹션 %>
     <% if @favorite.analysis.parsed_tags.any? %>
       <section class="mb-10">
-        <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;padding-bottom:8px;margin-bottom:16px;border-bottom:1.5px solid var(--color-accent);">
+        <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;padding:12px 0 8px;border-bottom:1.5px solid var(--color-accent);">
           <span>🏷</span> 태그
         </h2>
         <div class="flex flex-wrap gap-2">
@@ -105,7 +105,7 @@
     <%# 핵심 인사이트 섹션 %>
     <% if @favorite.analysis.parsed_key_points.any? %>
       <section class="mb-10">
-        <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;padding-bottom:8px;margin-bottom:16px;border-bottom:1.5px solid var(--color-accent);">
+        <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;padding:12px 0 8px;border-bottom:1.5px solid var(--color-accent);">
           <span>💡</span> 핵심 인사이트
         </h2>
         <ul style="list-style:none;padding:0;margin:0;color:var(--color-text-secondary);line-height:1.8;font-size:var(--text-sm);">
@@ -127,7 +127,7 @@
     <%# 상세내용 섹션 %>
     <% if @favorite.analysis.detail_content.present? %>
       <section class="mb-10">
-        <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;padding-bottom:8px;margin-bottom:16px;border-bottom:1.5px solid var(--color-accent);">
+        <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;padding:12px 0 8px;border-bottom:1.5px solid var(--color-accent);">
           <span>📄</span> 상세내용
         </h2>
         <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:16px;color:var(--color-text-secondary);line-height:1.8;font-size:var(--text-sm);white-space:pre-wrap;"><%= @favorite.analysis.detail_content %></div>
@@ -156,7 +156,7 @@
 
   <%# 메모 섹션 %>
   <section class="mb-10">
-    <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;padding-bottom:8px;margin-bottom:16px;border-bottom:1.5px solid var(--color-accent);">
+    <h2 style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;padding:12px 0 8px;border-bottom:1.5px solid var(--color-accent);">
       <span>📝</span> 메모
     </h2>
     <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:16px;margin-bottom:12px;">
