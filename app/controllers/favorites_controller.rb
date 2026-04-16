@@ -87,7 +87,7 @@ class FavoritesController < ApplicationController
 
   def update_category
     @favorite = Favorite.find(params[:id])
-    @favorite.update!(category: params.dig(:favorite, :category))
+    @favorite.update!(category: params[:category])
 
     partial = params[:view_mode] == "list" ? "favorites/favorite_row" : "favorites/favorite_card"
     render turbo_stream: turbo_stream.replace(
