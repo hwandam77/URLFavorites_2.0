@@ -89,12 +89,18 @@ class FavoritesController < ApplicationController
     @favorite = Favorite.find(params[:id])
     @favorite.update!(category: params[:category])
 
-    partial = params[:view_mode] == "list" ? "favorites/favorite_row" : "favorites/favorite_card"
-    render turbo_stream: turbo_stream.replace(
-      @favorite,
-      partial: partial,
-      locals: { favorite: @favorite }
-    )
+    respond_to do |format|
+      format.turbo_stream do
+        partial = params[:view_mode] == "list" ? "favorites/favorite_row" : "favorites/favorite_card"
+        render turbo_stream: turbo_stream.replace(
+          @favorite,
+          partial: partial,
+          locals: { favorite: @favorite }
+        )
+      end
+      format.json { render json: { category: @favorite.category } }
+      format.html { redirect_to favorites_url }
+    end
   end
 
   private
