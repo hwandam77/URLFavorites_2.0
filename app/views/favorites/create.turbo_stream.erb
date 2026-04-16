@@ -4,6 +4,8 @@
 
 <%= turbo_stream.remove "empty-state" %>
 
+<%= turbo_stream.update "url-error", "" %>
+
 <%= turbo_stream.update "url-form" do %>
   <div id="url-form" class="mb-8 p-4 rounded-lg" style="background:var(--color-surface);border:1px solid var(--color-border);">
     <%= form_with url: favorites_path, method: :post, class: "flex gap-3" do |f| %>

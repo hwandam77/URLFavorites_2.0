@@ -17,11 +17,19 @@ class FavoritesController < ApplicationController
 
   def create
     url = params.dig(:favorite, :url).to_s.strip
-    normalized = UrlFavorites::Domain::Urls::Normalizer.call(url)
+
+    if url.blank?
+      return render_url_error("URL을 입력해주세요.")
+    end
+
+    normalized = begin
+      UrlFavorites::Domain::Urls::Normalizer.call(url)
+    rescue URI::InvalidURIError, ArgumentError
+      return render_url_error("잘못된 URL 주소입니다. 확인 후 다시 입력해주세요.")
+    end
 
     unless UrlFavorites::Domain::Urls::SafetyPolicy.allowed?(normalized)
-      redirect_to favorites_url, alert: "Unsafe URL"
-      return
+      return render_url_error("접근할 수 없는 URL입니다.")
     end
 
     content_type = UrlFavorites::Domain::Urls::TypeDetector.call(normalized)
@@ -74,6 +82,28 @@ class FavoritesController < ApplicationController
   def toggle_pin
     @favorite = Favorite.find(params[:id])
     @favorite.update!(pinned: !@favorite.pinned)
-    redirect_back_or_to favorites_url, notice: @favorite.pinned? ? "북마크가 핀されました" : "핀 해제되었습니다"
+    redirect_back_or_to favorites_url, notice: @favorite.pinned? ? "북마크가 핀되었습니다" : "핀 해제되었습니다"
+  end
+
+  private
+
+  def render_url_error(message)
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.update("url-error", build_error_html(message))
+      end
+      format.html { redirect_to favorites_url, alert: message }
+    end
+  end
+
+  def build_error_html(message)
+    <<~HTML
+      <div class="mb-4 p-3 rounded-lg flex items-center gap-2" style="background:var(--color-failed-bg);border:1px solid var(--color-failed-border);">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color:var(--color-failed-text);">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+        </svg>
+        <span style="font-size:var(--text-sm);font-weight:500;color:var(--color-failed-text);">#{ERB::Util.html_escape(message)}</span>
+      </div>
+    HTML
   end
 end
