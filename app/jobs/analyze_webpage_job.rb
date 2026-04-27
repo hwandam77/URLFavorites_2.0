@@ -1,42 +1,15 @@
 class AnalyzeWebpageJob < ApplicationJob
-  queue_as :default
+  queue_as :ai
+
+  rescue_from(StandardError) do |e|
+    executions_index = (executions - 1)
+    if executions < UrlFavorites::Domain::Analysis::RetryPolicy::MAX_RETRIES
+      wait_seconds = UrlFavorites::Domain::Analysis::RetryPolicy.next_wait_seconds(executions_index)
+      retry_job(wait: wait_seconds)
+    end
+  end
 
   def perform(favorite_id)
-    favorite = Favorite.find(favorite_id)
-    favorite.update!(status: "analyzing")
-
-    scraper_result = UrlFavorites::Integrations::Webpage::Scraper.call(favorite.url)
-    raw_content = [ scraper_result[:title], scraper_result[:body_text] ].compact.join(" ")
-
-    analysis_result = UrlFavorites::Integrations::LlamaServer::Client.call(raw_content, type: favorite.content_type)
-
-    if favorite.analysis
-      favorite.analysis.update!(
-        raw_content: raw_content,
-        summary:     analysis_result[:summary],
-        key_points:  analysis_result[:key_points],
-        tags:        analysis_result[:tags],
-        sentiment:   analysis_result[:sentiment],
-        detail_content: analysis_result[:detail_content]
-      )
-    else
-      favorite.create_analysis!(
-        raw_content: raw_content,
-        summary:     analysis_result[:summary],
-        key_points:  analysis_result[:key_points],
-        tags:        analysis_result[:tags],
-        sentiment:   analysis_result[:sentiment],
-        detail_content: analysis_result[:detail_content]
-      )
-    end
-
-    favorite.update!(
-      title: scraper_result[:title],
-      status: "done",
-      category: UrlFavorites::Domain::Urls::CategoryDetector.call(favorite.url, favorite.content_type)
-    )
-  rescue => e
-    favorite&.update!(status: "failed")
-    Rails.logger.error "[AnalyzeWebpageJob] #{e.class}: #{e.message}"
+    UrlFavorites::UseCases::Analysis::RunAnalysis.call(favorite_id: favorite_id)
   end
 end

@@ -41,11 +41,7 @@ class FavoritesController < ApplicationController
     )
 
     if @favorite.save
-      if content_type == "youtube"
-        AnalyzeYoutubeJob.perform_later(@favorite.id)
-      else
-        AnalyzeWebpageJob.perform_later(@favorite.id)
-      end
+      UrlFavorites::UseCases::Analysis::EnqueueAnalysis.call(favorite_id: @favorite.id)
 
       respond_to do |format|
         format.turbo_stream
@@ -71,11 +67,7 @@ class FavoritesController < ApplicationController
   def retry
     @favorite = Favorite.find(params[:id])
     @favorite.update!(status: "pending")
-    if @favorite.content_type == "youtube"
-      AnalyzeYoutubeJob.perform_later(@favorite.id)
-    else
-      AnalyzeWebpageJob.perform_later(@favorite.id)
-    end
+    UrlFavorites::UseCases::Analysis::EnqueueAnalysis.call(favorite_id: @favorite.id)
     redirect_to favorite_url(@favorite), notice: "Retrying analysis"
   end
 

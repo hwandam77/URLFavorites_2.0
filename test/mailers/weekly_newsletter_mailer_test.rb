@@ -32,7 +32,7 @@ class WeeklyNewsletterMailerTest < ActionMailer::TestCase
 
     assert_includes email.subject, "저장된 링크"
     assert_includes email.subject, "2개"
-    assert_match(/주간 링크 요약/, email.html_part&.body&.raw_source || email.body.to_s)
+    assert_match(/주간 링크 큐레이션/, email.html_part&.body&.raw_source || email.body.to_s)
     assert_match(/Test Article/, email.html_part&.body&.raw_source || email.body.to_s)
   end
 end
