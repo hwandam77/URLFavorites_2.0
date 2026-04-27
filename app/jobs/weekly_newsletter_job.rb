@@ -13,7 +13,7 @@ class WeeklyNewsletterJob < ApplicationJob
   private
 
   def fetch_recent_unread_favorites
-    FavoriteSearch.call(
+    UrlFavorites::UseCases::Search::FavoriteSearch.call(
       status: "done",
       sort: "recent"
     ).where("created_at > ?", 7.days.ago).to_a

@@ -1,6 +1,6 @@
 class FavoritesController < ApplicationController
   def index
-    @favorites = FavoriteSearch.call(
+    @favorites = UrlFavorites::UseCases::Search::FavoriteSearch.call(
       query: params[:q],
       content_type: params[:content_type],
       status: params[:status],
@@ -63,7 +63,7 @@ class FavoritesController < ApplicationController
 
   def destroy
     @favorite = Favorite.find(params[:id])
-    FavoriteSearchIndexer.remove(@favorite.id)
+    UrlFavorites::Integrations::Search::Indexer.remove(@favorite.id)
     @favorite.destroy
     redirect_to favorites_url, notice: "Deleted"
   end
