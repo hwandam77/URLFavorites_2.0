@@ -37,7 +37,7 @@ module UrlFavorites
         end
 
         def fts_search
-          sanitized = @query.gsub(/[^a-zA-Z0-9 ]/, "").strip
+          sanitized = @query.gsub(/['"]/, "''").strip
           return [] if sanitized.blank?
 
           sql = "SELECT favorite_id FROM favorites_fts WHERE favorites_fts MATCH ?"
@@ -47,13 +47,13 @@ module UrlFavorites
           ids = rows.map { |r| r["favorite_id"] }.compact
           return [] if ids.empty?
 
-          scope = Favorite.where(id: ids)
+          scope = Favorite.includes(:analysis).where(id: ids)
           scope = apply_filters(scope)
           apply_sort(scope)
         end
 
         def filtered_favorites
-          scope = Favorite.all
+          scope = Favorite.includes(:analysis).all
           scope = apply_filters(scope)
           apply_sort(scope)
         end

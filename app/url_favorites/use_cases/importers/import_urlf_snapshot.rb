@@ -17,6 +17,7 @@ module UrlFavorites
           @reader.each_bookmark do |row|
             url = UrlFavorites::Domain::Urls::Normalizer.call(row["url"].to_s)
             next if url.blank?
+            next unless UrlFavorites::Domain::Urls::SafetyPolicy.allowed?(url)
 
             if Favorite.exists?(url: url)
               skipped += 1

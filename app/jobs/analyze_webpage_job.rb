@@ -6,6 +6,8 @@ class AnalyzeWebpageJob < ApplicationJob
     if executions < UrlFavorites::Domain::Analysis::RetryPolicy::MAX_RETRIES
       wait_seconds = UrlFavorites::Domain::Analysis::RetryPolicy.next_wait_seconds(executions_index)
       retry_job(wait: wait_seconds)
+    else
+      raise e
     end
   end
 
