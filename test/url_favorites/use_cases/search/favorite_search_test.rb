@@ -1,8 +1,8 @@
-# test/services/favorite_search_test.rb
+# test/url_favorites/use_cases/search/favorite_search_test.rb
 require 'test_helper'
 require 'webmock/minitest'
 
-class FavoriteSearchTest < ActiveSupport::TestCase
+class UrlFavorites::UseCases::Search::FavoriteSearchTest < ActiveSupport::TestCase
   EMBEDDING_TEST_URL = "http://localhost:8080"
 
   def setup
@@ -50,7 +50,7 @@ class FavoriteSearchTest < ActiveSupport::TestCase
     )
 
     # 모두 FTS에 인덱싱
-    FavoriteSearchIndexer.reindex_all
+    UrlFavorites::Integrations::Search::Indexer.reindex_all
   end
 
   def teardown
@@ -59,41 +59,41 @@ class FavoriteSearchTest < ActiveSupport::TestCase
   end
 
   def test_returns_favorites_matching_title_keyword
-    results = FavoriteSearch.call(query: "Rails")
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "Rails")
     assert_includes results.map(&:id), @fav1.id
     refute_includes results.map(&:id), @fav2.id
   end
 
   def test_returns_favorites_matching_summary_keyword
-    results = FavoriteSearch.call(query: "framework")
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "framework")
     assert_includes results.map(&:id), @fav1.id
   end
 
   def test_returns_favorites_matching_tags
-    results = FavoriteSearch.call(query: "python")
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "python")
     assert_includes results.map(&:id), @fav2.id
     refute_includes results.map(&:id), @fav1.id
   end
 
   def test_filters_by_content_type
-    results = FavoriteSearch.call(query: nil, content_type: "youtube")
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: nil, content_type: "youtube")
     assert_includes results.map(&:id), @fav3.id
     refute_includes results.map(&:id), @fav1.id
   end
 
   def test_filters_by_status
-    results = FavoriteSearch.call(query: nil, status: "pending")
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: nil, status: "pending")
     assert_includes results.map(&:id), @fav3.id
     refute_includes results.map(&:id), @fav1.id
   end
 
   def test_returns_all_when_query_is_blank_and_no_filters
-    results = FavoriteSearch.call(query: nil)
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: nil)
     assert_equal 3, results.count
   end
 
   def test_returns_empty_when_no_match
-    results = FavoriteSearch.call(query: "nonexistent_xyz_999")
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "nonexistent_xyz_999")
     assert_empty results
   end
 end

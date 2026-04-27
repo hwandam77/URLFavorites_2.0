@@ -39,7 +39,7 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
       tags: ["rails"],
       key_points: []
     )
-    FavoriteSearchIndexer.reindex_all
+    UrlFavorites::Integrations::Search::Indexer.reindex_all
     get favorites_url, params: { q: "Rails" }
     assert_response :success
     assert_includes response.body, "Rails Guide"
@@ -70,7 +70,7 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to favorites_url
     fav = Favorite.last
-    assert_equal "pending", fav.status
+    assert_equal "analyzing", fav.status
   end
 
   test "POST /favorites 안전하지 않은 URL 을 거부합니다" do

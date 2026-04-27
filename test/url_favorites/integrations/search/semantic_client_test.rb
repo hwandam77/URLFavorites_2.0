@@ -2,7 +2,7 @@
 
 require "test_helper"
 
-class SemanticSearchTest < ActiveSupport::TestCase
+class UrlFavorites::Integrations::Search::SemanticClientTest < ActiveSupport::TestCase
   def setup
     @favorite = Favorite.create!(
       url: "https://example.com/ai-article",
@@ -26,8 +26,8 @@ class SemanticSearchTest < ActiveSupport::TestCase
 
   test "semantic search finds conceptually related content" do
     # Mock embedding service to return similar vector
-    EmbeddingService.stub :call, [0.1, 0.9, 0.3] do
-      results = SemanticSearch.call(query: "neural networks deep learning")
+    UrlFavorites::Integrations::Search::EmbeddingClient.stub :call, [0.1, 0.9, 0.3] do
+      results = UrlFavorites::Integrations::Search::SemanticClient.call(query: "neural networks deep learning")
       assert results.any? { |f| f.id == @favorite.id }
     end
   end
@@ -45,14 +45,14 @@ class SemanticSearchTest < ActiveSupport::TestCase
       ])
     )
 
-    EmbeddingService.stub :call, [] do
-      results = SemanticSearch.call(query: "machine learning")
+    UrlFavorites::Integrations::Search::EmbeddingClient.stub :call, [] do
+      results = UrlFavorites::Integrations::Search::SemanticClient.call(query: "machine learning")
       assert results.any? { |f| f.id == @favorite.id }
     end
   end
 
   test "returns empty for blank query" do
-    results = SemanticSearch.call(query: "")
+    results = UrlFavorites::Integrations::Search::SemanticClient.call(query: "")
     assert_equal [], results
   end
 end

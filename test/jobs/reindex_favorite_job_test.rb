@@ -5,7 +5,7 @@ class ReindexFavoriteJobTest < ActiveSupport::TestCase
   def test_performs_job_and_calls_favorite_search_indexer_for_single_favorite
     fav = Favorite.create!(title: "Job Test", url: "https://example.com/job", content_type: "webpage", status: "done")
     indexed = false
-    FavoriteSearchIndexer.stub(:index, ->(f) { indexed = true if f.id == fav.id }) do
+    UrlFavorites::Integrations::Search::Indexer.stub(:index, ->(f) { indexed = true if f.id == fav.id }) do
       ReindexFavoriteJob.new.perform(fav.id)
     end
     assert indexed
@@ -13,7 +13,7 @@ class ReindexFavoriteJobTest < ActiveSupport::TestCase
 
   def test_calls_reindex_all_when_no_favorite_id_given
     reindexed = false
-    FavoriteSearchIndexer.stub(:reindex_all, -> { reindexed = true }) do
+    UrlFavorites::Integrations::Search::Indexer.stub(:reindex_all, -> { reindexed = true }) do
       ReindexFavoriteJob.new.perform(nil)
     end
     assert reindexed

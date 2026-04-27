@@ -39,7 +39,7 @@ class FavoriteNotesControllerTest < ActionDispatch::IntegrationTest
 
   test "PATCH /favorites/:favorite_id/note triggers reindex" do
     fav = Favorite.create!(title: "Reindex Note", url: "https://example.com/reindex", content_type: "webpage", status: "done")
-    FavoriteSearchIndexer.reindex_all
+    UrlFavorites::Integrations::Search::Indexer.reindex_all
     patch favorite_note_url(fav), params: { favorite: { note: "Updated note" } }
     fav.reload
     assert_equal "Updated note", fav.note

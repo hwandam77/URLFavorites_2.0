@@ -1,8 +1,8 @@
-# test/services/favorite_search_indexer_test.rb
+# test/url_favorites/integrations/search/indexer_test.rb
 require 'test_helper'
 require 'webmock/minitest'
 
-class FavoriteSearchIndexerTest < ActiveSupport::TestCase
+class UrlFavorites::Integrations::Search::IndexerTest < ActiveSupport::TestCase
   EMBEDDING_TEST_URL = "http://localhost:8080"
 
   def setup
@@ -33,7 +33,7 @@ class FavoriteSearchIndexerTest < ActiveSupport::TestCase
       tags: ["rails"],
       key_points: []
     )
-    FavoriteSearchIndexer.index(fav)
+    UrlFavorites::Integrations::Search::Indexer.index(fav)
 
     row = ActiveRecord::Base.connection.execute(
       "SELECT * FROM favorites_fts WHERE favorite_id = #{fav.id}"
@@ -51,7 +51,7 @@ class FavoriteSearchIndexerTest < ActiveSupport::TestCase
       content_type: "webpage",
       status: "pending"
     )
-    FavoriteSearchIndexer.index(fav)
+    UrlFavorites::Integrations::Search::Indexer.index(fav)
 
     row = ActiveRecord::Base.connection.execute(
       "SELECT * FROM favorites_fts WHERE favorite_id = #{fav.id}"
@@ -68,10 +68,10 @@ class FavoriteSearchIndexerTest < ActiveSupport::TestCase
       content_type: "webpage",
       status: "done"
     )
-    FavoriteSearchIndexer.index(fav)
+    UrlFavorites::Integrations::Search::Indexer.index(fav)
 
     fav.update!(title: "New Title")
-    FavoriteSearchIndexer.index(fav)
+    UrlFavorites::Integrations::Search::Indexer.index(fav)
 
     rows = ActiveRecord::Base.connection.execute(
       "SELECT * FROM favorites_fts WHERE favorite_id = #{fav.id}"
@@ -88,8 +88,8 @@ class FavoriteSearchIndexerTest < ActiveSupport::TestCase
       content_type: "webpage",
       status: "done"
     )
-    FavoriteSearchIndexer.index(fav)
-    FavoriteSearchIndexer.remove(fav.id)
+    UrlFavorites::Integrations::Search::Indexer.index(fav)
+    UrlFavorites::Integrations::Search::Indexer.remove(fav.id)
 
     row = ActiveRecord::Base.connection.execute(
       "SELECT * FROM favorites_fts WHERE favorite_id = #{fav.id}"
@@ -101,7 +101,7 @@ class FavoriteSearchIndexerTest < ActiveSupport::TestCase
   test "reindex_all 은 모든 즐겨찾기를 색인합니다" do
     Favorite.create!(title: "A", url: "https://a.com", content_type: "webpage", status: "done")
     Favorite.create!(title: "B", url: "https://b.com", content_type: "webpage", status: "done")
-    FavoriteSearchIndexer.reindex_all
+    UrlFavorites::Integrations::Search::Indexer.reindex_all
 
     count = ActiveRecord::Base.connection.execute(
       "SELECT COUNT(*) as c FROM favorites_fts"
