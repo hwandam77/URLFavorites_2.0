@@ -2,47 +2,207 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 12px; margin-bottom: 24px; }
-    .title { font-size: 24px; font-weight: bold; margin: 0; }
-    .subtitle { opacity: 0.9; margin-top: 8px; }
-    .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-    .card-title { font-size: 16px; font-weight: 600; color: #1f2937; margin: 0 0 8px 0; }
-    .card-title a { color: #2563eb; text-decoration: none; }
-    .card-summary { font-size: 14px; color: #6b7280; margin: 0 0 12px 0; line-height: 1.5; }
-    .tags { display: flex; gap: 6px; flex-wrap: wrap; }
-    .tag { background: #f3f4f6; color: #374151; padding: 4px 10px; border-radius: 16px; font-size: 12px; }
-    .footer { text-align: center; color: #9ca3af; font-size: 12px; margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+    /* ── 5분 AI 뉴스 스타일 에디토리얼 뉴스레터 ── */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+      background: #f7f6f3;
+      color: #1a1917;
+      margin: 0;
+      padding: 40px 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    /* 헤더 */
+    .masthead {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid #1a1917;
+    }
+    .masthead-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin: 0;
+      color: #1a1917;
+    }
+    .masthead-sub {
+      font-size: 13px;
+      color: #6b6960;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+    .masthead-meta {
+      font-size: 12px;
+      color: #9e9b8f;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    /* 리드 */
+    .lead {
+      font-size: 16px;
+      line-height: 1.7;
+      color: #3a3937;
+      margin-bottom: 32px;
+      padding: 20px 24px;
+      background: #fff;
+      border-left: 3px solid #c4600a;
+      border-radius: 0 8px 8px 0;
+    }
+
+    /* 구분선 */
+    .divider {
+      border: none;
+      border-top: 1px solid #e0ddd7;
+      margin: 32px 0;
+    }
+
+    /* 아티클 */
+    .article {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+      border: 1px solid #e0ddd7;
+    }
+    .article-header {
+      margin-bottom: 16px;
+    }
+    .article-number {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #c4600a;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+    .article-title {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.35;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.3px;
+    }
+    .article-title a {
+      color: #1a1917;
+      text-decoration: none;
+    }
+    .article-title a:hover {
+      color: #c4600a;
+    }
+    .article-domain {
+      font-size: 12px;
+      color: #9e9b8f;
+      font-weight: 500;
+    }
+    .article-summary {
+      font-size: 15px;
+      line-height: 1.7;
+      color: #3a3937;
+      margin: 0 0 16px 0;
+    }
+    .article-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .article-tag {
+      font-size: 13px;
+      font-weight: 600;
+      color: #c4600a;
+    }
+
+    /* 푸터 */
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid #e0ddd7;
+    }
+    .footer-brand {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1917;
+      margin-bottom: 4px;
+    }
+    .footer-copy {
+      font-size: 12px;
+      color: #9e9b8f;
+      margin-bottom: 12px;
+    }
+    .footer a {
+      color: #c4600a;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* 반응형 */
+    @media (max-width: 480px) {
+      body { padding: 20px 16px; }
+      .article { padding: 20px; }
+      .masthead-title { font-size: 24px; }
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1 class="title">📚 주간 링크 요약</h1>
-    <p class="subtitle"><%= @digest[:date] %> · <%= @digest[:favorites_count] %>개 저장</p>
-  </div>
+  <div class="container">
 
-  <% @digest[:favorites].each do |fav| %>
-    <div class="card">
-      <h3 class="card-title">
-        <a href="<%= ERB::Util.h(fav[:url]) %>" target="_blank" rel="noopener"><%= fav[:title] %></a>
-      </h3>
-      <% if fav[:summary].present? %>
-        <p class="card-summary"><%= fav[:summary] %></p>
-      <% end %>
-      <% if fav[:tags].any? %>
-        <div class="tags">
-          <% fav[:tags].first(5).each do |tag| %>
-            <span class="tag"><%= tag %></span>
+    <!-- 마스티드 -->
+    <div class="masthead">
+      <h1 class="masthead-title">주간 링크 큐레이션</h1>
+      <p class="masthead-sub">이번 주에 저장하고 분석한 콘텐츠를 정리했습니다</p>
+      <p class="masthead-meta"><%= @digest[:date] %> · <%= @digest[:favorites_count] %>개 저장 · URLFavorites</p>
+    </div>
+
+    <!-- 리드 -->
+    <div class="lead">
+      이번 주에는 <strong><%= @digest[:favorites_count] %>개</strong>의 콘텐츠를 아카이브했습니다.
+      아래에서 각 콘텐츠의 AI 분석 요약과 핵심 키워드를 확인하세요.
+    </div>
+
+    <hr class="divider">
+
+    <!-- 아티클 목록 -->
+    <% @digest[:favorites].each_with_index do |fav, i| %>
+      <div class="article">
+        <div class="article-header">
+          <span class="article-number"><%= (i + 1).to_s.rjust(2, '0') %></span>
+          <h3 class="article-title">
+            <a href="<%= ERB::Util.h(fav[:url]) %>" target="_blank" rel="noopener"><%= fav[:title] %></a>
+          </h3>
+          <% host = URI.parse(fav[:url]).host rescue nil %>
+          <% if host %>
+            <span class="article-domain"><%= host.sub(/^www\./, '') %></span>
           <% end %>
         </div>
-      <% end %>
-    </div>
-  <% end %>
+        <% if fav[:summary].present? %>
+          <p class="article-summary"><%= fav[:summary] %></p>
+        <% end %>
+        <% if fav[:tags].any? %>
+          <div class="article-tags">
+            <% fav[:tags].first(5).each do |tag| %>
+              <span class="article-tag">#<%= tag %></span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
 
-  <div class="footer">
-    <p>URLFavorites 2.0에서 자동 생성됨</p>
-    <p><a href="<%= ERB::Util.h(favorites_url) %>">모든 저장된 링크 보기</a></p>
+    <!-- 푸터 -->
+    <div class="footer">
+      <p class="footer-brand">URLFavorites 2.0</p>
+      <p class="footer-copy">AI 분석을 통해 저장한 콘텐츠의 핵심을 자동으로 추출합니다</p>
+      <p><a href="<%= ERB::Util.h(favorites_url) %>">모든 저장된 링크 보기 →</a></p>
+    </div>
+
   </div>
 </body>
 </html>
