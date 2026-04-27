@@ -1,5 +1,5 @@
 # test/controllers/collection_memberships_controller_test.rb
-require 'test_helper'
+require "test_helper"
 
 class CollectionMembershipsControllerTest < ActionDispatch::IntegrationTest
   test "POST /favorites/:favorite_id/collection_membership adds to collection" do

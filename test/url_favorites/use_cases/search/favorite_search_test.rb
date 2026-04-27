@@ -1,6 +1,6 @@
 # test/url_favorites/use_cases/search/favorite_search_test.rb
-require 'test_helper'
-require 'webmock/minitest'
+require "test_helper"
+require "webmock/minitest"
 
 class UrlFavorites::UseCases::Search::FavoriteSearchTest < ActiveSupport::TestCase
   EMBEDDING_TEST_URL = "http://localhost:8080"
@@ -10,7 +10,7 @@ class UrlFavorites::UseCases::Search::FavoriteSearchTest < ActiveSupport::TestCa
     WebMock.enable!
     WebMock.disable_net_connect!
     # EmbeddingService stub
-    @embedding_response = { embedding: [0.1, 0.2, 0.3] * 384 }.to_json
+    @embedding_response = { embedding: [ 0.1, 0.2, 0.3 ] * 384 }.to_json
     stub_request(:post, EMBEDDING_TEST_URL + "/v1/embeddings")
       .to_return(status: 200, body: @embedding_response, headers: { "Content-Type" => "application/json" })
 
@@ -24,8 +24,8 @@ class UrlFavorites::UseCases::Search::FavoriteSearchTest < ActiveSupport::TestCa
     Analysis.create!(
       favorite: @fav1,
       summary: "Rails MVC framework",
-      tags: ["ruby", "rails"],
-      key_points: ["MVC", "ActiveRecord"]
+      tags: [ "ruby", "rails" ],
+      key_points: [ "MVC", "ActiveRecord" ]
     )
 
     # fav2 생성 및 관련 Analysis 생성
@@ -38,7 +38,7 @@ class UrlFavorites::UseCases::Search::FavoriteSearchTest < ActiveSupport::TestCa
     Analysis.create!(
       favorite: @fav2,
       summary: "Python programming language",
-      tags: ["python", "tutorial"]
+      tags: [ "python", "tutorial" ]
     )
 
     # Analysis 없이 fav3 생성

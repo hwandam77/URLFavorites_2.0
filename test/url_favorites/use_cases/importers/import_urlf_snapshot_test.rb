@@ -1,14 +1,14 @@
-require 'test_helper'
-require 'sqlite3'
+require "test_helper"
+require "sqlite3"
 
 class UrlFavorites::UseCases::Importers::ImportUrlfSnapshotTest < ActiveSupport::TestCase
   def setup
     @db_path = Rails.root.join("tmp", "test_urlf_snapshot_#{Process.pid}_#{SecureRandom.hex(4)}.sqlite3").to_s
     db = SQLite3::Database.new(@db_path)
     db.execute("CREATE TABLE IF NOT EXISTS bookmarks (id INTEGER PRIMARY KEY, url TEXT, title TEXT, created_at TEXT)")
-    db.execute("INSERT INTO bookmarks (url, title, created_at) VALUES (?, ?, ?)", ["https://example.com/old1", "Old Bookmark 1", "2024-01-01 00:00:00"])
-    db.execute("INSERT INTO bookmarks (url, title, created_at) VALUES (?, ?, ?)", ["https://example.com/old2", "Old Bookmark 2", "2024-02-01 00:00:00"])
-    db.execute("INSERT INTO bookmarks (url, title, created_at) VALUES (?, ?, ?)", ["https://youtube.com/watch?v=old", "Old YouTube", "2024-03-01 00:00:00"])
+    db.execute("INSERT INTO bookmarks (url, title, created_at) VALUES (?, ?, ?)", [ "https://example.com/old1", "Old Bookmark 1", "2024-01-01 00:00:00" ])
+    db.execute("INSERT INTO bookmarks (url, title, created_at) VALUES (?, ?, ?)", [ "https://example.com/old2", "Old Bookmark 2", "2024-02-01 00:00:00" ])
+    db.execute("INSERT INTO bookmarks (url, title, created_at) VALUES (?, ?, ?)", [ "https://youtube.com/watch?v=old", "Old YouTube", "2024-03-01 00:00:00" ])
     db.close
   end
 

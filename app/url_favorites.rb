@@ -2,4 +2,3 @@
 
 module UrlFavorites
 end
-

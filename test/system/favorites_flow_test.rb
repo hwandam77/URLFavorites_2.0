@@ -36,7 +36,7 @@ class FavoritesFlowTest < ApplicationSystemTestCase
       content_type: "webpage",
       status: "done"
     )
-    fav.create_analysis!(summary: "This is a system test favorite summary", tags: ["test", "system"])
+    fav.create_analysis!(summary: "This is a system test favorite summary", tags: [ "test", "system" ])
 
     visit favorite_url(fav)
 

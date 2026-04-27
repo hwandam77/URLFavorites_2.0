@@ -10,7 +10,7 @@ module UrlFavorites
 
           conn = ActiveRecord::Base.connection
 
-          content_for_embedding = [favorite.title, summary, note].compact.join(" ")
+          content_for_embedding = [ favorite.title, summary, note ].compact.join(" ")
           embedding = UrlFavorites::Integrations::Search::EmbeddingClient.call(content_for_embedding)
           embedding_json = embedding.present? ? embedding.to_json : nil
 

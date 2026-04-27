@@ -1,6 +1,6 @@
 # test/url_favorites/integrations/search/indexer_test.rb
-require 'test_helper'
-require 'webmock/minitest'
+require "test_helper"
+require "webmock/minitest"
 
 class UrlFavorites::Integrations::Search::IndexerTest < ActiveSupport::TestCase
   EMBEDDING_TEST_URL = "http://localhost:8080"
@@ -10,7 +10,7 @@ class UrlFavorites::Integrations::Search::IndexerTest < ActiveSupport::TestCase
     WebMock.enable!
     WebMock.disable_net_connect!
     # EmbeddingService stub - nomic-embed-text 모델의 더미 임베딩 응답
-    @embedding_response = { embedding: [0.1, 0.2, 0.3] * 384 }.to_json
+    @embedding_response = { embedding: [ 0.1, 0.2, 0.3 ] * 384 }.to_json
     stub_request(:post, EMBEDDING_TEST_URL + "/v1/embeddings")
       .to_return(status: 200, body: @embedding_response, headers: { "Content-Type" => "application/json" })
   end
@@ -30,7 +30,7 @@ class UrlFavorites::Integrations::Search::IndexerTest < ActiveSupport::TestCase
     Analysis.create!(
       favorite: fav,
       summary: "MVC framework guide",
-      tags: ["rails"],
+      tags: [ "rails" ],
       key_points: []
     )
     UrlFavorites::Integrations::Search::Indexer.index(fav)

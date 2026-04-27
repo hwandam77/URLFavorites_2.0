@@ -8,4 +8,3 @@ module UrlFavorites
     end
   end
 end
-

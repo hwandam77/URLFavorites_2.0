@@ -1,5 +1,5 @@
 # test/jobs/reindex_favorite_job_test.rb
-require 'test_helper'
+require "test_helper"
 
 class ReindexFavoriteJobTest < ActiveSupport::TestCase
   def test_performs_job_and_calls_favorite_search_indexer_for_single_favorite

@@ -1,5 +1,5 @@
 # test/controllers/collections_controller_test.rb
-require 'test_helper'
+require "test_helper"
 
 class CollectionsControllerTest < ActionDispatch::IntegrationTest
   test "GET /collections returns success" do

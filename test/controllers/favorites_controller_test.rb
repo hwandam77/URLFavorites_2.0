@@ -1,6 +1,6 @@
 # test/controllers/favorites_controller_test.rb
-require 'test_helper'
-require 'webmock/minitest'
+require "test_helper"
+require "webmock/minitest"
 
 class FavoritesControllerTest < ActionDispatch::IntegrationTest
   EMBEDDING_TEST_URL = "http://localhost:8080"
@@ -10,7 +10,7 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     ENV["EMBEDDING_URL"] = EMBEDDING_TEST_URL
     WebMock.enable!
     WebMock.disable_net_connect!
-    @embedding_response = { embedding: [0.1, 0.2, 0.3] * 384 }.to_json
+    @embedding_response = { embedding: [ 0.1, 0.2, 0.3 ] * 384 }.to_json
     stub_request(:post, EMBEDDING_TEST_URL + "/v1/embeddings")
       .to_return(status: 200, body: @embedding_response, headers: { "Content-Type" => "application/json" })
   end
@@ -36,7 +36,7 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     Analysis.create!(
       favorite: fav,
       summary: "Rails framework",
-      tags: ["rails"],
+      tags: [ "rails" ],
       key_points: []
     )
     UrlFavorites::Integrations::Search::Indexer.reindex_all

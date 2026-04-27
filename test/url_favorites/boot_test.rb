@@ -7,4 +7,3 @@ class UrlFavoritesBootTest < ActiveSupport::TestCase
     assert_equal "UrlFavorites", UrlFavorites.name
   end
 end
-

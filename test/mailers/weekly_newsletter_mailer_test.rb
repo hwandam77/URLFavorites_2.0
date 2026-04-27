@@ -10,18 +10,18 @@ class WeeklyNewsletterMailerTest < ActionMailer::TestCase
           title: "Test Article",
           url: "https://example.com/test",
           summary: "Test summary",
-          tags: ["test"],
+          tags: [ "test" ],
           created_at: "04/13"
         },
         {
           title: "Another Article",
           url: "https://example.com/another",
           summary: "Another summary",
-          tags: ["sample"],
+          tags: [ "sample" ],
           created_at: "04/12"
         }
       ],
-      top_tags: ["test", "sample"]
+      top_tags: [ "test", "sample" ]
     }
 
     email = WeeklyNewsletterMailer.digest(digest_data)

@@ -36,7 +36,7 @@ module UrlFavorites
           else
             r = UrlFavorites::Integrations::Webpage::Scraper.call(favorite.url)
             favorite.update!(title: r[:title]) if r[:title].present?
-            [r[:title], r[:body_text]].compact.join(" ")
+            [ r[:title], r[:body_text] ].compact.join(" ")
           end
         end
 

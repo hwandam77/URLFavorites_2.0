@@ -7,4 +7,3 @@
 require Rails.root.join("app/url_favorites").to_s
 
 Rails.autoloaders.main.push_dir(Rails.root.join("app/url_favorites"), namespace: UrlFavorites)
-

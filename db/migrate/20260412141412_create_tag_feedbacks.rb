@@ -8,6 +8,5 @@ class CreateTagFeedbacks < ActiveRecord::Migration[8.1]
       t.string :reason, limit: 500         # optional reason
       t.timestamps
     end
-
   end
 end

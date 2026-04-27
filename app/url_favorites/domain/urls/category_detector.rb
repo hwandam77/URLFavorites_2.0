@@ -100,9 +100,9 @@ module UrlFavorites
         private_class_method def self.detect_youtube_category(url)
           # YouTube 채널/크리에이터 기반 분류
           channel_patterns = {
-            "AI모델" => [/sentdex|statquest|coreyms/i, /two?minute.?papers/i],
-            "튜토리얼" => [/traversymedia|freeswitutorials|netninjas/i],
-            "뉴스/커뮤니티" => [/linus.?tech.?tips|mrwho|Benjamin.?Keys/i]
+            "AI모델" => [ /sentdex|statquest|coreyms/i, /two?minute.?papers/i ],
+            "튜토리얼" => [ /traversymedia|freeswitutorials|netninjas/i ],
+            "뉴스/커뮤니티" => [ /linus.?tech.?tips|mrwho|Benjamin.?Keys/i ]
           }
 
           channel_patterns.each do |category, patterns|

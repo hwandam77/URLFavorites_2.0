@@ -101,8 +101,8 @@ class UrlFavorites::Integrations::LlamaServer::ClientFallbackTest < ActiveSuppor
   def valid_response
     {
       summary: "Test summary",
-      key_points: ["point1"],
-      tags: ["tag1"],
+      key_points: [ "point1" ],
+      tags: [ "tag1" ],
       sentiment: "neutral"
     }
   end

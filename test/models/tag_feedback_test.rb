@@ -3,14 +3,14 @@ require "test_helper"
 class TagFeedbackTest < ActiveSupport::TestCase
   def setup
     @favorite = Favorite.create!(url: "https://example.com/article", content_type: "webpage", status: "done")
-    @favorite.create_analysis!(tags: ["tech", "news"], summary: "Test article")
+    @favorite.create_analysis!(tags: [ "tech", "news" ], summary: "Test article")
   end
 
   test "tag_diff returns added and removed tags" do
     feedback = TagFeedback.create!(
       favorite: @favorite,
-      original_tags: ["tech", "news"],
-      corrected_tags: ["technology", "programming", "news"]
+      original_tags: [ "tech", "news" ],
+      corrected_tags: [ "technology", "programming", "news" ]
     )
 
     diff = feedback.tag_diff
@@ -34,14 +34,14 @@ class TagFeedbackTest < ActiveSupport::TestCase
   test "validates uniqueness of favorite_id" do
     TagFeedback.create!(
       favorite: @favorite,
-      original_tags: ["tech"],
-      corrected_tags: ["technology"]
+      original_tags: [ "tech" ],
+      corrected_tags: [ "technology" ]
     )
 
     duplicate = TagFeedback.new(
       favorite: @favorite,
-      original_tags: ["news"],
-      corrected_tags: ["breaking-news"]
+      original_tags: [ "news" ],
+      corrected_tags: [ "breaking-news" ]
     )
 
     assert_not duplicate.save
@@ -51,8 +51,8 @@ class TagFeedbackTest < ActiveSupport::TestCase
   test "allows anonymous corrections without user" do
     feedback = TagFeedback.new(
       favorite: @favorite,
-      original_tags: ["tech"],
-      corrected_tags: ["technology"]
+      original_tags: [ "tech" ],
+      corrected_tags: [ "technology" ]
     )
 
     assert_difference "TagFeedback.count", 1 do
