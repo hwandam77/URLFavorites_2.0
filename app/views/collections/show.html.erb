@@ -1,34 +1,96 @@
-<div class="max-w-5xl mx-auto px-6 py-10">
+<div class="max-w-3xl mx-auto px-6 py-10" style="--text-xs:13px;--text-sm:15px;--text-base:16px;--text-lg:18px;--text-xl:22px;--text-2xl:32px;">
 
-  <%# 뒤로가기 %>
-  <div class="mb-8">
+  <%# ── 에디토리얼 헤더 ── %>
+  <div class="mb-6">
     <%= link_to collections_path,
-          class: "inline-flex items-center gap-1.5 text-sm transition-colors",
-          style: "color:var(--color-text-tertiary);font-weight:500;",
+          class: "inline-flex items-center gap-1.5 mb-6 transition-colors",
+          style: "color:var(--color-text-tertiary);font-size:var(--text-xs);font-weight:500;",
           onmouseover: "this.style.color='var(--color-accent)'",
           onmouseout: "this.style.color='var(--color-text-tertiary)'" do %>
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
       </svg>
       컬렉션으로 돌아가기
     <% end %>
-  </div>
 
-  <%# 컬렉션 헤더 %>
-  <div class="mb-8">
-    <div class="flex items-center gap-3 mb-2">
-      <div class="w-2.5 h-2.5 rounded-full" style="background:var(--color-accent);"></div>
-      <h1 style="font-size:var(--text-2xl);font-weight:700;letter-spacing:-0.5px;color:var(--text);"><%= @collection.name %></h1>
+    <div class="flex items-center gap-2 mb-3" style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.8px;">
+      <span>큐레이션</span>
+      <span style="color:var(--color-border);">·</span>
+      <span><%= @favorites.count %>개 콘텐츠</span>
     </div>
+
+    <h1 style="font-size:var(--text-2xl);font-weight:800;letter-spacing:-1px;color:var(--color-text);line-height:1.25;margin-bottom:12px;">
+      <%= @collection.name %>
+    </h1>
+
     <% if @collection.description.present? %>
-      <p style="font-size:var(--text-sm);color:var(--color-text-tertiary);margin-left:22px;"><%= @collection.description %></p>
+      <p style="font-size:var(--text-base);color:var(--color-text-secondary);line-height:1.7;">
+        <%= @collection.description %>
+      </p>
     <% end %>
   </div>
 
+  <hr style="border:none;border-top:1px solid var(--color-border);margin:32px 0;">
+
   <% if @favorites.any? %>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <% @favorites.each do |favorite| %>
-        <%= render partial: "favorites/favorite_card", locals: { favorite: favorite } %>
+    <%# ── 에디토리얼 리스트 ── %>
+    <div style="display:flex;flex-direction:column;gap:24px;">
+      <% @favorites.each_with_index do |favorite, i| %>
+        <% host = URI.parse(favorite.url).host rescue nil %>
+        <% domain = host&.sub(/^www\./, "") || favorite.url %>
+
+        <%= link_to favorite_path(favorite), style: "display:block;text-decoration:none;" do %>
+          <article style="display:flex;gap:16px;align-items:flex-start;padding:20px;border-radius:var(--radius-lg);border:1px solid var(--color-border);background:var(--color-surface);transition:all 0.2s;"
+                   onmouseover="this.style.borderColor='var(--color-accent-muted)';this.style.boxShadow='var(--shadow-md)'"
+                   onmouseout="this.style.borderColor='var(--color-border)';this.style.boxShadow='none'"
+          >
+            <%# 번호 %>
+            <span style="font-size:var(--text-xl);font-weight:800;color:var(--color-accent);line-height:1;flex-shrink:0;width:32px;"
+            ><%= (i + 1).to_s.rjust(2, '0') %></span>
+
+            <%# 본문 %>
+            <div style="flex:1;min-width:0;">
+              <div class="flex items-center gap-2 mb-2">
+                <img src="https://www.google.com/s2/favicons?domain=<%= host || favorite.url %>&sz=16"
+                     alt="" class="w-3.5 h-3.5 rounded-sm" style="flex-shrink:0;" onerror="this.style.display='none'">
+                <span style="font-size:var(--text-xs);color:var(--color-text-tertiary);font-weight:500;"
+                ><%= domain %></span>
+                <span style="font-size:var(--text-xs);color:var(--color-accent-text);font-weight:600;"
+                ><%= favorite.content_type == "youtube" ? "▶ YouTube" : "웹" %></span>
+              </div>
+
+              <h3 style="font-size:var(--text-base);font-weight:700;color:var(--color-text);line-height:1.4;margin:0 0 8px;letter-spacing:-0.2px;"
+                  class="line-clamp-2"
+              >
+                <%= favorite.title.presence || (favorite.url.to_s.include?("github.com") ? github_repo_name(favorite.url) : "제목 없음") %>
+              </h3>
+
+              <% if favorite.analysis&.summary.present? %>
+                <p style="font-size:var(--text-sm);color:var(--color-text-secondary);line-height:1.6;margin:0;"
+                   class="line-clamp-2"
+                >
+                  <%= favorite.analysis.summary %>
+                </p>
+              <% end %>
+
+              <% if favorite.analysis&.parsed_tags&.any? %>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                  <% favorite.analysis.parsed_tags.first(4).each do |tag| %>
+                    <span style="font-size:var(--text-xs);font-weight:500;color:var(--color-text-tertiary);"
+                    >#<%= tag %></span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+
+            <%# 화살표 %>
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="var(--color-text-tertiary)" viewBox="0 0 24 24" stroke-width="2"
+                 style="margin-top:2px;"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+          </article>
+        <% end %>
       <% end %>
     </div>
   <% else %>
