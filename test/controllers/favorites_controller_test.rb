@@ -70,7 +70,7 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to favorites_url
     fav = Favorite.last
-    assert_equal "analyzing", fav.status
+    assert_equal "pending", fav.status
   end
 
   test "POST /favorites 안전하지 않은 URL 을 거부합니다" do

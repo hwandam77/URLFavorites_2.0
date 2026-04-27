@@ -22,58 +22,38 @@ class FavoritesController < ApplicationController
       return render_url_error("URL을 입력해주세요.")
     end
 
-    normalized = begin
-      UrlFavorites::Domain::Urls::Normalizer.call(url)
+    result = begin
+      UrlFavorites::UseCases::Favorites::CreateFavorite.call(url: url)
     rescue URI::InvalidURIError, ArgumentError
       return render_url_error("잘못된 URL 주소입니다. 확인 후 다시 입력해주세요.")
-    end
-
-    unless UrlFavorites::Domain::Urls::SafetyPolicy.allowed?(normalized)
+    rescue UrlFavorites::Domain::Errors::UnsafeUrl
       return render_url_error("접근할 수 없는 URL입니다.")
     end
 
-    content_type = UrlFavorites::Domain::Urls::TypeDetector.call(normalized)
-    @favorite = Favorite.new(
-      url: normalized,
-      title: normalized,
-      content_type: content_type,
-      status: "analyzing"
-    )
+    @favorite = result.value[:favorite]
 
-    if @favorite.save
-      UrlFavorites::UseCases::Analysis::EnqueueAnalysis.call(favorite_id: @favorite.id)
-
+    if result.value[:created]
       respond_to do |format|
         format.turbo_stream
         format.html { redirect_to favorites_url, notice: "URL이 저장되었습니다. 분석을 시작합니다." }
       end
     else
-      if Favorite.exists?(url: normalized)
-        existing = Favorite.find_by(url: normalized)
-        redirect_to favorite_url(existing), alert: "이미 등록된 URL입니다. 기존 북마크로 이동합니다."
-      else
-        redirect_to favorites_url, alert: "저장에 실패했습니다. 다시 시도해주세요."
-      end
+      redirect_to favorite_url(@favorite), alert: "이미 등록된 URL입니다. 기존 북마크로 이동합니다."
     end
   end
 
   def destroy
-    @favorite = Favorite.find(params[:id])
-    UrlFavorites::Integrations::Search::Indexer.remove(@favorite.id)
-    @favorite.destroy
+    UrlFavorites::UseCases::Favorites::DeleteFavorite.call(id: params[:id])
     redirect_to favorites_url, notice: "Deleted"
   end
 
   def retry
-    @favorite = Favorite.find(params[:id])
-    @favorite.update!(status: "pending")
-    UrlFavorites::UseCases::Analysis::EnqueueAnalysis.call(favorite_id: @favorite.id)
+    @favorite = UrlFavorites::UseCases::Favorites::RetryAnalysis.call(id: params[:id])
     redirect_to favorite_url(@favorite), notice: "Retrying analysis"
   end
 
   def toggle_pin
-    @favorite = Favorite.find(params[:id])
-    @favorite.update!(pinned: !@favorite.pinned)
+    @favorite = UrlFavorites::UseCases::Favorites::TogglePin.call(id: params[:id])
     redirect_back_or_to favorites_url, notice: @favorite.pinned? ? "북마크가 핀되었습니다" : "핀 해제되었습니다"
   end
 

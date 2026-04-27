@@ -65,7 +65,7 @@ class WeeklyNewsletterJobTest < ActiveSupport::TestCase
     fav.create_analysis!(summary: nil, tags: [])
 
     assert_nothing_raised do
-      digest = WeeklyNewsletterJob.new.send(:build_digest, [fav])
+      digest = UrlFavorites::UseCases::Newsletter::SendWeeklyNewsletter.build_digest([fav])
       assert_nil digest[:favorites][0][:summary]
       assert_equal [], digest[:favorites][0][:tags]
     end
@@ -82,8 +82,7 @@ class WeeklyNewsletterJobTest < ActiveSupport::TestCase
     )
     fav.create_analysis!(summary: "Test summary", tags: ["ruby", "rails"])
 
-    job = WeeklyNewsletterJob.new
-    digest = job.send(:build_digest, [fav])
+    digest = UrlFavorites::UseCases::Newsletter::SendWeeklyNewsletter.build_digest([fav])
 
     assert_equal 1, digest[:favorites_count]
     assert_equal "Test Title", digest[:favorites].first[:title]
