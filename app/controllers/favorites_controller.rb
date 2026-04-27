@@ -96,8 +96,10 @@ class FavoritesController < ApplicationController
   end
 
   def update_category
-    @favorite = Favorite.find(params[:id])
-    @favorite.update!(category: params[:category])
+    @favorite = UrlFavorites::UseCases::Favorites::UpdateCategory.call(
+      id: params[:id],
+      category: params[:category]
+    )
 
     respond_to do |format|
       format.turbo_stream do

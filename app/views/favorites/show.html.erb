@@ -26,7 +26,9 @@
 
     <% host = URI.parse(@favorite.url).host rescue nil %>
     <div class="flex items-center gap-2" style="font-size:var(--text-xs);color:var(--color-text-tertiary);">
-      <img src="https://www.google.com/s2/favicons?domain=<%= host || @favorite.url %>&sz=16" alt="" class="w-3.5 h-3.5 rounded-sm" onerror="this.style.display='none'">
+      <% if @favorite.favicon_url.present? %>
+      <img src="<%= @favorite.favicon_url %>" alt="" class="w-3.5 h-3.5 rounded-sm" onerror="this.style.display='none'">
+      <% end %>
       <span class="truncate"><%= host&.sub(/^www\./, "") || @favorite.url %></span>
       <span style="color:var(--color-border);">·</span>
       <a href="<%= @favorite.url %>" target="_blank" rel="noopener noreferrer" style="color:var(--color-accent-text);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">원본 링크 ↗</a>
@@ -237,8 +239,9 @@
   </section>
 
   <%# ── 10. 같은 컬렉션 ── %>
-  <% related = @favorite.respond_to?(:collection_id) && @favorite.collection_id.present? \
-       ? Favorite.where(collection_id: @favorite.collection_id).where.not(id: @favorite.id).where(status: "done").order(created_at: :desc).limit(5) \
+  <% collection_ids = @favorite.collections.ids %>
+  <% related = collection_ids.any? \
+       ? Favorite.joins(:collections).where(collections: { id: collection_ids }).where.not(id: @favorite.id).where(status: "done").distinct.order(created_at: :desc).limit(5) \
        : Favorite.none %>
   <% if related.any? %>
     <section class="mb-8"

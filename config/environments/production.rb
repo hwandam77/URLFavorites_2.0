@@ -78,6 +78,22 @@ Rails.application.configure do
   # 프로덕션에서는 :id 만 검사에 사용합니다.
   config.active_record.attributes_for_inspect = [ :id ]
 
+  # Content Security Policy
+  config.content_security_policy do |policy|
+    policy.default_src :self
+    policy.font_src    :self, :data
+    policy.img_src     :self, :data, :https
+    policy.object_src  :none
+    policy.script_src  :self, "https://cdn.jsdelivr.net"
+    policy.style_src   :self, :unsafe_inline
+    policy.frame_src   :self, "https://www.youtube.com"
+    policy.connect_src :self, "ws:", "wss:"
+    policy.base_uri    :self
+    policy.form_action :self
+  end
+  config.content_security_policy_nonce_generator = ->(request) { SecureRandom.base64(16) }
+  config.content_security_policy_nonce_directives = %w[script-src]
+
   # DNS 리바인딩 보호 및 기타 `Host` 헤더 공격을 활성화합니다.
   config.hosts = [
     "urlf.hwandam.kr",
