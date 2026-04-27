@@ -42,7 +42,9 @@ FOREIGN KEY ("favorite_id")
 CREATE UNIQUE INDEX "index_analyses_on_favorite_id" ON "analyses" ("favorite_id") /*application='UrlFavorites20'*/;
 CREATE INDEX "index_favorites_on_category" ON "favorites" ("category") /*application='UrlFavorites20'*/;
 CREATE INDEX "index_favorites_on_pinned" ON "favorites" ("pinned") /*application='UrlFavorites20'*/;
+CREATE UNIQUE INDEX "index_favorites_on_id" ON "favorites" ("id") /*application='UrlFavorites20'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260418000001'),
 ('20260414000001'),
 ('20260413000002'),
 ('20260413000001'),

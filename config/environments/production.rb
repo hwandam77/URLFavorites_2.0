@@ -88,8 +88,7 @@ Rails.application.configure do
   # 기본 건강 상태 확인 엔드포인트에 대해 DNS 리바인딩 보호를 건너뜁니다.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 
-  # 서브패스 배포 (/ver2.0)
-  config.relative_url_root = ENV.fetch("RAILS_RELATIVE_URL_ROOT", nil)
+  # 루트 경로 배포 (https://urlf.hwandam.kr/)
 
   # LLAMA_SERVER_URL 이 없으면 시작 거부 (AI 분석 필수 의존성)
   config.after_initialize do

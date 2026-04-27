@@ -154,9 +154,9 @@ DISPATCH="/Users/hwandam/workspace/infrastructure/llm-orchestration/dispatch.sh"
 
 ```ini
 [Service]
-Environment=LLAMA_SERVER_URL=http://100.99.181.122:8282
+Environment=LLAMA_SERVER_URL=http://10.10.0.5:8282
 Environment=PORT=3001
-Environment=RAILS_RELATIVE_URL_ROOT=/ver2.0
+Environment=SOLID_QUEUE_IN_PUMA=1
 ```
 
 변경 시: `sudo systemctl daemon-reload && sudo systemctl restart rails-puma@urlfavorites_2.0`
