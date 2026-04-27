@@ -63,8 +63,7 @@
 
     <%# ── 1. 리드 (한 줄 요약 인용) ── %>
     <% if @favorite.analysis.summary.present? %>
-      <div class="mb-10" style="padding:20px 24px;border-left:3px solid var(--color-accent);background:var(--color-surface);border-radius:0 var(--radius-md) var(--radius-md) 0;"
-           style="background:linear-gradient(90deg, var(--color-accent-muted) 0%, var(--color-surface) 100%);"
+      <div class="mb-10" style="padding:20px 24px;border-left:3px solid var(--color-accent);background:linear-gradient(90deg, var(--color-accent-muted) 0%, var(--color-surface) 100%);border-radius:0 var(--radius-md) var(--radius-md) 0;"
       >
         <p style="font-size:var(--text-lg);font-weight:600;color:var(--color-text);line-height:1.6;margin:0;"
            class="line-clamp-4"
@@ -77,8 +76,7 @@
     <%# ── 2. 시각적 리드 ── %>
     <% if has_youtube_thumbnail %>
       <figure class="mb-10">
-        <div class="relative overflow-hidden rounded-lg" style="border:1px solid var(--color-border);"
-             style="aspect-ratio:16/9;"
+        <div class="relative overflow-hidden rounded-lg" style="border:1px solid var(--color-border);aspect-ratio:16/9;"
         >
           <img src="<%= @favorite.thumbnail_url %>"
                alt="썸네일"

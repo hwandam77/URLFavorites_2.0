@@ -17,6 +17,7 @@ Rails.application.routes.draw do
     patch :update_category, on: :member
     post :retry, on: :member
     post :toggle_pin, on: :member
+    post :share, on: :collection
   end
 
   resources :collections, only: %i[index show create update destroy]

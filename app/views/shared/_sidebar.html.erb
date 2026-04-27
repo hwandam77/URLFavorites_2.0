@@ -102,7 +102,7 @@
     <button type="button"
             onclick="(function(){var h=document.documentElement;if(h.classList.contains('dark')){h.classList.remove('dark');h.classList.add('sepia');localStorage.setItem('theme','sepia');}else if(h.classList.contains('sepia')){h.classList.remove('sepia');localStorage.removeItem('theme');}else{h.classList.add('dark');localStorage.setItem('theme','dark');}})()"
             class="flex items-center gap-2.5 w-full px-3 py-2 rounded-md transition-all"
-            style="color:var(--color-text-secondary);background:var(--color-surface-hover);"
+            style="color:var(--color-text-secondary);background:transparent;"
             onmouseover="this.style.background='var(--color-surface-hover)'"
             onmouseout="this.style.background='transparent'">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">

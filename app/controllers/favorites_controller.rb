@@ -1,4 +1,7 @@
 class FavoritesController < ApplicationController
+  # PWA 공유 대상 POST는 CSRF 토큰이 없으므로 해당 액션만 인증 건너뜀
+  skip_before_action :verify_authenticity_token, only: :share
+
   def index
     @favorites = UrlFavorites::UseCases::Search::FavoriteSearch.call(
       query: params[:q],
@@ -39,6 +42,41 @@ class FavoritesController < ApplicationController
       end
     else
       redirect_to favorite_url(@favorite), alert: "이미 등록된 URL입니다. 기존 북마크로 이동합니다."
+    end
+  end
+
+  # PWA 공유 대상 — POST /favorites/share
+  # 모바일 브라우저 공유 시트에서 호출됨. CSRF 보호 없이 URL을 받아 저장.
+  def share
+    url = params.dig(:favorite, :url).to_s.strip
+
+    # 일부 브라우저는 URL을 text 필드에 담아 보냄
+    if url.blank?
+      text = params.dig(:favorite, :text).to_s.strip
+      url = text if text.match?(/\Ahttps?:\/\//)
+    end
+
+    if url.blank?
+      redirect_to favorites_url, alert: "공유된 URL을 찾을 수 없습니다."
+      return
+    end
+
+    result = begin
+      UrlFavorites::UseCases::Favorites::CreateFavorite.call(url: url)
+    rescue URI::InvalidURIError, ArgumentError
+      redirect_to favorites_url, alert: "잘못된 URL 주소입니다."
+      return
+    rescue UrlFavorites::Domain::Errors::UnsafeUrl
+      redirect_to favorites_url, alert: "접근할 수 없는 URL입니다."
+      return
+    end
+
+    @favorite = result.value[:favorite]
+
+    if result.value[:created]
+      redirect_to favorite_url(@favorite), notice: "URL이 저장되었습니다. 분석을 시작합니다."
+    else
+      redirect_to favorite_url(@favorite), alert: "이미 등록된 URL입니다."
     end
   end
 
