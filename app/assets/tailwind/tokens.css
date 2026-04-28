@@ -34,11 +34,11 @@
   --text-3xl: 36px;
 
   /* ── Color Tokens — Warm Tactile (Default) ── */
-  --color-bg: #f7f3ec;
+  --color-bg: #f3ecdf;
   --color-surface: #fffdf8;
   --color-surface-raised: #faf6ee;
   --color-surface-hover: #efe8dc;
-  --color-command-bg: rgba(255, 253, 248, 0.86);
+  --color-command-bg: rgba(255, 253, 248, 0.82);
   --color-border: #d8cec0;
   --color-border-strong: #b9ab99;
   --color-border-subtle: #ebe3d7;

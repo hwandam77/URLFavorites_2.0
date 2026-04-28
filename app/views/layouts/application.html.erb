@@ -41,9 +41,19 @@
         flex: 1;
         overflow-y: auto;
         background:
-          linear-gradient(rgba(36, 31, 24, 0.028) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(36, 31, 24, 0.022) 1px, transparent 1px),
-          radial-gradient(circle at top left, var(--color-accent-muted), transparent 360px),
+          linear-gradient(rgba(36, 31, 24, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(36, 31, 24, 0.032) 1px, transparent 1px),
+          radial-gradient(circle at 20% 10%, rgba(183, 101, 70, 0.14), transparent 30rem),
+          linear-gradient(120deg, rgba(255, 253, 248, 0.72), rgba(239, 232, 220, 0.88)),
+          var(--color-bg);
+        background-size: 18px 18px, 18px 18px, auto, auto;
+      }
+
+      .dark .main-content {
+        background:
+          linear-gradient(rgba(242, 234, 220, 0.028) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(242, 234, 220, 0.02) 1px, transparent 1px),
+          radial-gradient(circle at 20% 10%, rgba(255, 95, 31, 0.10), transparent 30rem),
           var(--color-bg);
         background-size: 18px 18px, 18px 18px, auto, auto;
       }
