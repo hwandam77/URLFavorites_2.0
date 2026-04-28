@@ -5,8 +5,8 @@
   <div class="mb-8">
     <h1 style="
       font-size:var(--text-3xl);
-      font-weight:800;
-      letter-spacing:-1.2px;
+      font-weight:650;
+      letter-spacing:-0.02em;
       color:var(--color-text);
       line-height:1;
       margin-bottom:6px;
@@ -17,7 +17,7 @@
   </div>
 
   <%# ── URL 추가 폼 ── %>
-  <div id="url-form" class="mb-8 p-4 rounded-lg" style="background:var(--color-surface);border:1px solid var(--color-border);">
+  <div id="url-form" class="mb-8 p-4 rounded-md" style="background:var(--color-surface);border:1px solid var(--color-border);">
     <%= form_with url: favorites_path, method: :post, class: "flex gap-3" do |f| %>
       <%= f.text_field :url, name: "favorite[url]",
         placeholder: "분석할 URL을 붙여넣으세요...",
@@ -63,7 +63,7 @@
     <%# 좌측: 필터 pill 그룹 %>
     <div class="flex items-center gap-3 flex-wrap">
       <%# 유형 필터 %>
-      <div class="flex items-center gap-1.5 rounded-lg" style="background:var(--color-surface);border:1px solid var(--color-border);padding:5px;">
+      <div class="flex items-center gap-1.5 rounded-md" style="background:var(--color-surface);border:1px solid var(--color-border);padding:5px;">
         <%
           type_options = [["전체", nil], ["웹", "webpage"], ["YouTube", "youtube"], ["GitHub", "github"]]
           type_options.each do |label, value|
@@ -79,7 +79,7 @@
       </div>
 
       <%# 카테고리 필터 %>
-      <div class="flex items-center gap-1.5 rounded-lg" style="background:var(--color-surface);border:1px solid var(--color-border);padding:5px;">
+      <div class="flex items-center gap-1.5 rounded-md" style="background:var(--color-surface);border:1px solid var(--color-border);padding:5px;">
         <%
           category_options = Favorite::CATEGORIES
           category_options.each do |label|
@@ -95,7 +95,7 @@
       </div>
 
       <%# 상태 필터 %>
-      <div class="flex items-center gap-1.5 rounded-lg" style="background:var(--color-surface);border:1px solid var(--color-border);padding:5px;">
+      <div class="flex items-center gap-1.5 rounded-md" style="background:var(--color-surface);border:1px solid var(--color-border);padding:5px;">
         <%
           status_options = [["전체", nil], ["대기", "pending"], ["분석중", "analyzing"], ["완료", "done"], ["실패", "failed"]]
           status_options.each do |label, value|
@@ -141,7 +141,7 @@
       </div>
 
       <%# 뷰모드 토글 %>
-      <div class="flex items-center gap-0.5 rounded-lg" style="background:var(--color-surface);border:1px solid var(--color-border);padding:5px;" data-controller="view-mode">
+      <div class="flex items-center gap-0.5 rounded-md" style="background:var(--color-surface);border:1px solid var(--color-border);padding:5px;" data-controller="view-mode">
         <button type="button"
           style="
             padding:6px 12px;
@@ -192,7 +192,7 @@
       <%= render "empty_state" %>
     </div>
     <%# 리스트 뷰 %>
-    <div class="hidden rounded-lg overflow-hidden" style="border:1px solid var(--color-border);" data-view-mode-target="listView">
+    <div class="hidden rounded-md overflow-hidden" style="border:1px solid var(--color-border);" data-view-mode-target="listView">
       <table class="w-full" style="background:var(--color-surface);">
         <thead>
           <tr style="border-bottom:1px solid var(--color-border);">
