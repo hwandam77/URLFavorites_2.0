@@ -22,10 +22,10 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Google Fonts — Inter (Notion 디자인 시스템 기반) %>
+    <%# Google Fonts — Warm Tactile Command Grid %>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
@@ -40,7 +40,12 @@
       .main-content {
         flex: 1;
         overflow-y: auto;
-        background-color: var(--color-bg);
+        background:
+          linear-gradient(rgba(36, 31, 24, 0.028) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(36, 31, 24, 0.022) 1px, transparent 1px),
+          radial-gradient(circle at top left, var(--color-accent-muted), transparent 360px),
+          var(--color-bg);
+        background-size: 18px 18px, 18px 18px, auto, auto;
       }
 
       /* ── Mobile: Sidebar Drawer ── */
@@ -61,6 +66,58 @@
       :focus-visible {
         outline: 2px solid var(--color-focus-ring);
         outline-offset: 2px;
+      }
+
+      .urlf-workspace-header,
+      .urlf-workspace-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-5);
+      }
+
+      .urlf-command-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-3);
+      }
+
+      .urlf-desktop-rail {
+        display: none;
+      }
+
+      .urlf-card-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-3);
+      }
+
+      @media (min-width: 768px) {
+        .urlf-card-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (min-width: 1024px) {
+        .urlf-command-grid {
+          grid-template-columns: minmax(320px, 1fr) minmax(280px, 0.8fr) auto;
+        }
+      }
+
+      @media (min-width: 1280px) {
+        .urlf-workspace-header,
+        .urlf-workspace-body {
+          grid-template-columns: minmax(0, 1fr) 320px;
+        }
+
+        .urlf-desktop-rail {
+          display: block;
+        }
+      }
+
+      @media (min-width: 1536px) {
+        .urlf-card-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
       }
     </style>
 

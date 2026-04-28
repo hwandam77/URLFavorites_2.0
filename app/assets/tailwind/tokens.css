@@ -1,8 +1,7 @@
 /* ================================================
    URLFavorites 2.0 — Design Tokens
-   Archetype: Warm Archive (Editorial Swiss)
-   Differentiator: Warm amber accent on layered surfaces
-                   with typographic hierarchy
+   Archetype: Warm Tactile Command Grid
+   Differentiator: Dense command surface with quiet AI context rail
 ================================================ */
 
 :root {
@@ -34,22 +33,25 @@
   --text-2xl: 28px;
   --text-3xl: 36px;
 
-  /* ── Color Tokens — Light Editorial (Default) ── */
-  --color-bg: #faf9f6;
-  --color-surface: #ffffff;
-  --color-surface-raised: #f5f4f0;
-  --color-surface-hover: #eeece6;
-  --color-border: #e5e3de;
-  --color-border-strong: #d4d0c8;
-  --color-border-subtle: #f0eeea;
-  --color-accent: #c41e3a;
-  --color-accent-hover: #a01830;
-  --color-accent-muted: rgba(196, 30, 58, 0.06);
-  --color-accent-text: #b91c1c;
-  --color-text: #1a1a1a;
-  --color-text-secondary: #4a4a4a;
-  --color-text-tertiary: #8a8a8a;
-  --color-text-placeholder: #bfbdb8;
+  /* ── Color Tokens — Warm Tactile (Default) ── */
+  --color-bg: #f7f3ec;
+  --color-surface: #fffdf8;
+  --color-surface-raised: #faf6ee;
+  --color-surface-hover: #efe8dc;
+  --color-command-bg: rgba(255, 253, 248, 0.86);
+  --color-border: #d8cec0;
+  --color-border-strong: #b9ab99;
+  --color-border-subtle: #ebe3d7;
+  --color-accent: #b76546;
+  --color-accent-hover: #955137;
+  --color-accent-muted: rgba(183, 101, 70, 0.10);
+  --color-accent-text: #91452d;
+  --color-ai-accent: #b98a42;
+  --color-ai-muted: rgba(185, 138, 66, 0.12);
+  --color-text: #241f18;
+  --color-text-secondary: #534a40;
+  --color-text-tertiary: #766c60;
+  --color-text-placeholder: #a99d8f;
 
   /* Status */
   --color-pending-bg: rgba(180, 130, 0, 0.08);
@@ -70,15 +72,15 @@
   --color-overlay: rgba(0, 0, 0, 0.3);
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 2px 8px rgba(0,0,0,0.06);
-  --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-sm: 0 1px 2px rgba(50,38,24,0.05);
+  --shadow-md: 0 8px 24px rgba(50,38,24,0.08);
+  --shadow-lg: 0 22px 70px rgba(50,38,24,0.12);
 
   color-scheme: light;
 }
 
 body {
-  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  font-family: 'IBM Plex Sans', 'Pretendard', -apple-system, system-ui, sans-serif;
   font-size: var(--text-base);
   background-color: var(--color-bg);
   color: var(--color-text);
@@ -92,6 +94,7 @@ body {
   --color-surface: #fdf6e3;
   --color-surface-raised: #eee8d5;
   --color-surface-hover: #e6dec3;
+  --color-command-bg: rgba(253, 246, 227, 0.88);
   --color-border: #d5cdb0;
   --color-border-strong: #bfb492;
   --color-border-subtle: #e0d8c0;
@@ -99,6 +102,8 @@ body {
   --color-accent-hover: #6d360f;
   --color-accent-muted: rgba(139, 69, 19, 0.08);
   --color-accent-text: #8b4513;
+  --color-ai-accent: #a87928;
+  --color-ai-muted: rgba(168, 121, 40, 0.12);
   --color-text: #433422;
   --color-text-secondary: #5c4d3c;
   --color-text-tertiary: #8a7a68;
@@ -136,6 +141,7 @@ body {
   --color-surface: #191714;
   --color-surface-raised: #211e1a;
   --color-surface-hover: #2a251f;
+  --color-command-bg: rgba(25, 23, 20, 0.88);
   --color-border: #302b25;
   --color-border-strong: #463d33;
   --color-border-subtle: #25211d;
@@ -143,6 +149,8 @@ body {
   --color-accent-hover: #e54d0f;
   --color-accent-muted: rgba(255, 95, 31, 0.10);
   --color-accent-text: #ff7a3d;
+  --color-ai-accent: #d2a65a;
+  --color-ai-muted: rgba(210, 166, 90, 0.12);
   --color-text: #e4e4e4;
   --color-text-secondary: #a0a0a0;
   --color-text-tertiary: #666666;
