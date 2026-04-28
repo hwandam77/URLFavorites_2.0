@@ -91,6 +91,20 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Test"
   end
 
+  test "GET /favorites/:id 원본 링크 열기 버튼을 표시합니다" do
+    fav = Favorite.create!(
+      title: "Original Link",
+      url: "https://example.com/original",
+      content_type: "webpage",
+      status: "done"
+    )
+
+    get favorite_url(fav)
+
+    assert_response :success
+    assert_select "a[href='https://example.com/original'][target='_blank']", text: /원본 링크 열기/
+  end
+
   test "DELETE /favorites/:id 즐겨찾기를 삭제합니다" do
     fav = Favorite.create!(
       title: "Delete Me",
