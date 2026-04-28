@@ -61,4 +61,32 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
       UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "webpage")
     end
   end
+
+  def test_youtube_requests_use_specialized_analysis_prompt
+    stub_request(:post, ENV.fetch("LLAMA_SERVER_URL", "http://localhost:8080") + "/v1/chat/completions")
+      .with do |request|
+        body = JSON.parse(request.body)
+        system_message = body.fetch("messages").first.fetch("content")
+        user_message = body.fetch("messages").last.fetch("content")
+
+        assert_includes system_message, "For YouTube content"
+        assert_includes system_message, "AI execution brief"
+        assert_includes system_message, "ready-to-use prompt"
+        assert_includes system_message, "## 콘텐츠의 목적과 핵심 주장"
+        assert_includes system_message, "## 실행 가능한 절차"
+        assert_includes system_message, "## 바로 사용 가능한 AI 프롬프트"
+        assert_includes system_message, "역할"
+        assert_includes system_message, "작업"
+        assert_includes system_message, "입력"
+        assert_includes system_message, "출력 형식"
+        assert_includes system_message, "reuse the video's method"
+        assert_includes system_message, "미확인"
+        assert_includes system_message, "timestamp may be an empty string"
+        assert_includes user_message, "youtube:"
+        true
+      end
+      .to_return(status: 200, body: @valid_response, headers: { "Content-Type" => "application/json" })
+
+    UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "youtube")
+  end
 end

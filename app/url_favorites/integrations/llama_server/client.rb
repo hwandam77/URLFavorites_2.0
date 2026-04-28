@@ -54,7 +54,7 @@ module UrlFavorites
           body = {
             model: model,
             messages: [
-              { role: "system", content: system_prompt },
+              { role: "system", content: system_prompt(type) },
               { role: "user", content: "#{type}: #{content}" }
             ],
             response_format: { type: "json_object" }
@@ -132,13 +132,19 @@ module UrlFavorites
           raise ParseError, "Missing keys: #{missing.join(", ")}" if missing.any?
         end
 
-        def self.system_prompt
+        def self.system_prompt(type = nil)
           <<~PROMPT
             You are a content classifier for a personal bookmark manager.
             Analyze the given content and respond with valid JSON only:
             {
               "summary": "2-3 sentence summary in Korean",
-              "key_points": ["point1", "point2", "point3"],
+              "key_points": [
+                {
+                  "category": "핵심 분류",
+                  "point": "구체적이고 실행 가능한 핵심 내용",
+                  "timestamp": "영상 근거 시간이 있으면 HH:MM:SS, 없으면 빈 문자열"
+                }
+              ],
               "tags": ["tag1", "tag2", "tag3"],
               "sentiment": "positive|neutral|negative",
               "detail_content": "분석 대상의 상세 내용 3~5문단"
@@ -147,8 +153,31 @@ module UrlFavorites
             - tags: 3-7 lowercase English words or Korean words
             - summary: under 200 characters
             - key_points: max 5 items
-            - detail_content: 웹페이지 전체 핵심 내용 3~5문단으로 작성
+            - detail_content: 전체 핵심 내용 3~5문단으로 작성
+            #{youtube_prompt_rules if type == "youtube"}
           PROMPT
+        end
+
+        def self.youtube_prompt_rules
+          <<~RULES
+
+            For YouTube content:
+            - Treat the video as source material for a professional AI execution brief, not a casual summary.
+            - detail_content must be a Korean markdown document with these exact section headings:
+              ## 콘텐츠의 목적과 핵심 주장
+              ## 실행 가능한 절차
+              ## 바로 사용 가능한 AI 프롬프트
+              ## 필요한 입력값, 전제 조건, 주의할 리스크
+              ## 추가로 확인하면 좋은 질문
+            - In "## 실행 가능한 절차", write steps a human can perform manually.
+            - In "## 바로 사용 가능한 AI 프롬프트", write one complete ready-to-use prompt that another AI can execute immediately.
+            - The purpose of "## 바로 사용 가능한 AI 프롬프트" is to help the user reuse the video's method on their own input or task.
+            - The ready-to-use prompt must explicitly include 역할, 작업, 입력, and 출력 형식.
+            - If the title, description, or transcript does not provide evidence for a section, write "미확인" instead of guessing.
+            - timestamp may be an empty string when transcript time evidence is unavailable.
+            - key_points should prefer actionable insights over generic topic labels.
+            - Do not invent details that are not grounded in the title, description, or transcript.
+          RULES
         end
 
         private_class_method(
@@ -157,7 +186,8 @@ module UrlFavorites
           :extract_result_from,
           :strip_json_fences,
           :validate_required_keys!,
-          :system_prompt
+          :system_prompt,
+          :youtube_prompt_rules
         )
       end
     end

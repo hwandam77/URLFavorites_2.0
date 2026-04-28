@@ -32,12 +32,33 @@ module UrlFavorites
             r = UrlFavorites::Integrations::Youtube::Extractor.call(favorite.url)
             favorite.update!(thumbnail_url: r[:thumbnail_url]) if r[:thumbnail_url].present?
             favorite.update!(title: r[:title]) if r[:title].present? && (favorite.title.blank? || favorite.title.to_s.start_with?("http://", "https://"))
-            r[:transcript].to_s
+            youtube_analysis_input(r)
           else
             r = UrlFavorites::Integrations::Webpage::Scraper.call(favorite.url)
             favorite.update!(title: r[:title]) if r[:title].present?
             [ r[:title], r[:body_text] ].compact.join(" ")
           end
+        end
+
+        def self.youtube_analysis_input(extraction)
+          <<~CONTENT
+            Title: #{extraction[:title]}
+            Description: #{extraction[:description]}
+            Subtitle source: #{extraction[:subtitle_source].presence || "unknown"}
+
+            Analysis goal:
+            이 YouTube 콘텐츠를 단순 요약하지 말고, 사용자가 바로 AI에게 지시하여 실행할 수 있는 AI 실행 브리프 수준으로 분석한다.
+            핵심 주장, 실행 절차, 필요한 입력값, 주의사항, 재사용 가능한 프롬프트를 구분해서 추출한다.
+
+            Required focus:
+            - 영상의 목적과 대상 독자
+            - 바로 실행 가능한 단계별 절차
+            - 다른 AI에게 그대로 전달할 수 있는 지시문/프롬프트
+            - 영상 내용에서 근거가 확인되는 제약, 전제, 리스크
+
+            Transcript:
+            #{extraction[:transcript]}
+          CONTENT
         end
 
         def self.upsert_analysis!(favorite, raw_content, analysis_result)
