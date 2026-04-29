@@ -71,7 +71,7 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
         user_message = body.fetch("messages").last.fetch("content")
 
         assert_includes system_message, "For YouTube content"
-        assert_includes system_message, "AI execution brief"
+        assert_includes system_message, "professional AI analysis artifact"
         assert_includes system_message, "ready-to-use prompt"
         assert_includes system_message, "## 콘텐츠의 목적과 핵심 주장"
         assert_includes system_message, "## 영상에서 제공한 GitHub 링크"
@@ -89,6 +89,7 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
         assert_includes system_message, "use only timestamps shown"
         assert_includes system_message, "timestamp may be an empty string"
         assert_includes style_message, "Analysis style: execution_brief"
+        assert_includes style_message, "mandatory"
         assert_includes style_message, "AI execution brief"
         assert_includes user_message, "youtube:"
         true
@@ -102,8 +103,15 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
     stub_request(:post, ENV.fetch("LLAMA_SERVER_URL", "http://localhost:8080") + "/v1/chat/completions")
       .with do |request|
         body = JSON.parse(request.body)
+        system_message = body.fetch("messages").first.fetch("content")
         style_message = body.fetch("messages").second.fetch("content")
 
+        assert_includes system_message, "## 기본 질문"
+        assert_includes system_message, "## 심화 질문"
+        assert_includes system_message, "## 흔한 오해"
+        assert_includes system_message, "do not use the execution_brief section order"
+        assert_not_includes system_message, "## 콘텐츠의 목적과 핵심 주장"
+        assert_not_includes system_message, "## 실행 가능한 절차"
         assert_includes style_message, "Analysis style: qna"
         assert_includes style_message, "Korean Q&A document"
         true
@@ -111,5 +119,23 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
       .to_return(status: 200, body: @valid_response, headers: { "Content-Type" => "application/json" })
 
     UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "youtube", analysis_style: "qna")
+  end
+
+  def test_youtube_tutorial_style_uses_tutorial_sections
+    stub_request(:post, ENV.fetch("LLAMA_SERVER_URL", "http://localhost:8080") + "/v1/chat/completions")
+      .with do |request|
+        body = JSON.parse(request.body)
+        system_message = body.fetch("messages").first.fetch("content")
+
+        assert_includes system_message, "## 준비물"
+        assert_includes system_message, "## 단계별 실행"
+        assert_includes system_message, "## 검증 체크"
+        assert_includes system_message, "## 자주 막히는 지점"
+        assert_not_includes system_message, "## 콘텐츠의 목적과 핵심 주장"
+        true
+      end
+      .to_return(status: 200, body: @valid_response, headers: { "Content-Type" => "application/json" })
+
+    UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "youtube", analysis_style: "tutorial")
   end
 end

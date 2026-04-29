@@ -24,10 +24,11 @@ module UrlFavorites
 
         def self.call(content, type:, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT)
           backends = resolve_backends
+          normalized_style = UrlFavorites::Domain::Analysis::PromptStyle.normalize(analysis_style)
 
           last_error = nil
           backends.each do |backend|
-            result = attempt_backend(backend, content, type, analysis_style)
+            result = attempt_backend(backend, content, type, normalized_style)
             return result if result
           rescue ServerError, ParseError => e
             last_error = e
@@ -54,7 +55,7 @@ module UrlFavorites
           body = {
             model: model,
             messages: [
-              { role: "system", content: system_prompt(type) },
+              { role: "system", content: system_prompt(type, analysis_style) },
               { role: "system", content: style_prompt(analysis_style) },
               { role: "user", content: "#{type}: #{content}" }
             ],
@@ -133,7 +134,9 @@ module UrlFavorites
           raise ParseError, "Missing keys: #{missing.join(", ")}" if missing.any?
         end
 
-        def self.system_prompt(type = nil)
+        def self.system_prompt(type = nil, analysis_style = UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT)
+          normalized_style = UrlFavorites::Domain::Analysis::PromptStyle.normalize(analysis_style)
+
           <<~PROMPT
             You are a content classifier for a personal bookmark manager.
             Analyze the given content and respond with valid JSON only:
@@ -155,28 +158,20 @@ module UrlFavorites
             - summary: under 200 characters
             - key_points: max 5 items
             - detail_content: 전체 핵심 내용 3~5문단으로 작성
-            #{youtube_prompt_rules if type == "youtube"}
+            #{youtube_prompt_rules(normalized_style) if type == "youtube"}
           PROMPT
         end
 
-        def self.youtube_prompt_rules
+        def self.youtube_prompt_rules(analysis_style)
           <<~RULES
 
             For YouTube content:
-            - Treat the video as source material for a professional AI execution brief, not a casual summary.
-            - detail_content must be a Korean markdown document with these exact section headings:
-              ## 콘텐츠의 목적과 핵심 주장
-              ## 영상에서 제공한 GitHub 링크
-              ## 실행 가능한 절차
-              ## 바로 사용 가능한 AI 프롬프트
-              ## 필요한 입력값, 전제 조건, 주의할 리스크
-              ## 추가로 확인하면 좋은 질문
+            - Treat the video as source material for a professional AI analysis artifact, not a casual summary.
+            #{youtube_detail_content_rules(analysis_style)}
             - In "## 영상에서 제공한 GitHub 링크", preserve only GitHub URLs explicitly present in "Provided GitHub links"; copy each URL exactly as a markdown bullet.
             - If "Provided GitHub links" is "미확인" or empty, write "미확인" in that section.
-            - In "## 실행 가능한 절차", write steps a human can perform manually.
-            - In "## 바로 사용 가능한 AI 프롬프트", write one complete ready-to-use prompt that another AI can execute immediately.
-            - The purpose of "## 바로 사용 가능한 AI 프롬프트" is to help the user reuse the video's method on their own input or task.
-            - The ready-to-use prompt must explicitly include 역할, 작업, 입력, and 출력 형식.
+            - When the selected style is not execution_brief, do not use the execution_brief section order.
+            - If a ready-to-use prompt section is requested, it must explicitly include 역할, 작업, 입력, and 출력 형식.
             - When "Timestamped transcript sample" is provided, key_points timestamps must use only timestamps shown in that sample.
             - If the title, description, or transcript does not provide evidence for a section, write "미확인" instead of guessing.
             - timestamp may be an empty string when transcript time evidence is unavailable.
@@ -185,10 +180,69 @@ module UrlFavorites
           RULES
         end
 
+        def self.youtube_detail_content_rules(analysis_style)
+          case analysis_style
+          when "qna"
+            <<~RULES
+              - detail_content must be a Korean markdown Q&A document.
+              - detail_content must start with exactly: ## 기본 질문
+              - Use these exact section headings in this order:
+                ## 기본 질문
+                ## 심화 질문
+                ## 흔한 오해
+                ## 후속 탐구 주제
+                ## 영상에서 제공한 GitHub 링크
+              - Include exactly three basic questions, two advanced questions, one common misconception, and follow-up topics.
+            RULES
+          when "tutorial"
+            <<~RULES
+              - detail_content must be a Korean markdown step-by-step tutorial.
+              - detail_content must start with exactly: ## 준비물
+              - Use these exact section headings in this order:
+                ## 준비물
+                ## 단계별 실행
+                ## 기대 결과
+                ## 검증 체크
+                ## 자주 막히는 지점
+                ## 영상에서 제공한 GitHub 링크
+              - Steps must be concrete actions a human can perform manually.
+            RULES
+          when "prompt_extract"
+            <<~RULES
+              - detail_content must be reusable AI instructions only.
+              - detail_content must start with exactly: ## 바로 복사할 프롬프트
+              - Use these exact section headings in this order:
+                ## 바로 복사할 프롬프트
+                ## 역할
+                ## 작업
+                ## 입력 형식
+                ## 출력 형식
+                ## 제약 조건
+                ## 검증 체크리스트
+                ## 영상에서 제공한 GitHub 링크
+              - The prompt must be directly copyable into another AI session.
+            RULES
+          else
+            <<~RULES
+              - detail_content must be a Korean markdown document with these exact section headings:
+                ## 콘텐츠의 목적과 핵심 주장
+                ## 영상에서 제공한 GitHub 링크
+                ## 실행 가능한 절차
+                ## 바로 사용 가능한 AI 프롬프트
+                ## 필요한 입력값, 전제 조건, 주의할 리스크
+                ## 추가로 확인하면 좋은 질문
+              - In "## 실행 가능한 절차", write steps a human can perform manually.
+              - In "## 바로 사용 가능한 AI 프롬프트", write one complete ready-to-use prompt that another AI can execute immediately.
+              - The purpose of "## 바로 사용 가능한 AI 프롬프트" is to help the user reuse the video's method on their own input or task.
+            RULES
+          end
+        end
+
         def self.style_prompt(analysis_style)
           normalized_style = UrlFavorites::Domain::Analysis::PromptStyle.normalize(analysis_style)
           <<~PROMPT
             Analysis style: #{normalized_style}
+            The selected analysis style is mandatory. The detail_content structure must visibly match this style.
             #{UrlFavorites::Domain::Analysis::PromptStyle.instructions_for(normalized_style)}
           PROMPT
         end
@@ -201,6 +255,7 @@ module UrlFavorites
           :validate_required_keys!,
           :system_prompt,
           :youtube_prompt_rules,
+          :youtube_detail_content_rules,
           :style_prompt
         )
       end
