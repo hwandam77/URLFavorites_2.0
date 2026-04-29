@@ -7,6 +7,10 @@
   failed_count = favorites_for_stats.count { |favorite| favorite.status == "failed" }
   youtube_count = favorites_for_stats.count { |favorite| favorite.content_type == "youtube" }
   latest_ai_favorite = favorites_for_stats.find { |favorite| favorite.analysis.present? } || favorites_for_stats.first
+  rail_content_type = params[:content_type].presence || latest_ai_favorite&.content_type
+  rail_context_favorites = favorites_for_stats.select do |favorite|
+    favorite.analysis.present? && (rail_content_type.blank? || favorite.content_type == rail_content_type)
+  end.first(4)
 %>
 
 <div class="mx-auto px-4 py-5 lg:px-6 lg:py-6" style="max-width:1480px;" data-controller="view-mode">
@@ -299,20 +303,40 @@
         </div>
 
         <div class="mt-4 rounded-md p-4" style="background:var(--color-surface);border:1px solid var(--color-border);">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:700;color:var(--color-ai-accent);text-transform:uppercase;">Latest AI Context</div>
-          <% if latest_ai_favorite.present? %>
-            <h2 class="mt-3 line-clamp-2" style="font-size:var(--text-lg);line-height:1.2;font-weight:700;color:var(--color-text);letter-spacing:0;">
-              <%= latest_ai_favorite.title.presence || "제목 없음" %>
-            </h2>
-            <p class="mt-3 line-clamp-4" style="font-size:var(--text-sm);line-height:1.55;color:var(--color-text-secondary);">
-              <%= latest_ai_favorite.analysis&.summary.presence || "아직 분석 요약이 없습니다. 저장된 raw content를 기반으로 비동기 분석이 완료되면 이 영역에서 핵심 맥락을 확인할 수 있습니다." %>
-            </p>
-            <%= link_to "분석 보기",
-                  favorite_path(latest_ai_favorite),
-                  style: "display:inline-flex;margin-top:14px;align-items:center;justify-content:center;height:34px;padding:0 12px;border-radius:var(--radius-md);background:var(--color-accent);color:#fff;font-size:var(--text-xs);font-weight:700;text-decoration:none;" %>
+          <div class="flex items-center justify-between gap-3">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:700;color:var(--color-ai-accent);text-transform:uppercase;">Same Type Context</div>
+            <% if rail_content_type.present? %>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:var(--color-text-tertiary);text-transform:uppercase;">
+                <%= rail_content_type == "youtube" ? "YouTube" : rail_content_type %>
+              </span>
+            <% end %>
+          </div>
+
+          <% if rail_context_favorites.any? %>
+            <div class="mt-3 space-y-3">
+              <% rail_context_favorites.each do |favorite| %>
+                <article class="rounded-md p-3" data-rail-context-kind="<%= favorite.content_type %>" style="background:var(--color-command-bg);border:1px solid var(--color-border);">
+                  <div class="flex items-center gap-2" style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:var(--color-text-tertiary);text-transform:uppercase;">
+                    <span><%= favorite.content_type == "youtube" ? "YouTube" : favorite.content_type %></span>
+                    <span style="width:3px;height:3px;border-radius:var(--radius-full);background:var(--color-border-strong);"></span>
+                    <span><%= favorite.status %></span>
+                  </div>
+                  <h2 class="mt-2 line-clamp-2" style="font-size:var(--text-sm);line-height:1.35;font-weight:750;color:var(--color-text);letter-spacing:0;">
+                    <%= favorite.title.presence || "제목 없음" %>
+                  </h2>
+                  <p class="mt-2 line-clamp-3" style="font-size:var(--text-xs);line-height:1.55;color:var(--color-text-secondary);">
+                    <%= favorite.analysis.summary.presence || "분석 요약이 없습니다." %>
+                  </p>
+                  <%= link_to "분석 보기",
+                        favorite_path(favorite),
+                        data: { turbo_frame: "favorites" },
+                        style: "display:inline-flex;margin-top:10px;align-items:center;justify-content:center;height:30px;padding:0 10px;border-radius:var(--radius-md);background:var(--color-accent);color:#fff;font-size:var(--text-xs);font-weight:700;text-decoration:none;" %>
+                </article>
+              <% end %>
+            </div>
           <% else %>
             <p class="mt-3" style="font-size:var(--text-sm);line-height:1.55;color:var(--color-text-secondary);">
-              첫 URL을 저장하면 분석 컨텍스트가 이곳에 표시됩니다.
+              같은 종류의 분석 완료 항목이 생기면 이곳에 목록으로 표시됩니다.
             </p>
           <% end %>
         </div>

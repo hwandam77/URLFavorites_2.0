@@ -95,6 +95,30 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "Web Page"
   end
 
+  test "GET /favorites 분석 레일은 현재 종류와 같은 분석 목록을 표시합니다" do
+    web = Favorite.create!(
+      title: "Rail Web Context",
+      url: "https://example.com/rail-web",
+      content_type: "webpage",
+      status: "done"
+    )
+    youtube = Favorite.create!(
+      title: "Rail YouTube Context",
+      url: "https://youtube.com/watch?v=rail",
+      content_type: "youtube",
+      status: "done"
+    )
+    Analysis.create!(favorite: web, summary: "Web rail summary", tags: [], key_points: [])
+    Analysis.create!(favorite: youtube, summary: "YouTube rail summary", tags: [], key_points: [])
+
+    get favorites_url, params: { content_type: "youtube" }
+
+    assert_response :success
+    assert_select "[data-rail-context-kind='youtube']", text: /Rail YouTube Context/
+    assert_select "[data-rail-context-kind='webpage']", count: 0
+    assert_select "a[data-turbo-frame='favorites'][href='#{favorite_path(youtube)}']", text: /분석 보기/
+  end
+
   test "POST /favorites 즐겨찾기를 생성하고 작업을 큐에 추가합니다" do
     assert_difference "Favorite.count", 1 do
       post favorites_url, params: { favorite: { url: "https://example.com/new" } }
