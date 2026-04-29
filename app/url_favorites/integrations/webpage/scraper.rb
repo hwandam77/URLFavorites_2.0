@@ -6,10 +6,17 @@ module UrlFavorites
       class Scraper
         class FetchError < StandardError; end
 
+        JINA_BASE_URL = "https://r.jina.ai/"
+        CLOUDFLARE_SIGNATURE = "Just a moment...".freeze
+
         def self.call(url)
           response = Faraday.new(request: { timeout: 30, open_timeout: 10 }).get(url)
 
           raise FetchError, "HTTP error: #{response.status}" if response.status >= 400
+
+          if cloudflare_challenge?(response.body)
+            return fetch_via_jina(url)
+          end
 
           doc = Nokogiri::HTML(response.body)
 
@@ -21,6 +28,35 @@ module UrlFavorites
           }
         rescue Faraday::Error => e
           raise FetchError, "Network error: #{e.message}"
+        end
+
+        def self.cloudflare_challenge?(body)
+          body.include?(CLOUDFLARE_SIGNATURE)
+        end
+
+        def self.fetch_via_jina(url)
+          jina_url = "#{JINA_BASE_URL}#{url}"
+          response = Faraday.new(request: { timeout: 30, open_timeout: 10 }).get(jina_url)
+
+          raise FetchError, "Jina HTTP error: #{response.status}" if response.status >= 400
+
+          parse_jina_response(response.body)
+        rescue Faraday::Error => e
+          raise FetchError, "Jina network error: #{e.message}"
+        end
+
+        def self.parse_jina_response(body)
+          title = body.match(/^Title:\s*(.+)$/m)&.captures&.first&.strip || ""
+          # Markdown Content 이후 텍스트를 body_text로 사용
+          content_after_marker = body.split(/^Markdown Content:\s*\n/, 2).last || body
+          body_text = content_after_marker.gsub(/\s+/, " ").strip[0...8_000]
+
+          {
+            title: title,
+            description: "",
+            og_image: nil,
+            body_text: body_text
+          }
         end
 
         def self.extract_title(doc)
