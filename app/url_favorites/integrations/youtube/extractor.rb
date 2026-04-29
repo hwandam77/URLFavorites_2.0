@@ -64,6 +64,7 @@ module UrlFavorites
           return nil unless items.is_a?(Array) && !items.empty?
 
           segments = caption_segments(items)
+          segments = fetch_caption_segments(items) if segments.empty?
           text = segments.map { |segment| segment[:text] }.join(" ").strip.presence
           return nil unless text
 
@@ -82,6 +83,42 @@ module UrlFavorites
               start: start || 0.0,
               duration: duration || 0.0,
               timestamp: format_timestamp(start || 0.0),
+              text: text
+            }
+          end
+        end
+
+        def self.fetch_caption_segments(items)
+          caption = preferred_caption_item(items)
+          return [] unless caption
+
+          connection = Faraday.new
+          connection.options.timeout = 20
+          connection.options.open_timeout = 5
+          response = connection.get(caption["url"])
+          parse_json3_caption(response.body)
+        rescue Faraday::Error, JSON::ParserError
+          []
+        end
+
+        def self.preferred_caption_item(items)
+          json3_items = items.select { |item| item["ext"] == "json3" && item["url"].present? }
+          json3_items.find { |item| !item["url"].include?("tlang=") } || json3_items.first
+        end
+
+        def self.parse_json3_caption(body)
+          data = JSON.parse(body)
+          Array(data["events"]).filter_map do |event|
+            text = Array(event["segs"]).map { |segment| segment["utf8"].to_s }.join.strip
+            next if text.blank?
+
+            start = numeric_or_nil(event["tStartMs"]).to_f / 1000.0
+            duration = numeric_or_nil(event["dDurationMs"]).to_f / 1000.0
+
+            {
+              start: start,
+              duration: duration,
+              timestamp: format_timestamp(start),
               text: text
             }
           end

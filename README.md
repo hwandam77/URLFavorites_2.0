@@ -1,13 +1,14 @@
 # URLFavorites 2.0
 
-Personal URL bookmark manager with automatic AI analysis. Saves URLs, extracts content, generates AI summaries/tags/key points using Qwen3-30B via llama-server.
+Personal URL bookmark manager with automatic AI analysis. Saves URLs, extracts content, generates AI summaries/tags/key points using Qwen3.6-35B via llama-server.
 
 ## Tech Stack
 
 - Rails 8.1.x, Ruby 3.4.x
 - SQLite3 + Solid Queue
 - Hotwire (Turbo + Stimulus) + Tailwind CSS
-- AI: Qwen3-30B via llama-server (WireGuard VPN)
+- AI: Qwen3.6-35B via llama-server (WireGuard VPN)
+- Current local llama-server model: `Qwen3.6-35B-A3B-Kimi-K2.6-Reasoning-Distilled.Q5_K_M.gguf`
 - Scraping: Nokogiri (web), yt-dlp (YouTube)
 
 ## Local Setup

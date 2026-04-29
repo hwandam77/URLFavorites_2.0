@@ -1,3 +1,5 @@
+require Rails.root.join("app/url_favorites/use_cases/analysis/run_analysis").to_s
+
 class AnalyzeYoutubeJob < ApplicationJob
   MAX_RETRIES = 3
   BACKOFF_SECONDS = [ 30, 60, 120 ].freeze

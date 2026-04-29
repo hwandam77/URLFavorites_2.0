@@ -32,6 +32,25 @@ class UrlFavorites::Integrations::Youtube::ExtractorTest < ActiveSupport::TestCa
     }
   })
 
+  AUTO_CAPTION_URL_JSON = JSON.generate({
+    "title" => "Auto Caption URL Video",
+    "description" => "Fallback description.",
+    "subtitles" => {},
+    "automatic_captions" => {
+      "ko" => [
+        { "ext" => "vtt", "url" => "https://example.com/caption.vtt" },
+        { "ext" => "json3", "url" => "https://example.com/caption.json3" }
+      ]
+    }
+  })
+
+  CAPTION_JSON3 = JSON.generate({
+    "events" => [
+      { "tStartMs" => 0, "dDurationMs" => 1500, "segs" => [ { "utf8" => "첫 번째 자막" } ] },
+      { "tStartMs" => 2500, "dDurationMs" => 1000, "segs" => [ { "utf8" => "두 번째 자막" } ] }
+    ]
+  })
+
   def ok_status
     s = Object.new
     s.define_singleton_method(:success?) { true }
@@ -98,6 +117,25 @@ class UrlFavorites::Integrations::Youtube::ExtractorTest < ActiveSupport::TestCa
       result = UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=auto")
       assert_includes result[:transcript], "Auto caption 1"
       assert_equal "00:03", result[:transcript_segments].second[:timestamp]
+    end
+  end
+
+  test "automatic_captions URL 이 있으면 json3 자막을 내려받아 transcript 로 사용" do
+    response = Struct.new(:body).new(CAPTION_JSON3)
+    options = Struct.new(:timeout, :open_timeout).new
+    connection = Object.new
+    connection.define_singleton_method(:options) { options }
+    connection.define_singleton_method(:get) { |_url| response }
+
+    Open3.stub(:capture3, [ AUTO_CAPTION_URL_JSON, "", ok_status ]) do
+      Faraday.stub(:new, connection) do
+        result = UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=auto-url")
+
+        assert_includes result[:transcript], "첫 번째 자막"
+        assert_includes result[:transcript], "두 번째 자막"
+        assert_equal "auto", result[:subtitle_source]
+        assert_equal "00:02", result[:transcript_segments].second[:timestamp]
+      end
     end
   end
 
