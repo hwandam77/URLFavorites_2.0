@@ -49,7 +49,7 @@ module UrlFavorites
         end
 
         def self.parse_jina_response(body)
-          title = body.match(/^Title:\s*(.+)$/m)&.captures&.first&.strip || ""
+          title = body.match(/^Title:\s*([^\n]+)/)&.captures&.first&.strip || ""
           # Markdown Content 이후 텍스트를 body_text로 사용
           content_after_marker = body.split(/^Markdown Content:\s*\n/, 2).last || body
           body_text = content_after_marker.gsub(/\s+/, " ").strip[0...8_000]
