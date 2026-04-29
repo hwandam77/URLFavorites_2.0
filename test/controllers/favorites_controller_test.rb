@@ -128,7 +128,7 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     post retry_favorite_url(fav)
     assert_redirected_to favorite_url(fav)
     fav.reload
-    assert_equal "pending", fav.status
+    assert_equal "analyzing", fav.status
   end
 
   test "GET /favorites/:id 재분석 버튼을 표시합니다" do
@@ -143,6 +143,22 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "form[action='#{reanalyze_favorite_path(fav)}'][method='post']", text: /재분석/
+    assert_includes response.body, "turbo-cable-stream-source"
+  end
+
+  test "GET /favorites/:id 분석중이면 재분석 버튼 대신 분석중 상태를 표시합니다" do
+    fav = Favorite.create!(
+      title: "Analyzing",
+      url: "https://example.com/analyzing",
+      content_type: "webpage",
+      status: "analyzing"
+    )
+
+    get favorite_url(fav)
+
+    assert_response :success
+    assert_select "button[disabled]", text: /분석중/
+    assert_select "form[action='#{reanalyze_favorite_path(fav)}']", count: 0
   end
 
   test "POST /favorites/:id/reanalyze 완료된 즐겨찾기를 다시 큐에 추가합니다" do
@@ -157,7 +173,7 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     post reanalyze_favorite_url(fav)
 
     assert_redirected_to favorite_url(fav)
-    assert_equal "pending", fav.reload.status
+    assert_equal "analyzing", fav.reload.status
     assert_equal "cached raw content", fav.raw_content
   end
 end

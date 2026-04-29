@@ -16,6 +16,7 @@ class Favorite < ApplicationRecord
   # Turbo Stream: 분석 완료/실패 시 자동으로 카드 갱신
   after_update_commit -> {
     broadcast_replace_to :favorites
+    broadcast_refresh_to self
   }
 
   # Instance predicates for statuses

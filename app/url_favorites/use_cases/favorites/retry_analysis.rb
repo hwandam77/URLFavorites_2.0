@@ -4,7 +4,7 @@ module UrlFavorites
       class RetryAnalysis
         def self.call(id:)
           favorite = Favorite.find(id)
-          favorite.update!(status: "pending", error_message: nil)
+          favorite.update!(status: "analyzing", error_message: nil)
           UrlFavorites::UseCases::Analysis::EnqueueAnalysis.call(favorite_id: favorite.id)
           favorite
         end

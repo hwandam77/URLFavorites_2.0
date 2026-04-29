@@ -1,3 +1,5 @@
+<%= turbo_stream_from @favorite %>
+
 <div class="max-w-3xl mx-auto px-6 py-10" style="--text-xs:13px;--text-sm:15px;--text-base:16px;--text-lg:18px;--text-xl:22px;--text-2xl:32px;">
 
   <%# ── 에디토리얼 헤더 ── %>
@@ -71,10 +73,19 @@
             class: "transition-all",
             style: "background:var(--color-pending-bg);color:var(--color-pending-text);border:1px solid var(--color-pending-border);padding:5px 12px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:600;cursor:pointer;" %>
     <% end %>
-    <%= button_to "재분석", reanalyze_favorite_path(@favorite), method: :post,
-          data: { turbo_confirm: "기존 원문 캐시를 사용해 AI 분석을 다시 실행합니다. 계속할까요?" },
-          class: "transition-all",
-          style: "background:var(--color-ai-muted);color:var(--color-text);border:1px solid var(--color-ai-accent);padding:5px 12px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:600;cursor:pointer;" %>
+    <% if @favorite.status == "analyzing" %>
+      <button type="button" disabled
+              class="inline-flex items-center gap-2 transition-all"
+              style="background:var(--color-analyzing-bg);color:var(--color-analyzing-text);border:1px solid var(--color-analyzing-border);padding:5px 12px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:600;cursor:default;">
+        <span class="w-3 h-3 rounded-full animate-spin" style="border:2px solid var(--color-analyzing-border);border-top-color:var(--color-analyzing-text);"></span>
+        분석중
+      </button>
+    <% else %>
+      <%= button_to "재분석", reanalyze_favorite_path(@favorite), method: :post,
+            data: { turbo_confirm: "기존 원문 캐시를 사용해 AI 분석을 다시 실행합니다. 계속할까요?" },
+            class: "transition-all",
+            style: "background:var(--color-ai-muted);color:var(--color-text);border:1px solid var(--color-ai-accent);padding:5px 12px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:600;cursor:pointer;" %>
+    <% end %>
     <%= button_to "삭제", favorite_path(@favorite), method: :delete,
           data: { turbo_confirm: "정말 삭제하시겠습니까?" },
           class: "transition-all",
