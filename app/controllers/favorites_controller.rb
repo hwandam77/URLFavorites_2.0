@@ -11,7 +11,7 @@ class FavoritesController < ApplicationController
       sort: params[:sort] || "recent",
       category: params[:category]
     )
-    @view_mode = params[:view_mode] || "card"
+    @view_mode = params[:view_mode] == "list" ? "list" : "card"
   end
 
   def show

@@ -11,9 +11,10 @@
   rail_context_favorites = favorites_for_stats.select do |favorite|
     favorite.analysis.present? && (rail_content_type.blank? || favorite.content_type == rail_content_type)
   end.first(4)
+  current_view_mode = @view_mode == "list" ? "list" : "card"
 %>
 
-<div class="mx-auto px-4 py-5 lg:px-6 lg:py-6" style="max-width:1480px;" data-controller="view-mode">
+<div class="mx-auto px-4 py-5 lg:px-6 lg:py-6" style="max-width:1480px;">
   <header class="urlf-workspace-header mb-5">
     <div>
       <div class="mb-2 flex items-center gap-2">
@@ -148,6 +149,11 @@
       </div>
 
       <%= form_with url: favorites_path, method: :get, data: { turbo_frame: "favorites" } do %>
+        <input type="hidden" name="content_type" value="<%= params[:content_type] %>">
+        <input type="hidden" name="status" value="<%= params[:status] %>">
+        <input type="hidden" name="sort" value="<%= params[:sort] %>">
+        <input type="hidden" name="category" value="<%= params[:category] %>">
+        <input type="hidden" name="view_mode" value="<%= current_view_mode %>">
         <div class="relative">
           <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style="color:var(--color-text-tertiary);" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -171,6 +177,7 @@
           <input type="hidden" name="content_type" value="<%= params[:content_type] %>">
           <input type="hidden" name="status" value="<%= params[:status] %>">
           <input type="hidden" name="category" value="<%= params[:category] %>">
+          <input type="hidden" name="view_mode" value="<%= current_view_mode %>">
           <select name="sort"
             onchange="this.form.requestSubmit()"
             style="height:40px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:0 12px;font-size:var(--text-sm);font-weight:600;color:var(--color-text-secondary);outline:none;cursor:pointer;">
@@ -181,24 +188,26 @@
         <% end %>
 
         <div class="flex items-center gap-0.5 rounded-md" style="height:40px;background:var(--color-surface);border:1px solid var(--color-border);padding:4px;">
-          <button type="button"
-            style="padding:6px 10px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;background:var(--color-accent);color:#fff;border:none;cursor:pointer;"
-            data-view-mode-target="cardButton"
-            data-action="view-mode#switchToCard"
-            title="카드 보기">
+          <%= link_to favorites_path(request.query_parameters.merge(view_mode: "card")),
+            data: { turbo: false },
+            style: current_view_mode == "card" ?
+              "padding:6px 10px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;background:var(--color-accent);color:#fff;border:none;cursor:pointer;display:inline-flex;align-items:center;" :
+              "padding:6px 10px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;background:transparent;color:var(--color-text-tertiary);border:none;cursor:pointer;display:inline-flex;align-items:center;",
+            title: "카드 보기" do %>
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
             </svg>
-          </button>
-          <button type="button"
-            style="padding:6px 10px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;background:transparent;color:var(--color-text-tertiary);border:none;cursor:pointer;"
-            data-view-mode-target="listButton"
-            data-action="view-mode#switchToList"
-            title="리스트 보기">
+          <% end %>
+          <%= link_to favorites_path(request.query_parameters.merge(view_mode: "list")),
+            data: { turbo: false },
+            style: current_view_mode == "list" ?
+              "padding:6px 10px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;background:var(--color-accent);color:#fff;border:none;cursor:pointer;display:inline-flex;align-items:center;" :
+              "padding:6px 10px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;background:transparent;color:var(--color-text-tertiary);border:none;cursor:pointer;display:inline-flex;align-items:center;",
+            title: "리스트 보기" do %>
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
-          </button>
+          <% end %>
         </div>
       </div>
     </div>
@@ -213,7 +222,7 @@
             is_active = value.nil? ? params[:content_type].blank? : params[:content_type] == value
         %>
           <%= link_to label,
-                favorites_path(q: params[:q], content_type: value, status: params[:status], sort: params[:sort], category: params[:category]),
+                favorites_path(q: params[:q], content_type: value, status: params[:status], sort: params[:sort], category: params[:category], view_mode: current_view_mode),
                 data: { turbo_frame: "favorites", turbo_action: "replace" },
                 style: is_active ?
                   "background:var(--color-accent);color:#fff;padding:6px 11px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:700;text-decoration:none;" :
@@ -226,7 +235,7 @@
             is_active = value.nil? ? params[:status].blank? : params[:status] == value
         %>
           <%= link_to label,
-                favorites_path(q: params[:q], content_type: params[:content_type], status: value, sort: params[:sort], category: params[:category]),
+                favorites_path(q: params[:q], content_type: params[:content_type], status: value, sort: params[:sort], category: params[:category], view_mode: current_view_mode),
                 data: { turbo_frame: "favorites", turbo_action: "replace" },
                 style: is_active ?
                   "background:var(--color-ai-muted);border:1px solid var(--color-ai-accent);color:var(--color-text);padding:6px 11px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:700;text-decoration:none;" :
@@ -238,7 +247,7 @@
         <% Favorite::CATEGORIES.each do |label| %>
           <% is_active = params[:category] == label || (label == "전체" && params[:category].blank?) %>
           <%= link_to label,
-                favorites_path(q: params[:q], content_type: params[:content_type], status: params[:status], sort: params[:sort], category: label == "전체" ? nil : label),
+                favorites_path(q: params[:q], content_type: params[:content_type], status: params[:status], sort: params[:sort], category: label == "전체" ? nil : label, view_mode: current_view_mode),
                 data: { turbo_frame: "favorites", turbo_action: "replace" },
                 style: is_active ?
                   "color:var(--color-accent-text);font-size:var(--text-xs);font-weight:700;text-decoration:none;" :
@@ -252,31 +261,37 @@
     <section>
       <%= turbo_frame_tag "favorites" do %>
         <% has_favorites = @favorites.respond_to?(:empty?) ? !@favorites.empty? : @favorites.present? %>
-        <div class="urlf-card-grid" id="favorites-grid" data-view-mode-target="cardView">
-          <%= render partial: "favorite_card", collection: @favorites, as: :favorite %>
-        </div>
+        <% if current_view_mode == "card" %>
+          <div class="urlf-card-grid" id="favorites-grid">
+            <%= render partial: "favorite_card", collection: @favorites, as: :favorite %>
+          </div>
+        <% else %>
+          <div class="hidden" id="favorites-grid"></div>
+        <% end %>
         <div id="empty-state" class="<%= 'hidden' if has_favorites %>">
           <%= render "empty_state" %>
         </div>
 
-        <div class="hidden rounded-md overflow-hidden" style="border:1px solid var(--color-border);box-shadow:var(--shadow-sm);" data-view-mode-target="listView">
-          <table class="w-full" style="background:var(--color-surface);">
-            <thead>
-              <tr style="border-bottom:1px solid var(--color-border);background:var(--color-surface-raised);">
-                <th class="py-3 px-4 text-left" style="font-size:var(--text-xs);font-weight:700;color:var(--color-text-tertiary);letter-spacing:0;">북마크</th>
-                <th class="py-3 px-4 text-left hidden md:table-cell" style="font-size:var(--text-xs);font-weight:700;color:var(--color-text-tertiary);letter-spacing:0;">유형</th>
-                <th class="py-3 px-4 text-left hidden lg:table-cell" style="font-size:var(--text-xs);font-weight:700;color:var(--color-text-tertiary);letter-spacing:0;">카테고리</th>
-                <th class="py-3 px-4 text-left" style="font-size:var(--text-xs);font-weight:700;color:var(--color-text-tertiary);letter-spacing:0;">상태</th>
-                <th class="py-3 px-4 text-left hidden lg:table-cell" style="font-size:var(--text-xs);font-weight:700;color:var(--color-text-tertiary);letter-spacing:0;">태그</th>
-                <th class="py-3 px-4 text-left hidden sm:table-cell" style="font-size:var(--text-xs);font-weight:700;color:var(--color-text-tertiary);letter-spacing:0;">날짜</th>
-                <th class="py-3 px-4" style="width:80px;"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <%= render partial: "favorite_row", collection: @favorites, as: :favorite %>
-            </tbody>
-          </table>
-        </div>
+        <% if current_view_mode == "list" %>
+          <div class="rounded-md overflow-hidden" style="border:1px solid var(--color-border);box-shadow:var(--shadow-sm);">
+            <table class="w-full" style="background:var(--color-surface);">
+              <thead>
+                <tr style="border-bottom:1px solid var(--color-border);background:var(--color-surface-raised);">
+                  <th class="py-3 px-4 text-left" style="font-size:var(--text-xs);font-weight:700;color:var(--color-text-tertiary);letter-spacing:0;">북마크</th>
+                  <th class="py-3 px-4 text-left hidden md:table-cell" style="font-size:var(--text-xs);font-weight:700;color:var(--color-text-tertiary);letter-spacing:0;">유형</th>
+                  <th class="py-3 px-4 text-left hidden lg:table-cell" style="font-size:var(--text-xs);font-weight:700;color:var(--color-text-tertiary);letter-spacing:0;">카테고리</th>
+                  <th class="py-3 px-4 text-left" style="font-size:var(--text-xs);font-weight:700;color:var(--color-text-tertiary);letter-spacing:0;">상태</th>
+                  <th class="py-3 px-4 text-left hidden lg:table-cell" style="font-size:var(--text-xs);font-weight:700;color:var(--color-text-tertiary);letter-spacing:0;">태그</th>
+                  <th class="py-3 px-4 text-left hidden sm:table-cell" style="font-size:var(--text-xs);font-weight:700;color:var(--color-text-tertiary);letter-spacing:0;">날짜</th>
+                  <th class="py-3 px-4" style="width:80px;"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <%= render partial: "favorite_row", collection: @favorites, as: :favorite %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
       <% end %>
     </section>
 
