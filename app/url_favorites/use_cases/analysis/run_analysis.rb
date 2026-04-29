@@ -7,6 +7,9 @@ module UrlFavorites
       class RunAnalysis
         DEFAULT_ANALYSIS_STYLE = "execution_brief"
         MAX_RETRIES = 3
+        YOUTUBE_ANALYSIS_INPUT_LIMIT = 12_000
+        YOUTUBE_TRANSCRIPT_PROMPT_LIMIT = 8_000
+        YOUTUBE_TIMESTAMP_SAMPLE_LIMIT = 40
 
         def self.call(favorite_id:, analysis_style: DEFAULT_ANALYSIS_STYLE)
           favorite = Favorite.find(favorite_id)
@@ -57,7 +60,7 @@ module UrlFavorites
         end
 
         def self.youtube_analysis_input(extraction)
-          <<~CONTENT
+          content = <<~CONTENT
             Title: #{extraction[:title]}
             Description: #{extraction[:description]}
             Subtitle source: #{extraction[:subtitle_source].presence || "unknown"}
@@ -75,15 +78,17 @@ module UrlFavorites
             - 영상 내용에서 근거가 확인되는 제약, 전제, 리스크
 
             Transcript:
-            #{extraction[:transcript]}
+            #{truncated_youtube_transcript(extraction[:transcript])}
 
             Timestamped transcript sample:
             #{timestamped_transcript_section(extraction[:transcript_segments])}
           CONTENT
+
+          content[0...YOUTUBE_ANALYSIS_INPUT_LIMIT]
         end
 
         def self.timestamped_transcript_section(segments)
-          normalized_segments = Array(segments).first(80)
+          normalized_segments = Array(segments).first(YOUTUBE_TIMESTAMP_SAMPLE_LIMIT)
           return "- 미확인" if normalized_segments.empty?
 
           normalized_segments.map do |segment|
@@ -91,6 +96,10 @@ module UrlFavorites
             text = segment[:text] || segment["text"]
             "- [#{timestamp}] #{text}"
           end.join("\n")
+        end
+
+        def self.truncated_youtube_transcript(transcript)
+          transcript.to_s[0...YOUTUBE_TRANSCRIPT_PROMPT_LIMIT]
         end
 
         def self.github_links_section(links)

@@ -108,6 +108,32 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
     assert_includes captured_content, "- 미확인"
   end
 
+  test "YouTube 분석 입력은 12,000자를 넘지 않는다" do
+    captured_content = nil
+    long_extractor_result = @extractor_result.merge(
+      description: "설명" * 4_000,
+      transcript: "자막" * 10_000,
+      transcript_segments: Array.new(100) do |index|
+        { start: index.to_f, duration: 1.0, timestamp: "00:%02d" % index, text: "세그먼트 #{index}" }
+      end
+    )
+
+    analyzer = lambda do |content, type:, analysis_style:|
+      captured_content = content
+      assert_equal "youtube", type
+      assert_equal "execution_brief", analysis_style
+      @analyzer_result
+    end
+
+    UrlFavorites::Integrations::Youtube::Extractor.stub(:call, long_extractor_result) do
+      UrlFavorites::Integrations::LlamaServer::Client.stub(:call, analyzer) do
+        AnalyzeYoutubeJob.perform_now(@favorite.id)
+      end
+    end
+
+    assert captured_content.length <= 12_000
+  end
+
   test "YouTube 추출 실패 시 status = failed" do
     UrlFavorites::Integrations::Youtube::Extractor.stub(:call, ->(_url) { raise UrlFavorites::Integrations::Youtube::Extractor::ExtractionError, "yt-dlp failed" }) do
       AnalyzeYoutubeJob.perform_now(@favorite.id)
