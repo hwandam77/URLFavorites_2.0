@@ -90,6 +90,11 @@ class FavoritesController < ApplicationController
     redirect_to favorite_url(@favorite), notice: "Retrying analysis"
   end
 
+  def reanalyze
+    @favorite = UrlFavorites::UseCases::Favorites::RetryAnalysis.call(id: params[:id])
+    redirect_to favorite_url(@favorite), notice: "분석을 다시 시작했습니다."
+  end
+
   def toggle_pin
     @favorite = UrlFavorites::UseCases::Favorites::TogglePin.call(id: params[:id])
     redirect_back_or_to favorites_url, notice: @favorite.pinned? ? "북마크가 핀되었습니다" : "핀 해제되었습니다"

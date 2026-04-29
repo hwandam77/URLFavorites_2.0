@@ -71,6 +71,10 @@
             class: "transition-all",
             style: "background:var(--color-pending-bg);color:var(--color-pending-text);border:1px solid var(--color-pending-border);padding:5px 12px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:600;cursor:pointer;" %>
     <% end %>
+    <%= button_to "재분석", reanalyze_favorite_path(@favorite), method: :post,
+          data: { turbo_confirm: "기존 원문 캐시를 사용해 AI 분석을 다시 실행합니다. 계속할까요?" },
+          class: "transition-all",
+          style: "background:var(--color-ai-muted);color:var(--color-text);border:1px solid var(--color-ai-accent);padding:5px 12px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:600;cursor:pointer;" %>
     <%= button_to "삭제", favorite_path(@favorite), method: :delete,
           data: { turbo_confirm: "정말 삭제하시겠습니까?" },
           class: "transition-all",

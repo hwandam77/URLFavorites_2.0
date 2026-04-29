@@ -23,9 +23,11 @@ module UrlFavorites
           transcript_result = extract_transcript(data)
           transcript    = transcript_result[:text][0...12_000]
           subtitle_source = transcript_result[:source]
+          github_links = UrlFavorites::Domain::Content::GithubLinkExtractor.call(description, transcript)
 
           { title: title, description: description, transcript: transcript,
-            thumbnail_url: thumbnail_url, subtitle_source: subtitle_source }
+            thumbnail_url: thumbnail_url, subtitle_source: subtitle_source,
+            github_links: github_links }
         rescue JSON::ParserError => e
           raise ExtractionError, "JSON parse failed: #{e.message}"
         end

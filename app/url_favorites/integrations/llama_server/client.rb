@@ -165,10 +165,13 @@ module UrlFavorites
             - Treat the video as source material for a professional AI execution brief, not a casual summary.
             - detail_content must be a Korean markdown document with these exact section headings:
               ## 콘텐츠의 목적과 핵심 주장
+              ## 영상에서 제공한 GitHub 링크
               ## 실행 가능한 절차
               ## 바로 사용 가능한 AI 프롬프트
               ## 필요한 입력값, 전제 조건, 주의할 리스크
               ## 추가로 확인하면 좋은 질문
+            - In "## 영상에서 제공한 GitHub 링크", preserve only GitHub URLs explicitly present in "Provided GitHub links"; copy each URL exactly as a markdown bullet.
+            - If "Provided GitHub links" is "미확인" or empty, write "미확인" in that section.
             - In "## 실행 가능한 절차", write steps a human can perform manually.
             - In "## 바로 사용 가능한 AI 프롬프트", write one complete ready-to-use prompt that another AI can execute immediately.
             - The purpose of "## 바로 사용 가능한 AI 프롬프트" is to help the user reuse the video's method on their own input or task.

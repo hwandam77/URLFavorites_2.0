@@ -3,7 +3,7 @@ require "test_helper"
 class UrlFavorites::Integrations::Youtube::ExtractorTest < ActiveSupport::TestCase
   VALID_JSON = JSON.generate({
     "title" => "Test Video Title",
-    "description" => "This is a test video description.",
+    "description" => "This is a test video description. Code: https://github.com/rails/rails",
     "subtitles" => {
       "en" => [
         { "duration" => 5.0, "start" => 0.0, "text" => "First subtitle line." },
@@ -48,7 +48,29 @@ class UrlFavorites::Integrations::Youtube::ExtractorTest < ActiveSupport::TestCa
     Open3.stub(:capture3, [ VALID_JSON, "", ok_status ]) do
       result = UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=test")
       assert_equal "Test Video Title", result[:title]
-      assert_equal "This is a test video description.", result[:description]
+      assert_equal "This is a test video description. Code: https://github.com/rails/rails", result[:description]
+    end
+  end
+
+  test "description과 transcript에서 GitHub 링크를 추출한다" do
+    json = JSON.generate({
+      "title" => "Links",
+      "description" => "Main repo https://github.com/basecamp/kamal.",
+      "subtitles" => {
+        "en" => [
+          { "text" => "Also see https://github.com/hotwired/turbo#readme" }
+        ]
+      },
+      "automatic_captions" => {}
+    })
+
+    Open3.stub(:capture3, [ json, "", ok_status ]) do
+      result = UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=links")
+
+      assert_equal [
+        "https://github.com/basecamp/kamal",
+        "https://github.com/hotwired/turbo"
+      ], result[:github_links]
     end
   end
 

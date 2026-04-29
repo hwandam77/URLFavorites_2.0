@@ -12,9 +12,10 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
     )
     @extractor_result = {
       title: "Rails 8 튜토리얼",
-      description: "Rails 8 소개",
+      description: "Rails 8 소개 https://github.com/rails/rails",
       transcript: "안녕하세요. 이 영상에서는 Rails 8을 소개합니다.",
-      subtitle_source: "manual"
+      subtitle_source: "manual",
+      github_links: [ "https://github.com/rails/rails" ]
     }
     @analyzer_result = {
       summary: "Rails 8 튜토리얼 요약",
@@ -71,8 +72,30 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
     assert_includes captured_content, "Title: Rails 8 튜토리얼"
     assert_includes captured_content, "Description: Rails 8 소개"
     assert_includes captured_content, "Subtitle source: manual"
+    assert_includes captured_content, "Provided GitHub links:"
+    assert_includes captured_content, "- https://github.com/rails/rails"
     assert_includes captured_content, "Transcript:"
     assert_includes captured_content, "AI 실행 브리프"
+  end
+
+  test "GitHub 링크가 없으면 분석 입력에 미확인으로 표시한다" do
+    captured_content = nil
+    extractor_result = @extractor_result.merge(github_links: [])
+
+    analyzer = lambda do |content, type:|
+      captured_content = content
+      assert_equal "youtube", type
+      @analyzer_result
+    end
+
+    UrlFavorites::Integrations::Youtube::Extractor.stub(:call, extractor_result) do
+      UrlFavorites::Integrations::LlamaServer::Client.stub(:call, analyzer) do
+        AnalyzeYoutubeJob.perform_now(@favorite.id)
+      end
+    end
+
+    assert_includes captured_content, "Provided GitHub links:"
+    assert_includes captured_content, "- 미확인"
   end
 
   test "YouTube 추출 실패 시 status = failed" do

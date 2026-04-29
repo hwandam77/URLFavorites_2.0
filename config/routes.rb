@@ -16,6 +16,7 @@ Rails.application.routes.draw do
     resource :collection_membership, only: %i[create destroy]
     patch :update_category, on: :member
     post :retry, on: :member
+    post :reanalyze, on: :member
     post :toggle_pin, on: :member
     post :share, on: :collection
   end

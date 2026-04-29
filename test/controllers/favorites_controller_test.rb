@@ -130,4 +130,34 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     fav.reload
     assert_equal "pending", fav.status
   end
+
+  test "GET /favorites/:id 재분석 버튼을 표시합니다" do
+    fav = Favorite.create!(
+      title: "Analyzed",
+      url: "https://example.com/analyzed",
+      content_type: "webpage",
+      status: "done"
+    )
+
+    get favorite_url(fav)
+
+    assert_response :success
+    assert_select "form[action='#{reanalyze_favorite_path(fav)}'][method='post']", text: /재분석/
+  end
+
+  test "POST /favorites/:id/reanalyze 완료된 즐겨찾기를 다시 큐에 추가합니다" do
+    fav = Favorite.create!(
+      title: "Done",
+      url: "https://example.com/done",
+      content_type: "webpage",
+      status: "done",
+      raw_content: "cached raw content"
+    )
+
+    post reanalyze_favorite_url(fav)
+
+    assert_redirected_to favorite_url(fav)
+    assert_equal "pending", fav.reload.status
+    assert_equal "cached raw content", fav.raw_content
+  end
 end

@@ -45,6 +45,8 @@ module UrlFavorites
             Title: #{extraction[:title]}
             Description: #{extraction[:description]}
             Subtitle source: #{extraction[:subtitle_source].presence || "unknown"}
+            Provided GitHub links:
+            #{github_links_section(extraction[:github_links])}
 
             Analysis goal:
             이 YouTube 콘텐츠를 단순 요약하지 말고, 사용자가 바로 AI에게 지시하여 실행할 수 있는 AI 실행 브리프 수준으로 분석한다.
@@ -59,6 +61,13 @@ module UrlFavorites
             Transcript:
             #{extraction[:transcript]}
           CONTENT
+        end
+
+        def self.github_links_section(links)
+          normalized_links = Array(links).map(&:to_s).reject(&:blank?)
+          return "- 미확인" if normalized_links.empty?
+
+          normalized_links.map { |link| "- #{link}" }.join("\n")
         end
 
         def self.upsert_analysis!(favorite, raw_content, analysis_result)
