@@ -24,6 +24,8 @@ class UrlFavorites::UseCases::Analysis::EnqueueAnalysisTest < ActiveSupport::Tes
         analysis_style: "tutorial"
       )
     end
+
+    assert_equal "analyzing", favorite.reload.status
   end
 
   test "알 수 없는 분석 스타일은 기본 스타일로 정규화한다" do
@@ -39,5 +41,21 @@ class UrlFavorites::UseCases::Analysis::EnqueueAnalysisTest < ActiveSupport::Tes
         analysis_style: "unknown"
       )
     end
+
+    assert_equal "analyzing", favorite.reload.status
+  end
+
+  test "GitHub URL은 웹페이지 분석 작업으로 즉시 분석 중 상태가 된다" do
+    favorite = Favorite.create!(
+      url: "https://github.com/GitFrog1111/OpenWhip",
+      content_type: "github",
+      status: "pending"
+    )
+
+    assert_enqueued_with(job: AnalyzeWebpageJob, args: [ favorite.id, "execution_brief" ]) do
+      UrlFavorites::UseCases::Analysis::EnqueueAnalysis.call(favorite_id: favorite.id)
+    end
+
+    assert_equal "analyzing", favorite.reload.status
   end
 end

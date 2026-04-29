@@ -10,6 +10,9 @@ module UrlFavorites
 
           existing = Favorite.find_by(url: normalized)
           if existing
+            enqueue_analysis_if_needed(existing)
+            existing.reload
+
             return UrlFavorites::UseCases::Result.new(ok: true, value: { favorite: existing, created: false })
           end
 
@@ -23,7 +26,16 @@ module UrlFavorites
           )
 
           UrlFavorites::UseCases::Analysis::EnqueueAnalysis.call(favorite_id: favorite.id)
+          favorite.reload
+
           UrlFavorites::UseCases::Result.new(ok: true, value: { favorite: favorite, created: true })
+        end
+
+        def self.enqueue_analysis_if_needed(favorite)
+          return if favorite.analyzing?
+          return if favorite.done? && favorite.analysis.present?
+
+          UrlFavorites::UseCases::Analysis::EnqueueAnalysis.call(favorite_id: favorite.id)
         end
       end
     end
