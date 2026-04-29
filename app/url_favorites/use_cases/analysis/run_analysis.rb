@@ -1,8 +1,14 @@
+require Rails.root.join("app/url_favorites/domain/analysis").to_s
+require Rails.root.join("app/url_favorites/domain/analysis/prompt_style").to_s
+
 module UrlFavorites
   module UseCases
     module Analysis
       class RunAnalysis
-        def self.call(favorite_id:, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT)
+        DEFAULT_ANALYSIS_STYLE = "execution_brief"
+        MAX_RETRIES = 3
+
+        def self.call(favorite_id:, analysis_style: DEFAULT_ANALYSIS_STYLE)
           favorite = Favorite.find(favorite_id)
           favorite.update!(status: "analyzing", error_message: nil)
           normalized_style = UrlFavorites::Domain::Analysis::PromptStyle.normalize(analysis_style)
@@ -34,7 +40,7 @@ module UrlFavorites
             retry_count: favorite.retry_count.to_i + 1,
             error_message: "#{e.class}: #{e.message}"
           )
-          raise e if favorite.retry_count < UrlFavorites::Domain::Analysis::RetryPolicy::MAX_RETRIES
+          raise e if favorite.retry_count < MAX_RETRIES
         end
 
         def self.extract_content(favorite)
@@ -94,7 +100,7 @@ module UrlFavorites
           normalized_links.map { |link| "- #{link}" }.join("\n")
         end
 
-        def self.upsert_analysis!(favorite, raw_content, analysis_result, extraction: nil, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT)
+        def self.upsert_analysis!(favorite, raw_content, analysis_result, extraction: nil, analysis_style: DEFAULT_ANALYSIS_STYLE)
           attrs = {
             raw_content: raw_content,
             summary: analysis_result[:summary],

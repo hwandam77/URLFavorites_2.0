@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require Rails.root.join("app/url_favorites/domain/analysis").to_s
+require Rails.root.join("app/url_favorites/domain/analysis/prompt_style").to_s
+
 module UrlFavorites
   module Integrations
     module LlamaServer
