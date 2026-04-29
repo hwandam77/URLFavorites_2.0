@@ -47,7 +47,9 @@ module UrlFavorites
           element = doc.at_css("article") || doc.at_css("main") || doc.at_css("body")
           return "" unless element
 
-          text = element.text.gsub(/\s+/, " ").strip
+          clone = element.dup
+          clone.css("script, style, noscript").each(&:remove)
+          text = clone.text.gsub(/\s+/, " ").strip
           text[0...8_000]
         end
       end
