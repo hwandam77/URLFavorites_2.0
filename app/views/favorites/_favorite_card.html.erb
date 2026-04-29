@@ -78,7 +78,7 @@
     </div>
   </div>
 
-  <%= link_to favorite_path(favorite), class: "block p-3.5" do %>
+  <%= link_to favorite_path(favorite), class: "block p-3.5", data: { turbo_prefetch: false } do %>
     <%# 파비콘 + 제목 %>
     <div class="flex items-start gap-3 mb-2.5">
       <img src="<%= favicon_url %>"
