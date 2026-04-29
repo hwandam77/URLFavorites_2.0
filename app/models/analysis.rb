@@ -7,6 +7,8 @@ class Analysis < ApplicationRecord
 
   validates :sentiment, inclusion: { in: %w[positive neutral negative] }, allow_nil: true
 
+  after_commit :broadcast_favorite_refresh
+
   def analysis_style_label
     UrlFavorites::Domain::Analysis::PromptStyle.label(analysis_style)
   end
@@ -58,5 +60,11 @@ class Analysis < ApplicationRecord
     else
       format("%02d:%02d", minutes, secs)
     end
+  end
+
+  private
+
+  def broadcast_favorite_refresh
+    favorite.broadcast_refresh_to favorite
   end
 end
