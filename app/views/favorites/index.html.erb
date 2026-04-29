@@ -246,7 +246,7 @@
 
   <div class="urlf-workspace-body">
     <section>
-      <%= turbo_frame_tag "favorites" do %>
+      <%= turbo_frame_tag "favorites", target: "_top" do %>
         <% has_favorites = @favorites.respond_to?(:empty?) ? !@favorites.empty? : @favorites.present? %>
         <div class="urlf-card-grid" id="favorites-grid" data-view-mode-target="cardView">
           <%= render partial: "favorite_card", collection: @favorites, as: :favorite %>

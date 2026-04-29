@@ -42,6 +42,21 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "바이브 코딩 실전 자료"
   end
 
+  test "GET /favorites 즐겨찾기 프레임의 상세 링크는 전체 페이지로 이동합니다" do
+    Favorite.create!(
+      title: "Frame Link",
+      url: "https://example.com/frame-link",
+      content_type: "webpage",
+      status: "done"
+    )
+
+    get favorites_url
+
+    assert_response :success
+    assert_select "turbo-frame#favorites[target='_top']"
+    assert_select "form[data-turbo-frame='favorites']"
+  end
+
   test "GET /favorites 검색 쿼리로 결과를 필터링합니다" do
     fav = Favorite.create!(
       title: "Rails Guide",
