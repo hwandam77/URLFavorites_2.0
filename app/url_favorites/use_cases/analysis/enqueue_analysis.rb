@@ -10,7 +10,7 @@ module UrlFavorites
           if favorite.content_type == "youtube"
             AnalyzeYoutubeJob.perform_later(favorite.id, normalized_style)
           else
-            AnalyzeWebpageJob.perform_later(favorite.id, normalized_style)
+            AnalyzeWebpageAnalysisJob.perform_later(favorite.id, normalized_style)
           end
         end
       end

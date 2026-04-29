@@ -14,7 +14,7 @@ class UrlFavorites::UseCases::Favorites::CreateFavoriteTest < ActiveSupport::Tes
   test "새 GitHub URL을 만들면 대기 상태에 머물지 않고 바로 분석 작업을 예약한다" do
     result = nil
 
-    assert_enqueued_jobs 1, only: AnalyzeWebpageJob do
+    assert_enqueued_jobs 1, only: AnalyzeWebpageAnalysisJob do
       result = UrlFavorites::UseCases::Favorites::CreateFavorite.call(
         url: "https://github.com/GitFrog1111/OpenWhip"
       )
@@ -36,7 +36,7 @@ class UrlFavorites::UseCases::Favorites::CreateFavoriteTest < ActiveSupport::Tes
     )
     result = nil
 
-    assert_enqueued_jobs 1, only: AnalyzeWebpageJob do
+    assert_enqueued_jobs 1, only: AnalyzeWebpageAnalysisJob do
       result = UrlFavorites::UseCases::Favorites::CreateFavorite.call(url: existing.url)
     end
 

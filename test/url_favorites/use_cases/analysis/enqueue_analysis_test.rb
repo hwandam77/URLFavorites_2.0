@@ -35,7 +35,7 @@ class UrlFavorites::UseCases::Analysis::EnqueueAnalysisTest < ActiveSupport::Tes
       status: "done"
     )
 
-    assert_enqueued_with(job: AnalyzeWebpageJob, args: [ favorite.id, "execution_brief" ]) do
+    assert_enqueued_with(job: AnalyzeWebpageAnalysisJob, args: [ favorite.id, "execution_brief" ]) do
       UrlFavorites::UseCases::Analysis::EnqueueAnalysis.call(
         favorite_id: favorite.id,
         analysis_style: "unknown"
@@ -52,7 +52,7 @@ class UrlFavorites::UseCases::Analysis::EnqueueAnalysisTest < ActiveSupport::Tes
       status: "pending"
     )
 
-    assert_enqueued_with(job: AnalyzeWebpageJob, args: [ favorite.id, "execution_brief" ]) do
+    assert_enqueued_with(job: AnalyzeWebpageAnalysisJob, args: [ favorite.id, "execution_brief" ]) do
       UrlFavorites::UseCases::Analysis::EnqueueAnalysis.call(favorite_id: favorite.id)
     end
 
