@@ -38,6 +38,7 @@ module UrlFavorites
             retry_count: 0
           )
         rescue => e
+          raise e unless favorite
           favorite.update!(
             status: "failed",
             retry_count: favorite.retry_count.to_i + 1,

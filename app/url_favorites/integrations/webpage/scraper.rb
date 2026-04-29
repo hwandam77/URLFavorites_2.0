@@ -12,11 +12,12 @@ module UrlFavorites
         def self.call(url)
           response = Faraday.new(request: { timeout: 30, open_timeout: 10 }).get(url)
 
-          raise FetchError, "HTTP error: #{response.status}" if response.status >= 400
-
-          if cloudflare_challenge?(response.body)
+          # Cloudflare는 403 또는 200+챌린지 페이지로 차단 → Jina fallback
+          if cloudflare_blocked?(response)
             return fetch_via_jina(url)
           end
+
+          raise FetchError, "HTTP error: #{response.status}" if response.status >= 400
 
           doc = Nokogiri::HTML(response.body)
 
@@ -30,8 +31,10 @@ module UrlFavorites
           raise FetchError, "Network error: #{e.message}"
         end
 
-        def self.cloudflare_challenge?(body)
-          body.include?(CLOUDFLARE_SIGNATURE)
+        def self.cloudflare_blocked?(response)
+          return true if response.status == 403 && response.body.include?("cloudflare")
+          return true if response.body.include?(CLOUDFLARE_SIGNATURE)
+          false
         end
 
         def self.fetch_via_jina(url)
