@@ -144,6 +144,8 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "form[action='#{reanalyze_favorite_path(fav)}'][method='post']", text: /재분석/
     assert_includes response.body, "turbo-cable-stream-source"
+    assert_select "script[type='importmap']"
+    assert_select "script[type='module']", text: /import "application"/
   end
 
   test "GET /favorites/:id 분석중이면 재분석 버튼 대신 분석중 상태를 표시합니다" do
