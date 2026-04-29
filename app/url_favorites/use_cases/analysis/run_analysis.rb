@@ -6,12 +6,17 @@ module UrlFavorites
           favorite = Favorite.find(favorite_id)
           favorite.update!(status: "analyzing", error_message: nil)
 
-          raw_content = favorite.raw_content.presence || extract_raw_content(favorite)
-          favorite.update!(raw_content: raw_content) if favorite.raw_content.blank?
+          extraction = nil
+          raw_content = favorite.raw_content.presence
+          if raw_content.blank?
+            extraction = extract_content(favorite)
+            raw_content = extraction[:raw_content]
+            favorite.update!(raw_content: raw_content)
+          end
 
           analysis_result = UrlFavorites::Integrations::LlamaServer::Client.call(raw_content, type: favorite.content_type)
 
-          upsert_analysis!(favorite, raw_content, analysis_result)
+          upsert_analysis!(favorite, raw_content, analysis_result, extraction: extraction)
 
           favorite.update!(
             status: "done",
@@ -27,16 +32,16 @@ module UrlFavorites
           raise e if favorite.retry_count < UrlFavorites::Domain::Analysis::RetryPolicy::MAX_RETRIES
         end
 
-        def self.extract_raw_content(favorite)
+        def self.extract_content(favorite)
           if favorite.content_type == "youtube"
-            r = UrlFavorites::Integrations::Youtube::Extractor.call(favorite.url)
-            favorite.update!(thumbnail_url: r[:thumbnail_url]) if r[:thumbnail_url].present?
-            favorite.update!(title: r[:title]) if r[:title].present? && (favorite.title.blank? || favorite.title.to_s.start_with?("http://", "https://"))
-            youtube_analysis_input(r)
+            extraction = UrlFavorites::Integrations::Youtube::Extractor.call(favorite.url)
+            favorite.update!(thumbnail_url: extraction[:thumbnail_url]) if extraction[:thumbnail_url].present?
+            favorite.update!(title: extraction[:title]) if extraction[:title].present? && (favorite.title.blank? || favorite.title.to_s.start_with?("http://", "https://"))
+            extraction.merge(raw_content: youtube_analysis_input(extraction))
           else
-            r = UrlFavorites::Integrations::Webpage::Scraper.call(favorite.url)
-            favorite.update!(title: r[:title]) if r[:title].present?
-            [ r[:title], r[:body_text] ].compact.join(" ")
+            extraction = UrlFavorites::Integrations::Webpage::Scraper.call(favorite.url)
+            favorite.update!(title: extraction[:title]) if extraction[:title].present?
+            { raw_content: [ extraction[:title], extraction[:body_text] ].compact.join(" ") }
           end
         end
 
@@ -60,7 +65,21 @@ module UrlFavorites
 
             Transcript:
             #{extraction[:transcript]}
+
+            Timestamped transcript sample:
+            #{timestamped_transcript_section(extraction[:transcript_segments])}
           CONTENT
+        end
+
+        def self.timestamped_transcript_section(segments)
+          normalized_segments = Array(segments).first(80)
+          return "- 미확인" if normalized_segments.empty?
+
+          normalized_segments.map do |segment|
+            timestamp = segment[:timestamp] || segment["timestamp"] || "00:00"
+            text = segment[:text] || segment["text"]
+            "- [#{timestamp}] #{text}"
+          end.join("\n")
         end
 
         def self.github_links_section(links)
@@ -70,7 +89,7 @@ module UrlFavorites
           normalized_links.map { |link| "- #{link}" }.join("\n")
         end
 
-        def self.upsert_analysis!(favorite, raw_content, analysis_result)
+        def self.upsert_analysis!(favorite, raw_content, analysis_result, extraction: nil)
           attrs = {
             raw_content: raw_content,
             summary: analysis_result[:summary],
@@ -79,6 +98,11 @@ module UrlFavorites
             sentiment: analysis_result[:sentiment],
             detail_content: analysis_result[:detail_content]
           }
+          if extraction
+            attrs[:transcript] = extraction[:transcript]
+            attrs[:subtitle_source] = extraction[:subtitle_source]
+            attrs[:transcript_segments] = extraction[:transcript_segments] if extraction[:transcript_segments]
+          end
 
           if favorite.analysis
             favorite.analysis.update!(**attrs)

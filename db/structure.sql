@@ -30,7 +30,7 @@ CREATE VIRTUAL TABLE favorites_fts USING fts5(
   tokenize='porter ascii'
 )
 /* favorites_fts(favorite_id,title,summary,tags,note,content_embedding) */;
-CREATE TABLE IF NOT EXISTS "analyses" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "analyzed_at" datetime(6), "created_at" datetime(6) NOT NULL, "favorite_id" integer NOT NULL, "key_points" text, "model_used" varchar, "raw_content" text, "sentiment" varchar, "subtitle_source" varchar, "summary" text, "tags" text, "transcript" text, "updated_at" datetime(6) NOT NULL, "video_metadata" text, "detail_content" text /*application='UrlFavorites20'*/, CONSTRAINT "fk_rails_b11216332f"
+CREATE TABLE IF NOT EXISTS "analyses" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "analyzed_at" datetime(6), "created_at" datetime(6) NOT NULL, "favorite_id" integer NOT NULL, "key_points" text, "model_used" varchar, "raw_content" text, "sentiment" varchar, "subtitle_source" varchar, "summary" text, "tags" text, "transcript" text, "updated_at" datetime(6) NOT NULL, "video_metadata" text, "detail_content" text /*application='UrlFavorites20'*/, "transcript_segments" text /*application='UrlFavorites20'*/, CONSTRAINT "fk_rails_b11216332f"
 FOREIGN KEY ("favorite_id")
   REFERENCES "favorites" ("id")
 );
@@ -39,6 +39,7 @@ CREATE INDEX "index_favorites_on_category" ON "favorites" ("category") /*applica
 CREATE INDEX "index_favorites_on_pinned" ON "favorites" ("pinned") /*application='UrlFavorites20'*/;
 CREATE UNIQUE INDEX "index_favorites_on_id" ON "favorites" ("id") /*application='UrlFavorites20'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260429000001'),
 ('20260418000001'),
 ('20260414000001'),
 ('20260413000002'),
@@ -50,4 +51,3 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260407000003'),
 ('20260407000002'),
 ('20260407000001');
-

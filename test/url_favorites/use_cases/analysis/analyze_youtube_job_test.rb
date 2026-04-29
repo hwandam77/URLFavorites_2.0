@@ -15,6 +15,10 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
       description: "Rails 8 소개 https://github.com/rails/rails",
       transcript: "안녕하세요. 이 영상에서는 Rails 8을 소개합니다.",
       subtitle_source: "manual",
+      transcript_segments: [
+        { start: 0.0, duration: 3.0, timestamp: "00:00", text: "안녕하세요." },
+        { start: 3.0, duration: 4.0, timestamp: "00:03", text: "이 영상에서는 Rails 8을 소개합니다." }
+      ],
       github_links: [ "https://github.com/rails/rails" ]
     }
     @analyzer_result = {
@@ -40,6 +44,8 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
         assert_equal "Rails 8 튜토리얼 요약", @favorite.analysis.summary
         assert_equal [ "rails", "tutorial" ], @favorite.analysis.tags
         assert_equal "positive", @favorite.analysis.sentiment
+        assert_equal "manual", @favorite.analysis.subtitle_source
+        assert_equal 2, @favorite.analysis.parsed_transcript_segments.size
       end
     end
   end
@@ -76,6 +82,8 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
     assert_includes captured_content, "- https://github.com/rails/rails"
     assert_includes captured_content, "Transcript:"
     assert_includes captured_content, "AI 실행 브리프"
+    assert_includes captured_content, "Timestamped transcript sample:"
+    assert_includes captured_content, "- [00:03] 이 영상에서는 Rails 8을 소개합니다."
   end
 
   test "GitHub 링크가 없으면 분석 입력에 미확인으로 표시한다" do

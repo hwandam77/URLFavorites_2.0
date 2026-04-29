@@ -3,6 +3,7 @@ class Analysis < ApplicationRecord
 
   serialize :key_points, coder: JSON
   serialize :tags, coder: JSON
+  serialize :transcript_segments, coder: JSON
 
   validates :sentiment, inclusion: { in: %w[positive neutral negative] }, allow_nil: true
 
@@ -20,5 +21,38 @@ class Analysis < ApplicationRecord
     end
   rescue JSON::ParserError
     []
+  end
+
+  def parsed_transcript_segments
+    return [] unless transcript_segments
+
+    Array(transcript_segments).filter_map do |segment|
+      next unless segment.is_a?(Hash)
+
+      text = segment["text"].to_s.strip
+      next if text.blank?
+
+      {
+        "start" => segment["start"].to_f,
+        "duration" => segment["duration"].to_f,
+        "text" => text,
+        "timestamp" => segment["timestamp"].presence || self.class.format_timestamp(segment["start"].to_f)
+      }
+    end
+  rescue JSON::ParserError
+    []
+  end
+
+  def self.format_timestamp(seconds)
+    total_seconds = seconds.to_i
+    hours = total_seconds / 3600
+    minutes = (total_seconds % 3600) / 60
+    secs = total_seconds % 60
+
+    if hours.positive?
+      format("%d:%02d:%02d", hours, minutes, secs)
+    else
+      format("%02d:%02d", minutes, secs)
+    end
   end
 end

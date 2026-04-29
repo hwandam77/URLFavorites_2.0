@@ -84,6 +84,8 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
         assert_includes system_message, "출력 형식"
         assert_includes system_message, "reuse the video's method"
         assert_includes system_message, "미확인"
+        assert_includes system_message, "Timestamped transcript sample"
+        assert_includes system_message, "use only timestamps shown"
         assert_includes system_message, "timestamp may be an empty string"
         assert_includes user_message, "youtube:"
         true

@@ -176,6 +176,7 @@ module UrlFavorites
             - In "## 바로 사용 가능한 AI 프롬프트", write one complete ready-to-use prompt that another AI can execute immediately.
             - The purpose of "## 바로 사용 가능한 AI 프롬프트" is to help the user reuse the video's method on their own input or task.
             - The ready-to-use prompt must explicitly include 역할, 작업, 입력, and 출력 형식.
+            - When "Timestamped transcript sample" is provided, key_points timestamps must use only timestamps shown in that sample.
             - If the title, description, or transcript does not provide evidence for a section, write "미확인" instead of guessing.
             - timestamp may be an empty string when transcript time evidence is unavailable.
             - key_points should prefer actionable insights over generic topic labels.

@@ -81,10 +81,23 @@ class UrlFavorites::Integrations::Youtube::ExtractorTest < ActiveSupport::TestCa
     end
   end
 
+  test "subtitles 타임스탬프를 transcript_segments 로 반환한다" do
+    Open3.stub(:capture3, [ VALID_JSON, "", ok_status ]) do
+      result = UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=test")
+
+      assert_equal 2, result[:transcript_segments].size
+      assert_equal 0.0, result[:transcript_segments].first[:start]
+      assert_equal "00:00", result[:transcript_segments].first[:timestamp]
+      assert_equal "First subtitle line.", result[:transcript_segments].first[:text]
+      assert_equal "00:05", result[:transcript_segments].second[:timestamp]
+    end
+  end
+
   test "subtitles 없으면 automatic_captions fallback" do
     Open3.stub(:capture3, [ AUTO_CAPTIONS_JSON, "", ok_status ]) do
       result = UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=auto")
       assert_includes result[:transcript], "Auto caption 1"
+      assert_equal "00:03", result[:transcript_segments].second[:timestamp]
     end
   end
 
@@ -92,6 +105,7 @@ class UrlFavorites::Integrations::Youtube::ExtractorTest < ActiveSupport::TestCa
     Open3.stub(:capture3, [ NO_SUBTITLES_JSON, "", ok_status ]) do
       result = UrlFavorites::Integrations::Youtube::Extractor.call("https://youtube.com/watch?v=nodesc")
       assert_includes result[:transcript], "Fallback description"
+      assert_empty result[:transcript_segments]
     end
   end
 

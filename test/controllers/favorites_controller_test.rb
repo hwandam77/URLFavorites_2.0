@@ -176,6 +176,34 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='https://example.com/original'][target='_blank']", text: /원본 링크 열기/
   end
 
+  test "GET /favorites/:id YouTube 타임스탬프 근거 링크와 자막 타임라인을 표시합니다" do
+    fav = Favorite.create!(
+      title: "Timestamped Video",
+      url: "https://www.youtube.com/watch?v=abc123def45",
+      content_type: "youtube",
+      status: "done"
+    )
+    Analysis.create!(
+      favorite: fav,
+      summary: "타임스탬프 분석",
+      tags: [ "youtube" ],
+      key_points: [
+        { "category" => "실행", "point" => "핵심 절차", "timestamp" => "00:03" }
+      ],
+      sentiment: "positive",
+      transcript_segments: [
+        { "start" => 3.0, "duration" => 4.0, "timestamp" => "00:03", "text" => "핵심 절차 설명" }
+      ]
+    )
+
+    get favorite_url(fav)
+
+    assert_response :success
+    assert_select "a[href='https://www.youtube.com/watch?v=abc123def45&t=3s']", text: /근거 00:03/
+    assert_select "section", text: /타임라인 자막/
+    assert_includes response.body, "핵심 절차 설명"
+  end
+
   test "DELETE /favorites/:id 즐겨찾기를 삭제합니다" do
     fav = Favorite.create!(
       title: "Delete Me",
