@@ -30,19 +30,19 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     get favorites_url
 
     assert_response :success
-    assert_select "#favorites-grid a[href='https://ai-news-5min-kr.netlify.app/'][target='_blank']", text: /뉴스 데스크 열기/
-    assert_includes response.body, "5MIN AI NEWS"
+    assert_select "a[href='https://ai-news-5min-kr.netlify.app/'][target='_blank']", text: /뉴스 데스크 열기/
+    assert_includes response.body, "5분 AI 뉴스"
   end
 
   test "GET /favorites VibeLabs 배너를 표시합니다" do
     get favorites_url
 
     assert_response :success
-    assert_select "#favorites-grid a[href='https://vibelabs.kr/'][target='_blank']", text: /VibeLabs 열기/
+    assert_select "a[href='https://vibelabs.kr/'][target='_blank']", text: /VibeLabs 열기/
     assert_includes response.body, "바이브 코딩 실전 자료"
   end
 
-  test "GET /favorites 즐겨찾기 프레임의 상세 링크는 전체 페이지로 이동합니다" do
+  test "GET /favorites 즐겨찾기 프레임은 상세 링크를 프레임 안에서 엽니다" do
     Favorite.create!(
       title: "Frame Link",
       url: "https://example.com/frame-link",
@@ -53,7 +53,7 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     get favorites_url
 
     assert_response :success
-    assert_select "turbo-frame#favorites[target='_top']"
+    assert_select "turbo-frame#favorites:not([target])"
     assert_select "form[data-turbo-frame='favorites']"
   end
 
@@ -120,6 +120,22 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     get favorite_url(fav)
     assert_response :success
     assert_includes response.body, "Test"
+    assert_select "turbo-frame#favorites"
+  end
+
+  test "GET /favorites/:id Turbo Frame 요청은 분석 상세를 favorites 프레임 안에 반환합니다" do
+    fav = Favorite.create!(
+      title: "Frame Detail",
+      url: "https://example.com/frame-detail",
+      content_type: "webpage",
+      status: "done"
+    )
+
+    get favorite_url(fav), headers: { "Turbo-Frame" => "favorites" }
+
+    assert_response :success
+    assert_select "turbo-frame#favorites", text: /Frame Detail/
+    assert_select "a[href='#{favorites_path}']", text: /아카이브로 돌아가기/
   end
 
   test "GET /favorites/:id 원본 링크 열기 버튼을 표시합니다" do
