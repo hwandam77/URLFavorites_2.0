@@ -64,7 +64,7 @@ module UrlFavorites
 
           response = conn.post("/v1/chat/completions", body)
 
-          parsed = JSON.parse(response.body, symbolize_names: true)
+          parsed = parse_json_object(response.body)
           inner = extract_result_from(parsed)
           validate_required_keys!(inner)
 
@@ -110,9 +110,52 @@ module UrlFavorites
             raise ParseError, "Missing message.content in response" if message_content.blank?
 
             json = strip_json_fences(message_content)
-            JSON.parse(json, symbolize_names: true)
+            parse_json_object(json)
           else
             parsed
+          end
+        end
+
+        def self.parse_json_object(text)
+          JSON.parse(text, symbolize_names: true)
+        rescue JSON::ParserError
+          JSON.parse(escape_control_chars_in_strings(text), symbolize_names: true)
+        end
+
+        def self.escape_control_chars_in_strings(text)
+          in_string = false
+          escaped = false
+
+          text.each_char.with_object(+"") do |char, output|
+            if escaped
+              output << char
+              escaped = false
+              next
+            end
+
+            if char == "\\"
+              output << char
+              escaped = true
+              next
+            end
+
+            if char == '"'
+              in_string = !in_string
+              output << char
+              next
+            end
+
+            if in_string && char.ord < 0x20
+              output << case char
+                        when "\n" then "\\n"
+                        when "\r" then "\\r"
+                        when "\t" then "\\t"
+                        else "\\u%04x" % char.ord
+                        end
+              next
+            end
+
+            output << char
           end
         end
 
@@ -158,6 +201,7 @@ module UrlFavorites
             - summary: under 200 characters
             - key_points: max 5 items
             - detail_content: 전체 핵심 내용 3~5문단으로 작성
+            - Escape all line breaks inside JSON string values as \\n. Do not insert literal newline characters inside quoted JSON strings.
             #{youtube_prompt_rules(normalized_style) if type == "youtube"}
           PROMPT
         end
@@ -251,6 +295,8 @@ module UrlFavorites
           :attempt_backend,
           :resolve_backends,
           :extract_result_from,
+          :parse_json_object,
+          :escape_control_chars_in_strings,
           :strip_json_fences,
           :validate_required_keys!,
           :system_prompt,

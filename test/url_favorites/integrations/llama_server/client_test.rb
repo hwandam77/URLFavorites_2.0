@@ -33,6 +33,35 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
     assert_equal "positive", result[:sentiment]
   end
 
+  def test_call_repairs_literal_newlines_inside_model_json_strings
+    invalid_inner_json = <<~JSON
+      {
+        "summary": "튜토리얼 요약",
+        "key_points": ["준비", "실행"],
+        "tags": ["tutorial"],
+        "sentiment": "positive",
+        "detail_content": "## 준비물
+      - Ollama
+      ## 단계별 실행
+      1. 실행한다"
+      }
+    JSON
+    response_body = {
+      choices: [
+        { message: { content: invalid_inner_json } }
+      ]
+    }.to_json
+
+    stub_request(:post, ENV.fetch("LLAMA_SERVER_URL", "http://localhost:8080") + "/v1/chat/completions")
+      .to_return(status: 200, body: response_body, headers: { "Content-Type" => "application/json" })
+
+    result = UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "youtube", analysis_style: "tutorial")
+
+    assert_equal "튜토리얼 요약", result[:summary]
+    assert_includes result[:detail_content], "## 준비물"
+    assert_includes result[:detail_content], "## 단계별 실행"
+  end
+
   def test_call_raises_server_error_on_invalid_json
     stub_request(:post, ENV.fetch("LLAMA_SERVER_URL", "http://localhost:8080") + "/v1/chat/completions")
       .to_return(status: 200, body: "invalid json", headers: { "Content-Type" => "application/json" })
