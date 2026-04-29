@@ -26,6 +26,22 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "GET /favorites 5분 AI 뉴스 배너를 표시합니다" do
+    get favorites_url
+
+    assert_response :success
+    assert_select "a[href='https://ai-news-5min-kr.netlify.app/'][target='_blank']", text: /뉴스 데스크 열기/
+    assert_includes response.body, "5분 AI 뉴스"
+  end
+
+  test "GET /favorites VibeLabs 배너를 표시합니다" do
+    get favorites_url
+
+    assert_response :success
+    assert_select "a[href='https://vibelabs.kr/'][target='_blank']", text: /VibeLabs 열기/
+    assert_includes response.body, "바이브 코딩 실전 자료"
+  end
+
   test "GET /favorites 검색 쿼리로 결과를 필터링합니다" do
     fav = Favorite.create!(
       title: "Rails Guide",
