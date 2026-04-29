@@ -1,3 +1,5 @@
+require Rails.root.join("app/url_favorites/domain/analysis").to_s
+require Rails.root.join("app/url_favorites/domain/analysis/prompt_style").to_s
 require Rails.root.join("app/url_favorites/use_cases/analysis/run_analysis").to_s
 
 class AnalyzeWebpageJob < ApplicationJob
