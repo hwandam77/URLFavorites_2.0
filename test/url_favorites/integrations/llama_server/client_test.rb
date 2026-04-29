@@ -67,6 +67,7 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
       .with do |request|
         body = JSON.parse(request.body)
         system_message = body.fetch("messages").first.fetch("content")
+        style_message = body.fetch("messages").second.fetch("content")
         user_message = body.fetch("messages").last.fetch("content")
 
         assert_includes system_message, "For YouTube content"
@@ -87,11 +88,28 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
         assert_includes system_message, "Timestamped transcript sample"
         assert_includes system_message, "use only timestamps shown"
         assert_includes system_message, "timestamp may be an empty string"
+        assert_includes style_message, "Analysis style: execution_brief"
+        assert_includes style_message, "AI execution brief"
         assert_includes user_message, "youtube:"
         true
       end
       .to_return(status: 200, body: @valid_response, headers: { "Content-Type" => "application/json" })
 
     UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "youtube")
+  end
+
+  def test_call_includes_selected_analysis_style_prompt
+    stub_request(:post, ENV.fetch("LLAMA_SERVER_URL", "http://localhost:8080") + "/v1/chat/completions")
+      .with do |request|
+        body = JSON.parse(request.body)
+        style_message = body.fetch("messages").second.fetch("content")
+
+        assert_includes style_message, "Analysis style: qna"
+        assert_includes style_message, "Korean Q&A document"
+        true
+      end
+      .to_return(status: 200, body: @valid_response, headers: { "Content-Type" => "application/json" })
+
+    UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "youtube", analysis_style: "qna")
   end
 end

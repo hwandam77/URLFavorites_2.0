@@ -7,6 +7,10 @@ class Analysis < ApplicationRecord
 
   validates :sentiment, inclusion: { in: %w[positive neutral negative] }, allow_nil: true
 
+  def analysis_style_label
+    UrlFavorites::Domain::Analysis::PromptStyle.label(analysis_style)
+  end
+
   def parsed_tags
     tags.is_a?(Array) ? tags : []
   end

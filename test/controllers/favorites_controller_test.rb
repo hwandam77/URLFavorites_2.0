@@ -241,7 +241,12 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     get favorite_url(fav)
 
     assert_response :success
-    assert_select "form[action='#{reanalyze_favorite_path(fav)}'][method='post']", text: /재분석/
+    assert_select "form[action='#{reanalyze_favorite_path(fav)}'][method='post']"
+    assert_select "input[type='submit'][value='재분석']"
+    assert_select "select[name='analysis_style'] option[value='execution_brief']", text: /실행 브리프/
+    assert_select "select[name='analysis_style'] option[value='qna']", text: /Q&A/
+    assert_select "select[name='analysis_style'] option[value='tutorial']", text: /튜토리얼/
+    assert_select "select[name='analysis_style'] option[value='prompt_extract']", text: /프롬프트 추출/
     assert_includes response.body, "turbo-cable-stream-source"
     assert_select "script[type='importmap']"
     assert_select "script[type='module']", text: /import "application"/
@@ -271,7 +276,7 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
       raw_content: "cached raw content"
     )
 
-    post reanalyze_favorite_url(fav)
+    post reanalyze_favorite_url(fav), params: { analysis_style: "qna" }
 
     assert_redirected_to favorite_url(fav)
     assert_equal "analyzing", fav.reload.status

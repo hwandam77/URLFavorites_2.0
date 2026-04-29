@@ -22,12 +22,12 @@ module UrlFavorites
         @@connection_cache = {}
         cattr_accessor :connection_cache, instance_reader: false, instance_writer: false
 
-        def self.call(content, type:)
+        def self.call(content, type:, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT)
           backends = resolve_backends
 
           last_error = nil
           backends.each do |backend|
-            result = attempt_backend(backend, content, type)
+            result = attempt_backend(backend, content, type, analysis_style)
             return result if result
           rescue ServerError, ParseError => e
             last_error = e
@@ -37,7 +37,7 @@ module UrlFavorites
           raise ServerError, "All LLM backends failed. Last error: #{last_error&.message}"
         end
 
-        def self.attempt_backend(backend, content, type)
+        def self.attempt_backend(backend, content, type, analysis_style)
           base_url = backend[:url]
           timeout = backend[:timeout] || DEFAULT_TIMEOUT_SECONDS
           model = backend[:model] || "local"
@@ -55,6 +55,7 @@ module UrlFavorites
             model: model,
             messages: [
               { role: "system", content: system_prompt(type) },
+              { role: "system", content: style_prompt(analysis_style) },
               { role: "user", content: "#{type}: #{content}" }
             ],
             response_format: { type: "json_object" }
@@ -184,6 +185,14 @@ module UrlFavorites
           RULES
         end
 
+        def self.style_prompt(analysis_style)
+          normalized_style = UrlFavorites::Domain::Analysis::PromptStyle.normalize(analysis_style)
+          <<~PROMPT
+            Analysis style: #{normalized_style}
+            #{UrlFavorites::Domain::Analysis::PromptStyle.instructions_for(normalized_style)}
+          PROMPT
+        end
+
         private_class_method(
           :attempt_backend,
           :resolve_backends,
@@ -191,7 +200,8 @@ module UrlFavorites
           :strip_json_fences,
           :validate_required_keys!,
           :system_prompt,
-          :youtube_prompt_rules
+          :youtube_prompt_rules,
+          :style_prompt
         )
       end
     end

@@ -11,7 +11,7 @@ class AnalyzeWebpageJob < ApplicationJob
     end
   end
 
-  def perform(favorite_id)
-    UrlFavorites::UseCases::Analysis::RunAnalysis.call(favorite_id: favorite_id)
+  def perform(favorite_id, analysis_style = UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT)
+    UrlFavorites::UseCases::Analysis::RunAnalysis.call(favorite_id: favorite_id, analysis_style: analysis_style)
   end
 end

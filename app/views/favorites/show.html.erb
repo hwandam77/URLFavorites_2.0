@@ -82,10 +82,16 @@
         분석중
       </button>
     <% else %>
-      <%= button_to "재분석", reanalyze_favorite_path(@favorite), method: :post,
-            data: { turbo_confirm: "기존 원문 캐시를 사용해 AI 분석을 다시 실행합니다. 계속할까요?" },
-            class: "transition-all",
-            style: "background:var(--color-ai-muted);color:var(--color-text);border:1px solid var(--color-ai-accent);padding:5px 12px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:600;cursor:pointer;" %>
+      <%= form_with url: reanalyze_favorite_path(@favorite), method: :post,
+            class: "inline-flex items-center gap-2",
+            data: { turbo_confirm: "기존 원문 캐시를 사용해 AI 분석을 다시 실행합니다. 계속할까요?" } do %>
+        <%= select_tag :analysis_style,
+              options_for_select(UrlFavorites::Domain::Analysis::PromptStyle::OPTIONS.map { |value, label| [ label, value ] }, @favorite.analysis&.analysis_style || UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT),
+              style: "height:28px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:0 8px;font-size:var(--text-xs);font-weight:650;color:var(--color-text-secondary);outline:none;cursor:pointer;" %>
+        <%= submit_tag "재분석",
+              class: "transition-all",
+              style: "background:var(--color-ai-muted);color:var(--color-text);border:1px solid var(--color-ai-accent);padding:5px 12px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:600;cursor:pointer;" %>
+      <% end %>
     <% end %>
     <%= button_to "삭제", favorite_path(@favorite), method: :delete,
           data: { turbo_confirm: "정말 삭제하시겠습니까?" },
@@ -255,6 +261,8 @@
         <span
         >분석 모델: <%= @favorite.analysis.model_used %></span>
       <% end %>
+      <span
+      >분석 스타일: <%= @favorite.analysis.analysis_style_label %></span>
       <span
       >저장일: <%= @favorite.created_at.strftime("%Y.%m.%d") %></span>
     </div>

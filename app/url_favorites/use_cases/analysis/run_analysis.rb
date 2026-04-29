@@ -2,9 +2,10 @@ module UrlFavorites
   module UseCases
     module Analysis
       class RunAnalysis
-        def self.call(favorite_id:)
+        def self.call(favorite_id:, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT)
           favorite = Favorite.find(favorite_id)
           favorite.update!(status: "analyzing", error_message: nil)
+          normalized_style = UrlFavorites::Domain::Analysis::PromptStyle.normalize(analysis_style)
 
           extraction = nil
           raw_content = favorite.raw_content.presence
@@ -14,9 +15,13 @@ module UrlFavorites
             favorite.update!(raw_content: raw_content)
           end
 
-          analysis_result = UrlFavorites::Integrations::LlamaServer::Client.call(raw_content, type: favorite.content_type)
+          analysis_result = UrlFavorites::Integrations::LlamaServer::Client.call(
+            raw_content,
+            type: favorite.content_type,
+            analysis_style: normalized_style
+          )
 
-          upsert_analysis!(favorite, raw_content, analysis_result, extraction: extraction)
+          upsert_analysis!(favorite, raw_content, analysis_result, extraction: extraction, analysis_style: normalized_style)
 
           favorite.update!(
             status: "done",
@@ -89,14 +94,15 @@ module UrlFavorites
           normalized_links.map { |link| "- #{link}" }.join("\n")
         end
 
-        def self.upsert_analysis!(favorite, raw_content, analysis_result, extraction: nil)
+        def self.upsert_analysis!(favorite, raw_content, analysis_result, extraction: nil, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT)
           attrs = {
             raw_content: raw_content,
             summary: analysis_result[:summary],
             key_points: analysis_result[:key_points],
             tags: analysis_result[:tags],
             sentiment: analysis_result[:sentiment],
-            detail_content: analysis_result[:detail_content]
+            detail_content: analysis_result[:detail_content],
+            analysis_style: analysis_style
           }
           if extraction
             attrs[:transcript] = extraction[:transcript]

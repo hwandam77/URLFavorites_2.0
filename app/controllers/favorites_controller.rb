@@ -91,7 +91,10 @@ class FavoritesController < ApplicationController
   end
 
   def reanalyze
-    @favorite = UrlFavorites::UseCases::Favorites::RetryAnalysis.call(id: params[:id])
+    @favorite = UrlFavorites::UseCases::Favorites::RetryAnalysis.call(
+      id: params[:id],
+      analysis_style: params[:analysis_style]
+    )
     redirect_to favorite_url(@favorite), notice: "분석을 다시 시작했습니다."
   end
 

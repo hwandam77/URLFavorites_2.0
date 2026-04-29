@@ -63,9 +63,10 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
   test "YouTube 분석 입력에 제목 설명 자막 출처와 AI 실행 브리프 지시를 포함한다" do
     captured_content = nil
 
-    analyzer = lambda do |content, type:|
+    analyzer = lambda do |content, type:, analysis_style:|
       captured_content = content
       assert_equal "youtube", type
+      assert_equal "execution_brief", analysis_style
       @analyzer_result
     end
 
@@ -90,9 +91,10 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
     captured_content = nil
     extractor_result = @extractor_result.merge(github_links: [])
 
-    analyzer = lambda do |content, type:|
+    analyzer = lambda do |content, type:, analysis_style:|
       captured_content = content
       assert_equal "youtube", type
+      assert_equal "execution_brief", analysis_style
       @analyzer_result
     end
 
@@ -135,5 +137,27 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
         assert_equal 1, Analysis.where(favorite_id: @favorite.id).count
       end
     end
+  end
+
+  test "선택한 분석 스타일을 LLM 호출과 Analysis에 저장한다" do
+    captured_style = nil
+    analyzer = lambda do |_content, type:, analysis_style:|
+      assert_equal "youtube", type
+      captured_style = analysis_style
+      @analyzer_result
+    end
+
+    UrlFavorites::Integrations::Youtube::Extractor.stub(:call, @extractor_result) do
+      UrlFavorites::Integrations::LlamaServer::Client.stub(:call, analyzer) do
+        UrlFavorites::UseCases::Analysis::RunAnalysis.call(
+          favorite_id: @favorite.id,
+          analysis_style: "qna"
+        )
+      end
+    end
+
+    assert_equal "qna", captured_style
+    assert_equal "qna", @favorite.reload.analysis.analysis_style
+    assert_equal "Q&A", @favorite.analysis.analysis_style_label
   end
 end
