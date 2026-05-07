@@ -73,5 +73,5 @@ group :test do
   # HTTP request stubbing
   gem "webmock"
   # Minitest mock/stub support — minitest 6 removed mock.rb; pin to 5.x
-  gem "minitest", "~> 5"
+  gem "minitest", "~> 6"
 end
