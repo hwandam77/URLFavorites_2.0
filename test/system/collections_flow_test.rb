@@ -2,6 +2,10 @@
 require "application_system_test_case"
 
 class CollectionsFlowTest < ApplicationSystemTestCase
+  def setup
+    sign_in_as
+  end
+
   test "visiting the collections index page" do
     visit collections_url
     assert_selector "h1", text: "컬렉션"

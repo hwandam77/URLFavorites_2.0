@@ -11,6 +11,8 @@ Rails.application.routes.draw do
 
   root "favorites#index"
 
+  resource :session, only: %i[new create destroy]
+
   resources :favorites, only: %i[index create show destroy] do
     resource :note, only: %i[update], controller: "favorite_notes"
     resource :collection_membership, only: %i[create destroy]

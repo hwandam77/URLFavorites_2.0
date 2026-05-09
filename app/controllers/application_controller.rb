@@ -1,4 +1,6 @@
 class ApplicationController < ActionController::Base
+  include Authentication
+
   # 최신 브라우저만 허용 (webp 이미지, 웹 푸시, 배지, import maps, CSS nesting, CSS :has 지원)
   allow_browser versions: :modern
 

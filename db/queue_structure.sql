@@ -163,7 +163,16 @@ CREATE TABLE IF NOT EXISTS 'favorites_fts_config'(k PRIMARY KEY, v) WITHOUT ROWI
 CREATE INDEX "index_favorites_on_category" ON "favorites" ("category") /*application='UrlFavorites20'*/;
 CREATE INDEX "index_favorites_on_pinned" ON "favorites" ("pinned") /*application='UrlFavorites20'*/;
 CREATE UNIQUE INDEX "index_favorites_on_id" ON "favorites" ("id") /*application='UrlFavorites20'*/;
+CREATE TABLE IF NOT EXISTS "users" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "email_address" varchar NOT NULL, "password_digest" varchar NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE UNIQUE INDEX "index_users_on_email_address" ON "users" ("email_address") /*application='UrlFavorites20'*/;
+CREATE TABLE IF NOT EXISTS "sessions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "user_id" integer NOT NULL, "token" varchar NOT NULL, "user_agent" varchar, "ip_address" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_758836b4f0"
+FOREIGN KEY ("user_id")
+  REFERENCES "users" ("id")
+);
+CREATE INDEX "index_sessions_on_user_id" ON "sessions" ("user_id") /*application='UrlFavorites20'*/;
+CREATE UNIQUE INDEX "index_sessions_on_token" ON "sessions" ("token") /*application='UrlFavorites20'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260509000001'),
 ('20260429000002'),
 ('20260429000001'),
 ('20260418000001'),

@@ -4,6 +4,7 @@ require "application_system_test_case"
 class FavoritesFlowTest < ApplicationSystemTestCase
   def setup
     Favorite.where("url LIKE ?", "%example.com/system-test%").destroy_all
+    sign_in_as
   end
 
   def teardown
@@ -23,7 +24,7 @@ class FavoritesFlowTest < ApplicationSystemTestCase
     within "#url-form" do
       fill_in "favorite[url]", with: "https://example.com/system-test-add"
     end
-    click_on "추가하기"
+    click_on "추가"
 
     assert_text "URL이 저장되었습니다"
     assert_text "example.com"

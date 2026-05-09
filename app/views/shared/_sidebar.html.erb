@@ -97,6 +97,40 @@
   <%# 스페이서 %>
   <div class="flex-1"></div>
 
+  <%# 인증 %>
+  <div class="px-3 py-4" style="border-top:1px solid var(--color-border);">
+    <% if authenticated? %>
+      <div class="mb-2 px-3" style="font-size:var(--text-xs);font-weight:650;color:var(--color-text-tertiary);word-break:break-word;">
+        <%= current_user.email_address %>
+      </div>
+      <%= button_to session_path,
+            method: :delete,
+            form: { class: "w-full" },
+            class: "flex items-center gap-2.5 w-full px-3 py-2 rounded-md transition-all",
+            style: "color:var(--color-text-secondary);background:transparent;border:none;text-align:left;cursor:pointer;",
+            onmouseover: "this.style.background='var(--color-surface-hover)'",
+            onmouseout: "this.style.background='transparent'" do %>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9l3 3m0 0l-3 3m3-3H3"/>
+        </svg>
+        <span>로그아웃</span>
+      <% end %>
+    <% else %>
+      <%= link_to new_session_path,
+            class: "flex items-center gap-2.5 w-full px-3 py-2 rounded-md transition-all",
+            style: "color:var(--color-text-secondary);background:transparent;",
+            onmouseover: "this.style.background='var(--color-surface-hover)'",
+            onmouseout: "this.style.background='transparent'" do %>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M18 15l3-3m0 0l-3-3m3 3H9"/>
+        </svg>
+        <span>로그인</span>
+      <% end %>
+    <% end %>
+  </div>
+
   <%# 다크/라이트 모드 토글 %>
   <div class="px-3 py-4" style="border-top:1px solid var(--color-border);">
     <button type="button"

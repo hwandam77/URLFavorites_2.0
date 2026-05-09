@@ -13,6 +13,7 @@ class FavoriteNotesControllerTest < ActionDispatch::IntegrationTest
     @embedding_response = { embedding: [ 0.1, 0.2, 0.3 ] * 384 }.to_json
     stub_request(:post, EMBEDDING_TEST_URL + "/v1/embeddings")
       .to_return(status: 200, body: @embedding_response, headers: { "Content-Type" => "application/json" })
+    sign_in_as
   end
 
   def teardown
