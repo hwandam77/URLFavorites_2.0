@@ -1,0 +1,42 @@
+<%= turbo_stream.prepend "favorites-grid" do %>
+  <%= render partial: "favorites/favorite_card", locals: { favorite: @favorite } %>
+<% end %>
+
+<%= turbo_stream.remove "empty-state" %>
+
+<%= turbo_stream.update "url-error", "" %>
+
+<%= turbo_stream.update "url-form" do %>
+  <div id="url-form" class="mb-8 p-4 rounded-lg" style="background:var(--color-surface);border:1px solid var(--color-border);">
+    <%= form_with url: favorites_path, method: :post, class: "flex gap-3" do |f| %>
+      <%= f.text_field :url, name: "favorite[url]",
+        placeholder: "분석할 URL을 붙여넣으세요...",
+        style: "
+          flex:1;
+          background:var(--color-bg);
+          border:1px solid var(--color-border);
+          border-radius:var(--radius-md);
+          padding:10px 14px;
+          font-size:var(--text-sm);
+          font-weight:500;
+          color:var(--color-text);
+          outline:none;
+          transition:border-color 0.2s;
+        " %>
+      <%= f.submit "추가하기",
+        style: "
+          background:var(--color-accent);
+          color:#fff;
+          padding:10px 20px;
+          border-radius:var(--radius-md);
+          font-size:var(--text-sm);
+          font-weight:600;
+          cursor:pointer;
+          border:none;
+          transition:background 0.2s, transform 0.15s;
+        ",
+        onmouseover: "this.style.background='var(--color-accent-hover)'",
+        onmouseout: "this.style.background='var(--color-accent)'" %>
+    <% end %>
+  </div>
+<% end %>

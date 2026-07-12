@@ -11,10 +11,16 @@ Rails.application.routes.draw do
 
   root "favorites#index"
 
+  resource :session, only: %i[new create destroy]
+
   resources :favorites, only: %i[index create show destroy] do
     resource :note, only: %i[update], controller: "favorite_notes"
     resource :collection_membership, only: %i[create destroy]
+    patch :update_category, on: :member
     post :retry, on: :member
+    post :reanalyze, on: :member
+    post :toggle_pin, on: :member
+    post :share, on: :collection
   end
 
   resources :collections, only: %i[index show create update destroy]

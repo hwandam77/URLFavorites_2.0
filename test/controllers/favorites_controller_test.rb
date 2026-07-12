@@ -1,10 +1,61 @@
 # test/controllers/favorites_controller_test.rb
-require 'test_helper'
+require "test_helper"
+require "webmock/minitest"
 
 class FavoritesControllerTest < ActionDispatch::IntegrationTest
+  EMBEDDING_TEST_URL = "http://localhost:8080"
+
+  def setup
+    super
+    ENV["EMBEDDING_URL"] = EMBEDDING_TEST_URL
+    WebMock.enable!
+    WebMock.disable_net_connect!
+    @embedding_response = { embedding: [ 0.1, 0.2, 0.3 ] * 384 }.to_json
+    stub_request(:post, EMBEDDING_TEST_URL + "/v1/embeddings")
+      .to_return(status: 200, body: @embedding_response, headers: { "Content-Type" => "application/json" })
+    sign_in_as
+  end
+
+  def teardown
+    super
+    ENV.delete("EMBEDDING_URL")
+    WebMock.reset!
+  end
+
   test "GET /favorites 성공을 반환합니다" do
     get favorites_url
     assert_response :success
+  end
+
+  test "GET /favorites 5분 AI 뉴스 배너를 표시합니다" do
+    get favorites_url
+
+    assert_response :success
+    assert_select "a[href='https://ai-news-5min-kr.netlify.app/'][target='_blank']", text: /뉴스 데스크 열기/
+    assert_includes response.body, "5분 AI 뉴스"
+  end
+
+  test "GET /favorites VibeLabs 배너를 표시합니다" do
+    get favorites_url
+
+    assert_response :success
+    assert_select "a[href='https://vibelabs.kr/'][target='_blank']", text: /VibeLabs 열기/
+    assert_includes response.body, "바이브 코딩 실전 자료"
+  end
+
+  test "GET /favorites 즐겨찾기 프레임은 상세 링크를 프레임 안에서 엽니다" do
+    Favorite.create!(
+      title: "Frame Link",
+      url: "https://example.com/frame-link",
+      content_type: "webpage",
+      status: "done"
+    )
+
+    get favorites_url
+
+    assert_response :success
+    assert_select "turbo-frame#favorites:not([target])"
+    assert_select "form[data-turbo-frame='favorites']"
   end
 
   test "GET /favorites 검색 쿼리로 결과를 필터링합니다" do
@@ -17,10 +68,10 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     Analysis.create!(
       favorite: fav,
       summary: "Rails framework",
-      tags: ["rails"],
+      tags: [ "rails" ],
       key_points: []
     )
-    FavoriteSearchIndexer.reindex_all
+    UrlFavorites::Integrations::Search::Indexer.reindex_all
     get favorites_url, params: { q: "Rails" }
     assert_response :success
     assert_includes response.body, "Rails Guide"
@@ -45,13 +96,37 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "Web Page"
   end
 
+  test "GET /favorites 분석 레일은 현재 종류와 같은 분석 목록을 표시합니다" do
+    web = Favorite.create!(
+      title: "Rail Web Context",
+      url: "https://example.com/rail-web",
+      content_type: "webpage",
+      status: "done"
+    )
+    youtube = Favorite.create!(
+      title: "Rail YouTube Context",
+      url: "https://youtube.com/watch?v=rail",
+      content_type: "youtube",
+      status: "done"
+    )
+    Analysis.create!(favorite: web, summary: "Web rail summary", tags: [], key_points: [])
+    Analysis.create!(favorite: youtube, summary: "YouTube rail summary", tags: [], key_points: [])
+
+    get favorites_url, params: { content_type: "youtube" }
+
+    assert_response :success
+    assert_select "[data-rail-context-kind='youtube']", text: /Rail YouTube Context/
+    assert_select "[data-rail-context-kind='webpage']", count: 0
+    assert_select "a[data-turbo-frame='favorites'][href='#{favorite_path(youtube)}']", text: /분석 보기/
+  end
+
   test "POST /favorites 즐겨찾기를 생성하고 작업을 큐에 추가합니다" do
     assert_difference "Favorite.count", 1 do
       post favorites_url, params: { favorite: { url: "https://example.com/new" } }
     end
     assert_redirected_to favorites_url
     fav = Favorite.last
-    assert_equal "pending", fav.status
+    assert_equal "analyzing", fav.status
   end
 
   test "POST /favorites 안전하지 않은 URL 을 거부합니다" do
@@ -70,6 +145,64 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     get favorite_url(fav)
     assert_response :success
     assert_includes response.body, "Test"
+    assert_select "turbo-frame#favorites"
+  end
+
+  test "GET /favorites/:id Turbo Frame 요청은 분석 상세를 favorites 프레임 안에 반환합니다" do
+    fav = Favorite.create!(
+      title: "Frame Detail",
+      url: "https://example.com/frame-detail",
+      content_type: "webpage",
+      status: "done"
+    )
+
+    get favorite_url(fav), headers: { "Turbo-Frame" => "favorites" }
+
+    assert_response :success
+    assert_select "turbo-frame#favorites", text: /Frame Detail/
+    assert_select "a[href='#{favorites_path}']", text: /아카이브로 돌아가기/
+  end
+
+  test "GET /favorites/:id 원본 링크 열기 버튼을 표시합니다" do
+    fav = Favorite.create!(
+      title: "Original Link",
+      url: "https://example.com/original",
+      content_type: "webpage",
+      status: "done"
+    )
+
+    get favorite_url(fav)
+
+    assert_response :success
+    assert_select "a[href='https://example.com/original'][target='_blank']", text: /원본 링크 열기/
+  end
+
+  test "GET /favorites/:id YouTube 타임스탬프 근거 링크와 자막 타임라인을 표시합니다" do
+    fav = Favorite.create!(
+      title: "Timestamped Video",
+      url: "https://www.youtube.com/watch?v=abc123def45",
+      content_type: "youtube",
+      status: "done"
+    )
+    Analysis.create!(
+      favorite: fav,
+      summary: "타임스탬프 분석",
+      tags: [ "youtube" ],
+      key_points: [
+        { "category" => "실행", "point" => "핵심 절차", "timestamp" => "00:03" }
+      ],
+      sentiment: "positive",
+      transcript_segments: [
+        { "start" => 3.0, "duration" => 4.0, "timestamp" => "00:03", "text" => "핵심 절차 설명" }
+      ]
+    )
+
+    get favorite_url(fav)
+
+    assert_response :success
+    assert_select "a[href='https://www.youtube.com/watch?v=abc123def45&t=3s']", text: /근거 00:03/
+    assert_select "section", text: /타임라인 자막/
+    assert_includes response.body, "핵심 절차 설명"
   end
 
   test "DELETE /favorites/:id 즐겨찾기를 삭제합니다" do
@@ -95,6 +228,59 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     post retry_favorite_url(fav)
     assert_redirected_to favorite_url(fav)
     fav.reload
-    assert_equal "pending", fav.status
+    assert_equal "analyzing", fav.status
+  end
+
+  test "GET /favorites/:id 재분석 버튼을 표시합니다" do
+    fav = Favorite.create!(
+      title: "Analyzed",
+      url: "https://example.com/analyzed",
+      content_type: "webpage",
+      status: "done"
+    )
+
+    get favorite_url(fav)
+
+    assert_response :success
+    assert_select "form[action='#{reanalyze_favorite_path(fav)}'][method='post']"
+    assert_select "input[type='submit'][value='재분석']"
+    assert_select "select[name='analysis_style'] option[value='execution_brief']", text: /실행 브리프/
+    assert_select "select[name='analysis_style'] option[value='qna']", text: /Q&A/
+    assert_select "select[name='analysis_style'] option[value='tutorial']", text: /튜토리얼/
+    assert_select "select[name='analysis_style'] option[value='prompt_extract']", text: /프롬프트 추출/
+    assert_includes response.body, "turbo-cable-stream-source"
+    assert_select "script[type='importmap']"
+    assert_select "script[type='module']", text: /import "application"/
+  end
+
+  test "GET /favorites/:id 분석중이면 재분석 버튼 대신 분석중 상태를 표시합니다" do
+    fav = Favorite.create!(
+      title: "Analyzing",
+      url: "https://example.com/analyzing",
+      content_type: "webpage",
+      status: "analyzing"
+    )
+
+    get favorite_url(fav)
+
+    assert_response :success
+    assert_select "button[disabled]", text: /분석중/
+    assert_select "form[action='#{reanalyze_favorite_path(fav)}']", count: 0
+  end
+
+  test "POST /favorites/:id/reanalyze 완료된 즐겨찾기를 다시 큐에 추가합니다" do
+    fav = Favorite.create!(
+      title: "Done",
+      url: "https://example.com/done",
+      content_type: "webpage",
+      status: "done",
+      raw_content: "cached raw content"
+    )
+
+    post reanalyze_favorite_url(fav), params: { analysis_style: "qna" }
+
+    assert_redirected_to favorite_url(fav)
+    assert_equal "analyzing", fav.reload.status
+    assert_equal "cached raw content", fav.raw_content
   end
 end

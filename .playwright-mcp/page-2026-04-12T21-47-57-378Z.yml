@@ -1,0 +1,73 @@
+- generic [ref=e2]:
+  - navigation [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - generic [ref=e8]: URLFAV
+    - generic [ref=e9]:
+      - link "전체 북마크" [ref=e10] [cursor=pointer]:
+        - /url: /ver2.0/favorites
+        - img [ref=e11]
+        - text: 전체 북마크
+      - link "즐겨찾기" [ref=e13] [cursor=pointer]:
+        - /url: /ver2.0/favorites?pinned=true
+        - img [ref=e14]
+        - text: 즐겨찾기
+      - link "아카이브" [ref=e16] [cursor=pointer]:
+        - /url: /ver2.0/favorites?archived=true
+        - img [ref=e17]
+        - text: 아카이브
+    - button "다크 모드" [ref=e21]:
+      - img [ref=e22]
+      - generic [ref=e24]: 다크 모드
+  - main [ref=e25]:
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - heading "BOOKMARKS" [level=1] [ref=e28]
+        - paragraph [ref=e29]: 1 URLs 저장됨
+      - generic [ref=e31]:
+        - textbox "https://..." [ref=e32]
+        - button "추가" [ref=e33] [cursor=pointer]
+      - textbox "즐겨찾기 검색..." [ref=e35]
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - generic [ref=e38]: 유형
+          - generic [ref=e39]:
+            - link "전체" [ref=e40] [cursor=pointer]:
+              - /url: /ver2.0/favorites
+            - link "웹" [ref=e41] [cursor=pointer]:
+              - /url: /ver2.0/favorites?content_type=webpage
+            - link "YouTube" [ref=e42] [cursor=pointer]:
+              - /url: /ver2.0/favorites?content_type=youtube
+        - generic [ref=e43]:
+          - generic [ref=e44]: 상태
+          - generic [ref=e45]:
+            - link "전체" [ref=e46] [cursor=pointer]:
+              - /url: /ver2.0/favorites
+            - link "대기" [ref=e47] [cursor=pointer]:
+              - /url: /ver2.0/favorites?status=pending
+            - link "분석중" [ref=e48] [cursor=pointer]:
+              - /url: /ver2.0/favorites?status=analyzing
+            - link "완료" [ref=e49] [cursor=pointer]:
+              - /url: /ver2.0/favorites?status=done
+            - link "실패" [ref=e50] [cursor=pointer]:
+              - /url: /ver2.0/favorites?status=failed
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - generic [ref=e53]: 정렬
+          - combobox [ref=e55] [cursor=pointer]:
+            - option "최근 추가" [selected]
+            - option "오래된 순"
+            - option "제목 순"
+        - generic [ref=e56]:
+          - button "▦ 카드" [ref=e57] [cursor=pointer]
+          - button "≡ 목록" [ref=e58] [cursor=pointer]
+      - generic [ref=e61]:
+        - button [ref=e64]:
+          - img [ref=e65]
+        - link "https://github.com/Yakitrak/notesmd-cli github.com 실패 ⬡ 웹" [ref=e69] [cursor=pointer]:
+          - /url: /ver2.0/favorites/1
+          - heading "https://github.com/Yakitrak/notesmd-cli" [level=3] [ref=e71]
+          - paragraph [ref=e72]: github.com
+          - generic [ref=e73]:
+            - generic [ref=e74]: 실패
+            - generic [ref=e75]: ⬡ 웹

@@ -5,7 +5,7 @@ class CollectionsController < ApplicationController
 
   def show
     @collection = Collection.find(params[:id])
-    @favorites = @collection.favorites
+    @favorites = @collection.favorites.includes(:analysis)
   end
 
   def create

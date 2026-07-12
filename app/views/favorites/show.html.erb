@@ -1,75 +1,348 @@
-<div class="max-w-2xl mx-auto px-4 py-8">
-  <!-- Back link -->
-  <div class="mb-4">
-    <%= link_to "← Back to Archive", favorites_path, class: "text-blue-600 hover:text-blue-800 inline-block" %>
+<%= turbo_frame_tag "favorites" do %>
+<%= turbo_stream_from @favorite %>
+
+<div class="max-w-3xl mx-auto px-6 py-10" style="--text-xs:13px;--text-sm:15px;--text-base:16px;--text-lg:18px;--text-xl:22px;--text-2xl:32px;">
+
+  <%# ── 에디토리얼 헤더 ── %>
+  <div class="mb-6">
+    <%= link_to favorites_path,
+          class: "inline-flex items-center gap-1.5 mb-6 transition-colors",
+          style: "color:var(--color-text-tertiary);font-size:var(--text-xs);font-weight:500;",
+          onmouseover: "this.style.color='var(--color-accent)'",
+          onmouseout: "this.style.color='var(--color-text-tertiary)'" do %>
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+      아카이브로 돌아가기
+    <% end %>
+
+    <div class="flex items-center gap-2 mb-4" style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.8px;">
+      <span><%= @favorite.created_at.strftime("%Y.%m.%d") %></span>
+      <span style="color:var(--color-border);">·</span>
+      <span style="color:var(--color-accent-text);"><%= @favorite.content_type == "youtube" ? "YouTube" : "웹페이지" %></span>
+    </div>
+
+    <% display_title = @favorite.title.presence || (@favorite.url.to_s.include?("github.com") ? github_repo_name(@favorite.url) : @favorite.url) %>
+    <h1 style="font-size:var(--text-2xl);font-weight:800;letter-spacing:-1px;color:var(--color-text);line-height:1.25;margin-bottom:12px;">
+      <%= display_title %>
+    </h1>
+
+    <% host = URI.parse(@favorite.url).host rescue nil %>
+    <div class="flex items-center gap-2" style="font-size:var(--text-xs);color:var(--color-text-tertiary);">
+      <% if @favorite.favicon_url.present? %>
+      <img src="<%= @favorite.favicon_url %>" alt="" class="w-3.5 h-3.5 rounded-sm" onerror="this.style.display='none'">
+      <% end %>
+      <span class="truncate"><%= host&.sub(/^www\./, "") || @favorite.url %></span>
+      <span style="color:var(--color-border);">·</span>
+      <a href="<%= @favorite.url %>" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-1.5 transition-all"
+         style="
+           color:var(--color-accent-text);
+           background:var(--color-accent-muted);
+           border:1px solid var(--color-accent-muted);
+           padding:4px 10px;
+           border-radius:var(--radius-md);
+           font-size:var(--text-xs);
+           font-weight:600;
+           text-decoration:none;
+         "
+         onmouseover="this.style.background='var(--color-accent)';this.style.color='#fff';this.style.borderColor='var(--color-accent)'"
+         onmouseout="this.style.background='var(--color-accent-muted)';this.style.color='var(--color-accent-text)';this.style.borderColor='var(--color-accent-muted)'">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+        </svg>
+        원본 링크 열기
+      </a>
+    </div>
   </div>
 
-  <!-- Title -->
-  <h1 class="text-2xl font-bold text-gray-900 mb-2">
-    <%= @favorite.title %>
-  </h1>
-
-  <!-- URL -->
-  <div class="text-sm break-all mb-4">
-    <%= link_to @favorite.url, @favorite.url, target: "_blank", rel: "noopener noreferrer", class: "text-gray-500 hover:text-blue-600" %>
-  </div>
-
-  <!-- Status and Content Type badges -->
-  <div class="flex flex-wrap gap-2 mb-4">
-    <% status_class = case @favorite.status
-      when "pending" then "bg-yellow-100 text-yellow-800"
-      when "analyzing" then "bg-blue-100 text-blue-800"
-      when "done" then "bg-green-100 text-green-800"
-      when "failed" then "bg-red-100 text-red-800"
-      else "bg-gray-100 text-gray-800"
-    end %>
-    <span class="inline-flex px-2 py-1 rounded-full text-xs font-medium <%= status_class %>">
-      <%= @favorite.status %>
+  <%# ── 액션 툴킷 ── %>
+  <div class="flex items-center gap-2 mb-10 pb-6" style="border-bottom:1px solid var(--color-border);">
+    <% status_map = {
+      "pending"   => { bg: "var(--color-pending-bg)", text: "var(--color-pending-text)", border: "var(--color-pending-border)", label: "대기" },
+      "analyzing" => { bg: "var(--color-analyzing-bg)", text: "var(--color-analyzing-text)", border: "var(--color-analyzing-border)", label: "분석중" },
+      "done"      => { bg: "var(--color-done-bg)", text: "var(--color-done-text)", border: "var(--color-done-border)", label: "완료" },
+      "failed"    => { bg: "var(--color-failed-bg)", text: "var(--color-failed-text)", border: "var(--color-failed-border)", label: "실패" },
+    } %>
+    <% s = status_map[@favorite.status] || { bg: "var(--color-surface)", text: "var(--color-text-tertiary)", border: "var(--color-border)", label: @favorite.status } %>
+    <span style="background:<%= s[:bg] %>;color:<%= s[:text] %>;border:1px solid <%= s[:border] %>;padding:3px 10px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600;">
+      <%= s[:label] %>
     </span>
-    <span class="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-      <%= @favorite.content_type == "youtube" ? "YouTube" : "Webpage" %>
-    </span>
+    <span style="flex:1"></span>
+    <% if @favorite.status == "failed" %>
+      <%= button_to "재시도", retry_favorite_path(@favorite), method: :post,
+            class: "transition-all",
+            style: "background:var(--color-pending-bg);color:var(--color-pending-text);border:1px solid var(--color-pending-border);padding:5px 12px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:600;cursor:pointer;" %>
+    <% end %>
+    <% if @favorite.status == "analyzing" %>
+      <button type="button" disabled
+              class="inline-flex items-center gap-2 transition-all"
+              style="background:var(--color-analyzing-bg);color:var(--color-analyzing-text);border:1px solid var(--color-analyzing-border);padding:5px 12px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:600;cursor:default;">
+        <span class="w-3 h-3 rounded-full animate-spin" style="border:2px solid var(--color-analyzing-border);border-top-color:var(--color-analyzing-text);"></span>
+        분석중
+      </button>
+    <% else %>
+      <%= form_with url: reanalyze_favorite_path(@favorite), method: :post,
+            class: "inline-flex items-center gap-2",
+            data: { turbo_confirm: "기존 원문 캐시를 사용해 AI 분석을 다시 실행합니다. 계속할까요?" } do %>
+        <%= select_tag :analysis_style,
+              options_for_select(UrlFavorites::Domain::Analysis::PromptStyle::OPTIONS.map { |value, label| [ label, value ] }, @favorite.analysis&.analysis_style || UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT),
+              style: "height:28px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:0 8px;font-size:var(--text-xs);font-weight:650;color:var(--color-text-secondary);outline:none;cursor:pointer;" %>
+        <%= submit_tag "재분석",
+              class: "transition-all",
+              style: "background:var(--color-ai-muted);color:var(--color-text);border:1px solid var(--color-ai-accent);padding:5px 12px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:600;cursor:pointer;" %>
+      <% end %>
+    <% end %>
+    <%= button_to "삭제", favorite_path(@favorite), method: :delete,
+          data: { turbo_confirm: "정말 삭제하시겠습니까?" },
+          class: "transition-all",
+          style: "background:var(--color-failed-bg);color:var(--color-failed-text);border:1px solid var(--color-failed-border);padding:5px 12px;border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:600;cursor:pointer;" %>
   </div>
 
-  <!-- Analysis section -->
+  <%# ── 에디토리얼 본문 ── %>
   <% if @favorite.analysis.present? %>
-    <div class="mt-6 border-t pt-4">
-      <h2 class="text-lg font-semibold text-gray-800 mb-3">Analysis</h2>
-      <p class="text-gray-700 mb-3"><%= @favorite.analysis.summary %></p>
+    <% has_youtube_thumbnail = @favorite.content_type == "youtube" && @favorite.thumbnail_url.present? %>
 
-      <% if @favorite.analysis.tags.present? %>
-        <div class="flex flex-wrap gap-1 mb-3">
-          <% @favorite.analysis.tags.each do |tag| %>
-            <span class="inline-flex bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-sm"><%= tag %></span>
+    <%# ── 1. 리드 (한 줄 요약 인용) ── %>
+    <% if @favorite.analysis.summary.present? %>
+      <div class="mb-10" style="padding:20px 24px;border-left:3px solid var(--color-accent);background:linear-gradient(90deg, var(--color-accent-muted) 0%, var(--color-surface) 100%);border-radius:0 var(--radius-md) var(--radius-md) 0;"
+      >
+        <p style="font-size:var(--text-lg);font-weight:600;color:var(--color-text);line-height:1.6;margin:0;"
+           class="line-clamp-4"
+        >
+          <%= @favorite.analysis.summary %>
+        </p>
+      </div>
+    <% end %>
+
+    <%# ── 2. 시각적 리드 ── %>
+    <% if has_youtube_thumbnail %>
+      <figure class="mb-10">
+        <div class="relative overflow-hidden rounded-lg" style="border:1px solid var(--color-border);aspect-ratio:16/9;"
+        >
+          <img src="<%= @favorite.thumbnail_url %>"
+               alt="썸네일"
+               class="w-full object-cover"
+               style="display:block;"
+               loading="lazy">
+        </div>
+        <% if @favorite.analysis.subtitle_source.present? %>
+          <figcaption style="font-size:var(--text-xs);color:var(--color-text-tertiary);margin-top:8px;text-align:center;"
+          >
+            자막 출처: <%= @favorite.analysis.subtitle_source %>
+          </figcaption>
+        <% end %>
+      </figure>
+    <% end %>
+
+    <hr style="border:none;border-top:1px solid var(--color-border);margin:32px 0;"
+    >
+
+    <%# ── 3. 태그 (해시태그 스타일) ── %>
+    <% if @favorite.analysis.parsed_tags.any? %>
+      <div class="mb-10">
+        <p style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;"
+        >키워드</p>
+        <div class="flex flex-wrap gap-2"
+        >
+          <% @favorite.analysis.parsed_tags.each do |tag| %>
+            <span style="font-size:var(--text-sm);font-weight:600;color:var(--color-accent-text);"
+            >#<%= tag %></span>
           <% end %>
         </div>
-      <% end %>
+      </div>
+    <% end %>
 
-      <% if @favorite.analysis.key_points.present? %>
-        <ul class="list-disc list-inside text-gray-700 space-y-1">
-          <% @favorite.analysis.key_points.each do |point| %>
-            <li><%= point %></li>
+    <%# ── 4. 핵심 인사이트 (번호 섹션) ── %>
+    <% if @favorite.analysis.parsed_key_points.any? %>
+      <section class="mb-10">
+        <h2 style="font-size:var(--text-xl);font-weight:700;color:var(--color-text);margin-bottom:20px;letter-spacing:-0.3px;"
+        >핵심 인사이트</h2>
+        <div style="display:flex;flex-direction:column;gap:16px;"
+        >
+          <% @favorite.analysis.parsed_key_points.each_with_index do |kp, i| %>
+            <div class="flex gap-4"
+            >
+              <span style="font-size:var(--text-lg);font-weight:800;color:var(--color-accent);line-height:1;flex-shrink:0;width:28px;"
+              ><%= i + 1 %></span>
+              <div style="flex:1;"
+              >
+                <% if kp["category"].present? %>
+                  <span style="display:inline-block;background:var(--color-accent-muted);color:var(--color-accent-text);padding:2px 8px;border-radius:var(--radius-sm);font-size:var(--text-xs);font-weight:600;margin-bottom:6px;"
+                  ><%= kp["category"] %></span>
+                <% end %>
+                <p style="color:var(--color-text-secondary);line-height:1.7;font-size:var(--text-base);margin:0;"
+                ><%= kp["point"] %></p>
+                <% if kp["timestamp"].present? %>
+                  <% timestamp_url = @favorite.content_type == "youtube" ? youtube_timestamp_url(@favorite.url, kp["timestamp"]) : nil %>
+                  <% if timestamp_url.present? %>
+                    <%= link_to "근거 #{kp["timestamp"]}",
+                          timestamp_url,
+                          target: "_blank",
+                          rel: "noopener noreferrer",
+                          style: "color:var(--color-accent-text);font-size:var(--text-xs);font-weight:700;margin-top:6px;display:inline-flex;text-decoration:none;border-bottom:1px solid var(--color-ai-accent);" %>
+                  <% else %>
+                    <span style="color:var(--color-text-tertiary);font-size:var(--text-xs);margin-top:4px;display:block;"
+                    >근거 <%= kp["timestamp"] %></span>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
           <% end %>
-        </ul>
+        </div>
+      </section>
+    <% end %>
+
+    <% if @favorite.content_type == "youtube" && @favorite.analysis.parsed_transcript_segments.any? %>
+      <section class="mb-10">
+        <h2 style="font-size:var(--text-xl);font-weight:700;color:var(--color-text);margin-bottom:16px;letter-spacing:-0.3px;"
+        >타임라인 자막</h2>
+        <div class="rounded-md" style="max-height:360px;overflow:auto;background:var(--color-surface-raised);border:1px solid var(--color-border);">
+          <% @favorite.analysis.parsed_transcript_segments.first(80).each do |segment| %>
+            <% segment_url = youtube_timestamp_url(@favorite.url, segment["timestamp"]) %>
+            <div class="flex gap-3 px-4 py-3" style="border-bottom:1px solid var(--color-border);">
+              <% if segment_url.present? %>
+                <%= link_to segment["timestamp"],
+                      segment_url,
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      style: "font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:800;color:var(--color-accent-text);text-decoration:none;min-width:52px;" %>
+              <% else %>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:800;color:var(--color-text-tertiary);min-width:52px;"><%= segment["timestamp"] %></span>
+              <% end %>
+              <p style="font-size:var(--text-sm);line-height:1.55;color:var(--color-text-secondary);margin:0;"><%= segment["text"] %></p>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <%# ── 5. 상세내용 ── %>
+    <% if @favorite.analysis.detail_content.present? %>
+      <section class="mb-10">
+        <h2 style="font-size:var(--text-xl);font-weight:700;color:var(--color-text);margin-bottom:20px;letter-spacing:-0.3px;"
+        >상세 내용</h2>
+        <div style="color:var(--color-text-secondary);line-height:1.8;font-size:var(--text-base);white-space:pre-wrap;"
+        ><%= @favorite.analysis.detail_content %></div>
+      </section>
+    <% end %>
+
+    <hr style="border:none;border-top:1px solid var(--color-border);margin:32px 0;"
+    >
+
+    <%# ── 6. 시사점 (Takeaway 인용박스) ── %>
+    <% if @favorite.analysis.parsed_key_points.any? %>
+      <div class="mb-10"
+           style="padding:20px 24px;border-radius:var(--radius-md);background:var(--color-surface-raised);border:1px solid var(--color-border);"
+      >
+        <p style="font-size:var(--text-xs);font-weight:700;color:var(--color-accent-text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;"
+        >💡 시사점</p>
+        <p style="color:var(--color-text-secondary);line-height:1.7;font-size:var(--text-base);margin:0;"
+        >
+          이 콘텐츠의 핵심은 <strong style="color:var(--color-text);"
+        ><%= @favorite.analysis.parsed_key_points.first&.dig("point")&.truncate(60) %></strong>
+          <% if @favorite.analysis.parsed_key_points.size > 1 %>
+            외 <%= @favorite.analysis.parsed_key_points.size - 1 %>개의 인사이트
+          <% end %>
+          에 있습니다.
+          <%= @favorite.content_type == "youtube" ? "영상의 주요 메시지를 요약하여 정리했습니다." : "원문의 핵심 논지를 추출하여 정리했습니다." %>
+        </p>
+      </div>
+    <% end %>
+
+    <%# ── 7. 메타 데이터 ── %>
+    <div class="flex flex-wrap gap-4 mb-10" style="font-size:var(--text-xs);color:var(--color-text-tertiary);"
+    >
+      <% if @favorite.analysis.sentiment.present? %>
+        <span
+        >감정 분석: <%= @favorite.analysis.sentiment %></span>
       <% end %>
+      <% if @favorite.analysis.model_used.present? %>
+        <span
+        >분석 모델: <%= @favorite.analysis.model_used %></span>
+      <% end %>
+      <span
+      >분석 스타일: <%= @favorite.analysis.analysis_style_label %></span>
+      <span
+      >저장일: <%= @favorite.created_at.strftime("%Y.%m.%d") %></span>
+    </div>
+
+    <%# ── 8. 해시태그 마무리 ── %>
+    <% if @favorite.analysis.parsed_tags.any? %>
+      <div class="mb-10"
+           style="padding-top:16px;border-top:1px solid var(--color-border);"
+      >
+        <div class="flex flex-wrap gap-x-3 gap-y-1"
+        >
+          <% @favorite.analysis.parsed_tags.each do |tag| %>
+            <span style="font-size:var(--text-xs);font-weight:500;color:var(--color-text-tertiary);"
+            >#<%= tag.delete_prefix("#") %></span>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+  <% elsif @favorite.status == "analyzing" %>
+    <div class="flex items-center gap-3 mb-10" style="color:var(--color-analyzing-text);padding:40px 0;"
+    >
+      <div class="w-5 h-5 rounded-full animate-spin" style="border:2px solid var(--color-analyzing-border);border-top-color:var(--color-analyzing-text);"
+      ></div>
+      <span style="font-size:var(--text-base);font-weight:500;"
+      >AI가 콘텐츠를 분석하고 있습니다...</span>
     </div>
   <% end %>
 
-  <!-- Note section -->
-  <div class="mt-6 border-t pt-4">
-    <h2 class="text-lg font-semibold text-gray-800 mb-3">Note</h2>
-    <p class="text-gray-700 whitespace-pre-wrap mb-3"><%= @favorite.note.presence || "No note added." %></p>
-    <%= render "note_form", favorite: @favorite %>
-  </div>
+  <hr style="border:none;border-top:1px solid var(--color-border);margin:32px 0;"
+  >
 
-  <!-- Actions -->
-  <div class="mt-6 flex gap-3">
-    <% if @favorite.status == "failed" %>
-      <%= button_to "Retry", retry_favorite_path(@favorite), method: :post,
-        class: "bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600" %>
-    <% end %>
-    <%= button_to "Delete", favorite_path(@favorite), method: :delete,
-      data: { turbo_confirm: "Are you sure?" },
-      class: "bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" %>
-  </div>
+  <%# ── 9. 메모 (Editorial Note) ── %>
+  <section class="mb-10"
+  >
+    <h2 style="font-size:var(--text-xl);font-weight:700;color:var(--color-text);margin-bottom:20px;letter-spacing:-0.3px;"
+    >메모</h2>
+    <div style="padding:20px 24px;border-radius:var(--radius-md);background:var(--color-surface);border:1px solid var(--color-border);margin-bottom:12px;"
+    >
+      <% if @favorite.note.present? %>
+        <p style="color:var(--color-text-secondary);white-space:pre-wrap;line-height:1.7;font-size:var(--text-base);margin:0;"
+        ><%= @favorite.note %></p>
+      <% else %>
+        <p style="color:var(--color-text-tertiary);font-size:var(--text-base);margin:0;font-style:italic;"
+        >아직 메모가 없습니다. 이 콘텐츠에 대한 생각이나 인사이트를 남겨보세요.</p>
+      <% end %>
+    </div>
+    <%= render "note_form", favorite: @favorite %>
+  </section>
+
+  <%# ── 10. 같은 컬렉션 ── %>
+  <% collection_ids = @favorite.collections.ids %>
+  <% related = collection_ids.any? \
+       ? Favorite.joins(:collections).where(collections: { id: collection_ids }).where.not(id: @favorite.id).where(status: "done").distinct.order(created_at: :desc).limit(5) \
+       : Favorite.none %>
+  <% if related.any? %>
+    <section class="mb-8"
+    >
+      <h2 style="font-size:var(--text-xl);font-weight:700;color:var(--color-text);margin-bottom:20px;letter-spacing:-0.3px;"
+      >같은 컬렉션의 콘텐츠</h2>
+      <div style="display:flex;flex-direction:column;gap:12px;"
+      >
+        <% related.each do |rel| %>
+          <%= link_to favorite_path(rel), style: "display:block;padding:14px 16px;border-radius:var(--radius-md);background:var(--color-surface);border:1px solid var(--color-border);text-decoration:none;transition:all 0.2s;", onmouseover: "this.style.borderColor='var(--color-accent-muted)'", onmouseout: "this.style.borderColor='var(--color-border)'" do %>
+            <div class="flex items-center gap-3"
+            >
+              <span style="background:var(--color-accent-muted);color:var(--color-accent-text);padding:2px 8px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600;flex-shrink:0;"
+              ><%= rel.content_type == "youtube" ? "YouTube" : "웹" %></span>
+              <span style="color:var(--color-text-secondary);font-size:var(--text-sm);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;"
+              ><%= rel.title&.truncate(60) || rel.url %></span>
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="var(--color-text-tertiary)" viewBox="0 0 24 24" stroke-width="2"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
 </div>
+<% end %>

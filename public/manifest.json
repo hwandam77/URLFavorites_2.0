@@ -2,9 +2,10 @@
   "name": "URLFavorites",
   "short_name": "URLFav",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "background_color": "#faf7f2",
+  "theme_color": "#c2410c",
   "icons": [
     {
       "src": "/icon.png",
@@ -13,7 +14,7 @@
     }
   ],
   "share_target": {
-    "action": "/favorites",
+    "action": "/favorites/share",
     "method": "POST",
     "enctype": "application/x-www-form-urlencoded",
     "params": {

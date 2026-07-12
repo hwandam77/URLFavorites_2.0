@@ -1,0 +1,197 @@
+/* ================================================
+   URLFavorites 2.0 — Design Tokens
+   Archetype: Warm Tactile Command Grid
+   Differentiator: Dense command surface with quiet AI context rail
+================================================ */
+
+:root {
+  /* ── Spacing Scale ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ── Border Radius ── */
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-full: 9999px;
+
+  /* ── Typography ── */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 28px;
+  --text-3xl: 36px;
+
+  /* ── Color Tokens — Warm Tactile (Default) ── */
+  --color-bg: #f3ecdf;
+  --color-surface: #fffdf8;
+  --color-surface-raised: #faf6ee;
+  --color-surface-hover: #efe8dc;
+  --color-command-bg: rgba(255, 253, 248, 0.82);
+  --color-border: #d8cec0;
+  --color-border-strong: #b9ab99;
+  --color-border-subtle: #ebe3d7;
+  --color-accent: #b76546;
+  --color-accent-hover: #955137;
+  --color-accent-muted: rgba(183, 101, 70, 0.10);
+  --color-accent-text: #91452d;
+  --color-ai-accent: #b98a42;
+  --color-ai-muted: rgba(185, 138, 66, 0.12);
+  --color-text: #241f18;
+  --color-text-secondary: #534a40;
+  --color-text-tertiary: #766c60;
+  --color-text-placeholder: #a99d8f;
+
+  /* Status */
+  --color-pending-bg: rgba(180, 130, 0, 0.08);
+  --color-pending-text: #996b00;
+  --color-pending-border: rgba(180, 130, 0, 0.2);
+  --color-analyzing-bg: rgba(37, 99, 235, 0.06);
+  --color-analyzing-text: #2563eb;
+  --color-analyzing-border: rgba(37, 99, 235, 0.15);
+  --color-done-bg: rgba(22, 163, 74, 0.06);
+  --color-done-text: #16a34a;
+  --color-done-border: rgba(22, 163, 74, 0.15);
+  --color-failed-bg: rgba(220, 38, 38, 0.06);
+  --color-failed-text: #dc2626;
+  --color-failed-border: rgba(220, 38, 38, 0.15);
+
+  /* Interactive */
+  --color-focus-ring: var(--color-accent);
+  --color-overlay: rgba(0, 0, 0, 0.3);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(50,38,24,0.05);
+  --shadow-md: 0 8px 24px rgba(50,38,24,0.08);
+  --shadow-lg: 0 22px 70px rgba(50,38,24,0.12);
+
+  color-scheme: light;
+}
+
+body {
+  font-family: 'IBM Plex Sans', 'Pretendard', -apple-system, system-ui, sans-serif;
+  font-size: var(--text-base);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Color Tokens — Sepia Mode ── */
+.sepia {
+  --color-bg: #f4ecd8;
+  --color-surface: #fdf6e3;
+  --color-surface-raised: #eee8d5;
+  --color-surface-hover: #e6dec3;
+  --color-command-bg: rgba(253, 246, 227, 0.88);
+  --color-border: #d5cdb0;
+  --color-border-strong: #bfb492;
+  --color-border-subtle: #e0d8c0;
+  --color-accent: #8b4513;
+  --color-accent-hover: #6d360f;
+  --color-accent-muted: rgba(139, 69, 19, 0.08);
+  --color-accent-text: #8b4513;
+  --color-ai-accent: #a87928;
+  --color-ai-muted: rgba(168, 121, 40, 0.12);
+  --color-text: #433422;
+  --color-text-secondary: #5c4d3c;
+  --color-text-tertiary: #8a7a68;
+  --color-text-placeholder: #a89b8c;
+
+  /* Status */
+  --color-pending-bg: rgba(180, 130, 0, 0.08);
+  --color-pending-text: #996b00;
+  --color-pending-border: rgba(180, 130, 0, 0.2);
+  --color-analyzing-bg: rgba(37, 99, 235, 0.06);
+  --color-analyzing-text: #2563eb;
+  --color-analyzing-border: rgba(37, 99, 235, 0.15);
+  --color-done-bg: rgba(22, 163, 74, 0.06);
+  --color-done-text: #16a34a;
+  --color-done-border: rgba(22, 163, 74, 0.15);
+  --color-failed-bg: rgba(220, 38, 38, 0.06);
+  --color-failed-text: #dc2626;
+  --color-failed-border: rgba(220, 38, 38, 0.15);
+
+  /* Interactive */
+  --color-focus-ring: var(--color-accent);
+  --color-overlay: rgba(67, 52, 34, 0.3);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(67,52,34,0.06);
+  --shadow-md: 0 2px 8px rgba(67,52,34,0.08);
+  --shadow-lg: 0 4px 16px rgba(67,52,34,0.10);
+
+  color-scheme: light;
+}
+
+/* ── Color Tokens — Dark Editorial ── */
+.dark {
+  --color-bg: #11100e;
+  --color-surface: #191714;
+  --color-surface-raised: #211e1a;
+  --color-surface-hover: #2a251f;
+  --color-command-bg: rgba(25, 23, 20, 0.88);
+  --color-border: #302b25;
+  --color-border-strong: #463d33;
+  --color-border-subtle: #25211d;
+  --color-accent: #ff5f1f;
+  --color-accent-hover: #e54d0f;
+  --color-accent-muted: rgba(255, 95, 31, 0.10);
+  --color-accent-text: #ff7a3d;
+  --color-ai-accent: #d2a65a;
+  --color-ai-muted: rgba(210, 166, 90, 0.12);
+  --color-text: #e4e4e4;
+  --color-text-secondary: #a0a0a0;
+  --color-text-tertiary: #666666;
+  --color-text-placeholder: #444444;
+
+  /* Status */
+  --color-pending-bg: rgba(255, 190, 0, 0.08);
+  --color-pending-text: #e6ac00;
+  --color-pending-border: rgba(255, 190, 0, 0.2);
+  --color-analyzing-bg: rgba(96, 165, 250, 0.08);
+  --color-analyzing-text: #60a5fa;
+  --color-analyzing-border: rgba(96, 165, 250, 0.2);
+  --color-done-bg: rgba(52, 211, 153, 0.08);
+  --color-done-text: #34d399;
+  --color-done-border: rgba(52, 211, 153, 0.2);
+  --color-failed-bg: rgba(248, 113, 113, 0.08);
+  --color-failed-text: #f87171;
+  --color-failed-border: rgba(248, 113, 113, 0.2);
+
+  /* Interactive */
+  --color-focus-ring: var(--color-accent);
+  --color-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.20);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.25);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.30);
+
+  color-scheme: dark;
+}
+
+/* ── Animations ── */
+@keyframes animate-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ── Utility: Truncate ── */
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

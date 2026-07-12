@@ -1,18 +1,19 @@
 class CollectionMembershipsController < ApplicationController
   def create
-    @favorite = Favorite.find(params[:favorite_id])
     collection_id = params.dig(:collection_membership, :collection_id)
-    unless CollectionMembership.exists?(favorite: @favorite, collection_id: collection_id)
-      CollectionMembership.create!(favorite: @favorite, collection_id: collection_id)
-    end
+    @favorite = UrlFavorites::UseCases::Collections::AddFavoriteToCollection.call(
+      favorite_id: params[:favorite_id],
+      collection_id: collection_id
+    )
     redirect_to favorite_url(@favorite)
   end
 
   def destroy
-    @favorite = Favorite.find(params[:favorite_id])
     collection_id = params.dig(:collection_membership, :collection_id)
-    membership = CollectionMembership.find_by(favorite: @favorite, collection_id: collection_id)
-    membership&.destroy
+    @favorite = UrlFavorites::UseCases::Collections::RemoveFavoriteFromCollection.call(
+      favorite_id: params[:favorite_id],
+      collection_id: collection_id
+    )
     redirect_to favorite_url(@favorite)
   end
 end

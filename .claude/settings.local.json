@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bin/rails assets:precompile)",
+      "Bash(ruby:*)",
+      "Bash(bundle exec:*)",
+      "Bash(erb -T - app/views/layouts/application.html.erb)",
+      "Bash(erb -T - app/views/favorites/index.html.erb)",
+      "Bash(erb -x app/views/favorites/_favorite_card.html.erb)",
+      "Bash(timeout 10 bin/rails server -p 3099)",
+      "Bash(bin/rails tailwindcss:build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(deploy:*)",
+      "Bash(git push:*)",
+      "Bash(ssh hwandam@vps-server:*)",
+      "Bash(rsync:*)",
+      "Bash(git status:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "tavily-mcp"
+  ],
+  "enabledPlugins": {
+    "claude-mem@claude-mem": true
+  }
+}

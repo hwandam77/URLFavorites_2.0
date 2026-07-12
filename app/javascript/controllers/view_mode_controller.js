@@ -29,7 +29,7 @@ export default class extends Controller {
   updateButtonStates(activeMode) {
     const baseStyle = "padding:6px 12px;border-radius:6px;font-size:13px;font-weight:500;transition:all 0.15s;cursor:pointer;border:none;"
     const activeStyle = baseStyle + "background:var(--color-accent);color:#fff;"
-    const inactiveStyle = baseStyle + "background:transparent;color:var(--color-text-muted);"
+    const inactiveStyle = baseStyle + "background:transparent;color:var(--color-text-tertiary);"
 
     if (activeMode === "card") {
       this.cardButtonTarget.style.cssText = activeStyle

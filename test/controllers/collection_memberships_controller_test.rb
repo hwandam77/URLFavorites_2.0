@@ -1,7 +1,11 @@
 # test/controllers/collection_memberships_controller_test.rb
-require 'test_helper'
+require "test_helper"
 
 class CollectionMembershipsControllerTest < ActionDispatch::IntegrationTest
+  def setup
+    sign_in_as
+  end
+
   test "POST /favorites/:favorite_id/collection_membership adds to collection" do
     fav = Favorite.create!(title: "Member Test", url: "https://example.com/member", content_type: "webpage", status: "done")
     col = Collection.create!(name: "My Collection")

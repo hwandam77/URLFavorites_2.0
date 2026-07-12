@@ -7,6 +7,6 @@ class CreateCollectionMemberships < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :collection_memberships, [:favorite_id, :collection_id], unique: true
+    add_index :collection_memberships, [ :favorite_id, :collection_id ], unique: true
   end
 end

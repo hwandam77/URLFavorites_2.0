@@ -1,36 +1,24 @@
+require Rails.root.join("app/url_favorites/domain/analysis").to_s
+require Rails.root.join("app/url_favorites/domain/analysis/prompt_style").to_s
+require Rails.root.join("app/url_favorites/use_cases/analysis/run_analysis").to_s
+
 class AnalyzeWebpageJob < ApplicationJob
-  queue_as :default
+  MAX_RETRIES = 3
+  BACKOFF_SECONDS = [ 30, 60, 120 ].freeze
 
-  def perform(favorite_id)
-    favorite = Favorite.find(favorite_id)
-    favorite.update!(status: "analyzing")
+  queue_as :ai
 
-    scraper_result = WebpageScraper.call(favorite.url)
-    raw_content = [ scraper_result[:title], scraper_result[:body_text] ].compact.join(" ")
-
-    analysis_result = LlmAnalyzer.call(raw_content, type: favorite.content_type)
-
-    if favorite.analysis
-      favorite.analysis.update!(
-        raw_content: raw_content,
-        summary:     analysis_result[:summary],
-        key_points:  analysis_result[:key_points],
-        tags:        analysis_result[:tags],
-        sentiment:   analysis_result[:sentiment]
-      )
+  rescue_from(StandardError) do |e|
+    executions_index = (executions - 1)
+    if executions < MAX_RETRIES
+      wait_seconds = BACKOFF_SECONDS.fetch(executions_index, BACKOFF_SECONDS.last)
+      retry_job(wait: wait_seconds)
     else
-      favorite.create_analysis!(
-        raw_content: raw_content,
-        summary:     analysis_result[:summary],
-        key_points:  analysis_result[:key_points],
-        tags:        analysis_result[:tags],
-        sentiment:   analysis_result[:sentiment]
-      )
+      raise e
     end
+  end
 
-    favorite.update!(status: "done")
-  rescue => e
-    favorite&.update!(status: "failed")
-    Rails.logger.error "[AnalyzeWebpageJob] #{e.class}: #{e.message}"
+  def perform(favorite_id, analysis_style = "execution_brief")
+    UrlFavorites::UseCases::Analysis::RunAnalysis.call(favorite_id: favorite_id, analysis_style: analysis_style)
   end
 end

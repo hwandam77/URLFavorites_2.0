@@ -1,0 +1,138 @@
+require Rails.root.join("app/url_favorites/domain/analysis").to_s
+require Rails.root.join("app/url_favorites/domain/analysis/prompt_style").to_s
+
+module UrlFavorites
+  module UseCases
+    module Analysis
+      class RunAnalysis
+        DEFAULT_ANALYSIS_STYLE = "execution_brief"
+        MAX_RETRIES = 3
+        YOUTUBE_ANALYSIS_INPUT_LIMIT = 12_000
+        YOUTUBE_TRANSCRIPT_PROMPT_LIMIT = 8_000
+        YOUTUBE_TIMESTAMP_SAMPLE_LIMIT = 40
+
+        def self.call(favorite_id:, analysis_style: DEFAULT_ANALYSIS_STYLE)
+          favorite = Favorite.find(favorite_id)
+          favorite.update!(status: "analyzing", error_message: nil)
+          normalized_style = UrlFavorites::Domain::Analysis::PromptStyle.normalize(analysis_style)
+
+          extraction = nil
+          raw_content = favorite.raw_content.presence
+          if raw_content.blank?
+            extraction = extract_content(favorite)
+            raw_content = extraction[:raw_content]
+            favorite.update!(raw_content: raw_content)
+          end
+
+          analysis_result = UrlFavorites::Integrations::LlamaServer::Client.call(
+            raw_content,
+            type: favorite.content_type,
+            analysis_style: normalized_style
+          )
+
+          upsert_analysis!(favorite, raw_content, analysis_result, extraction: extraction, analysis_style: normalized_style)
+
+          favorite.update!(
+            status: "done",
+            category: UrlFavorites::Domain::Urls::CategoryDetector.call(favorite.url, favorite.content_type),
+            retry_count: 0
+          )
+        rescue => e
+          raise e unless favorite
+          favorite.update!(
+            status: "failed",
+            retry_count: favorite.retry_count.to_i + 1,
+            error_message: "#{e.class}: #{e.message}"
+          )
+          raise e if favorite.retry_count < MAX_RETRIES
+        end
+
+        def self.extract_content(favorite)
+          if favorite.content_type == "youtube"
+            extraction = UrlFavorites::Integrations::Youtube::Extractor.call(favorite.url)
+            favorite.update!(thumbnail_url: extraction[:thumbnail_url]) if extraction[:thumbnail_url].present?
+            favorite.update!(title: extraction[:title]) if extraction[:title].present? && (favorite.title.blank? || favorite.title.to_s.start_with?("http://", "https://"))
+            extraction.merge(raw_content: youtube_analysis_input(extraction))
+          else
+            extraction = UrlFavorites::Integrations::Webpage::Scraper.call(favorite.url)
+            favorite.update!(title: extraction[:title]) if extraction[:title].present?
+            { raw_content: [ extraction[:title], extraction[:body_text] ].compact.join(" ") }
+          end
+        end
+
+        def self.youtube_analysis_input(extraction)
+          content = <<~CONTENT
+            Title: #{extraction[:title]}
+            Description: #{extraction[:description]}
+            Subtitle source: #{extraction[:subtitle_source].presence || "unknown"}
+            Provided GitHub links:
+            #{github_links_section(extraction[:github_links])}
+
+            Analysis goal:
+            이 YouTube 콘텐츠를 단순 요약하지 말고, 사용자가 바로 AI에게 지시하여 실행할 수 있는 AI 실행 브리프 수준으로 분석한다.
+            핵심 주장, 실행 절차, 필요한 입력값, 주의사항, 재사용 가능한 프롬프트를 구분해서 추출한다.
+
+            Required focus:
+            - 영상의 목적과 대상 독자
+            - 바로 실행 가능한 단계별 절차
+            - 다른 AI에게 그대로 전달할 수 있는 지시문/프롬프트
+            - 영상 내용에서 근거가 확인되는 제약, 전제, 리스크
+
+            Transcript:
+            #{truncated_youtube_transcript(extraction[:transcript])}
+
+            Timestamped transcript sample:
+            #{timestamped_transcript_section(extraction[:transcript_segments])}
+          CONTENT
+
+          content[0...YOUTUBE_ANALYSIS_INPUT_LIMIT]
+        end
+
+        def self.timestamped_transcript_section(segments)
+          normalized_segments = Array(segments).first(YOUTUBE_TIMESTAMP_SAMPLE_LIMIT)
+          return "- 미확인" if normalized_segments.empty?
+
+          normalized_segments.map do |segment|
+            timestamp = segment[:timestamp] || segment["timestamp"] || "00:00"
+            text = segment[:text] || segment["text"]
+            "- [#{timestamp}] #{text}"
+          end.join("\n")
+        end
+
+        def self.truncated_youtube_transcript(transcript)
+          transcript.to_s[0...YOUTUBE_TRANSCRIPT_PROMPT_LIMIT]
+        end
+
+        def self.github_links_section(links)
+          normalized_links = Array(links).map(&:to_s).reject(&:blank?)
+          return "- 미확인" if normalized_links.empty?
+
+          normalized_links.map { |link| "- #{link}" }.join("\n")
+        end
+
+        def self.upsert_analysis!(favorite, raw_content, analysis_result, extraction: nil, analysis_style: DEFAULT_ANALYSIS_STYLE)
+          attrs = {
+            raw_content: raw_content,
+            summary: analysis_result[:summary],
+            key_points: analysis_result[:key_points],
+            tags: analysis_result[:tags],
+            sentiment: analysis_result[:sentiment],
+            detail_content: analysis_result[:detail_content],
+            analysis_style: analysis_style
+          }
+          if extraction
+            attrs[:transcript] = extraction[:transcript]
+            attrs[:subtitle_source] = extraction[:subtitle_source]
+            attrs[:transcript_segments] = extraction[:transcript_segments] if extraction[:transcript_segments]
+          end
+
+          if favorite.analysis
+            favorite.analysis.update!(**attrs)
+          else
+            favorite.create_analysis!(**attrs)
+          end
+        end
+      end
+    end
+  end
+end

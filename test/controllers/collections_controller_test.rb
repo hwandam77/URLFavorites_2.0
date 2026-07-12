@@ -1,7 +1,11 @@
 # test/controllers/collections_controller_test.rb
-require 'test_helper'
+require "test_helper"
 
 class CollectionsControllerTest < ActionDispatch::IntegrationTest
+  def setup
+    sign_in_as
+  end
+
   test "GET /collections returns success" do
     get collections_url
     assert_response :success

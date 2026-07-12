@@ -22,85 +22,128 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Google Fonts — Inter (Notion 디자인 시스템 기반) %>
+    <%# Google Fonts — Warm Tactile Command Grid %>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
 
     <style>
-      /* Editorial Design Tokens — Light Mode */
-      :root {
-        --color-bg: #faf7f2;
-        --color-surface: #fffbf5;
-        --color-border: #e8ddd0;
-        --color-accent: #c2410c;
-        --color-text: #1c1917;
-        --color-text-muted: #78716c;
-        --color-tag-bg: #fef3c7;
-        --color-tag-text: #92400e;
-      }
-      body {
-        font-family: 'Inter', -apple-system, system-ui, 'Segoe UI', Helvetica, Arial, sans-serif;
-        background-color: var(--color-bg);
-        color: var(--color-text);
-      }
-      /* Editorial Design Tokens — Dark Mode */
-      .dark {
-        --color-bg: #1c1917;
-        --color-surface: #292524;
-        --color-border: #44403c;
-        --color-accent: #f59e0b;
-        --color-text: #faf7f2;
-        --color-text-muted: #a8a29e;
-        --color-tag-bg: #451a03;
-        --color-tag-text: #fed7aa;
-        color-scheme: dark;
-      }
-      /* 앱 셸 레이아웃 */
+      /* ── App Shell ── */
       .app-shell {
         display: flex;
         height: 100dvh;
         overflow: hidden;
       }
-      .sidebar {
-        flex-shrink: 0;
-        background-color: var(--color-surface);
-        border-color: var(--color-border);
-      }
       .main-content {
         flex: 1;
         overflow-y: auto;
-        background-color: var(--color-bg);
+        background:
+          linear-gradient(rgba(36, 31, 24, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(36, 31, 24, 0.032) 1px, transparent 1px),
+          radial-gradient(circle at 20% 10%, rgba(183, 101, 70, 0.14), transparent 30rem),
+          linear-gradient(120deg, rgba(255, 253, 248, 0.72), rgba(239, 232, 220, 0.88)),
+          var(--color-bg);
+        background-size: 18px 18px, 18px 18px, auto, auto;
       }
-      /* 모바일: 사이드바 드로어 */
+
+      .dark .main-content {
+        background:
+          linear-gradient(rgba(242, 234, 220, 0.028) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(242, 234, 220, 0.02) 1px, transparent 1px),
+          radial-gradient(circle at 20% 10%, rgba(255, 95, 31, 0.10), transparent 30rem),
+          var(--color-bg);
+        background-size: 18px 18px, 18px 18px, auto, auto;
+      }
+
+      /* ── Mobile: Sidebar Drawer ── */
       @media (max-width: 768px) {
         .sidebar {
           position: fixed;
           top: 0; left: 0; bottom: 0;
           z-index: 50;
           transform: translateX(-100%);
-          transition: transform 0.2s ease;
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
         body.sidebar-open .sidebar {
           transform: translateX(0);
         }
-      @keyframes animate-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
+      }
+
+      /* ── Focus Ring ── */
+      :focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
+      }
+
+      .urlf-workspace-header,
+      .urlf-workspace-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-5);
+      }
+
+      .urlf-command-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-3);
+      }
+
+      .urlf-desktop-rail {
+        display: none;
+      }
+
+      .urlf-card-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-3);
+      }
+
+      @media (min-width: 768px) {
+        .urlf-card-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (min-width: 1024px) {
+        .urlf-command-grid {
+          grid-template-columns: minmax(320px, 1fr) minmax(280px, 0.8fr) auto;
+        }
+      }
+
+      @media (min-width: 1280px) {
+        .urlf-workspace-header,
+        .urlf-workspace-body {
+          grid-template-columns: minmax(0, 1fr) 320px;
+        }
+
+        .urlf-desktop-rail {
+          display: block;
+        }
+      }
+
+      @media (min-width: 1536px) {
+        .urlf-card-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
     </style>
 
-    <%# 다크 모드 초기화 (FOUC 방지) %>
+    <%# 3-way 테마 초기화 (FOUC 방지) - 라이트 모드 기본 %>
     <script>
       (function() {
-        if (localStorage.getItem('theme') === 'dark') {
-          document.documentElement.classList.add('dark');
+        var theme = localStorage.getItem('theme');
+        document.documentElement.classList.remove('dark', 'sepia');
+        if (theme === 'dark' || theme === 'sepia') {
+          document.documentElement.classList.add(theme);
         }
+        // 기본은 라이트 (클스 없음)
       })();
     </script>
+
+    <%= javascript_importmap_tags %>
   </head>
 
   <body>
@@ -121,16 +164,38 @@
       <%# 메인 컨텐츠 %>
       <main class="main-content">
         <%# 모바일 헤더 %>
-        <div class="flex items-center gap-3 px-4 py-3 border-b border-black/10 dark:border-white/10 md:hidden sticky top-0 bg-stone-50 dark:bg-stone-900 z-10">
+        <div class="flex items-center gap-3 px-4 py-3 border-b md:hidden sticky top-0 z-10"
+             style="border-color:var(--color-border);background:var(--color-bg);">
           <button type="button"
                   data-action="click->sidebar#toggle"
-                  class="p-1.5 rounded-md text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700">
+                  class="p-2 rounded-md transition-colors"
+                  style="color:var(--color-text-secondary);"
+                  onmouseover="this.style.background='var(--color-surface-hover)'"
+                  onmouseout="this.style.background='transparent'">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
           </button>
-          <span style="font-size:15px;font-weight:700;" class="text-stone-900 dark:text-stone-100">URLFavorites</span>
+          <span style="font-size:var(--text-base);font-weight:700;color:var(--color-text);letter-spacing:-0.3px;">URLFavorites</span>
         </div>
+
+        <%# Flash 메시지 %>
+        <% if notice || alert %>
+          <div class="mx-4 mt-3 px-4 py-3 rounded-lg text-sm font-medium"
+               style="
+                 <% if alert %>
+                   background:var(--color-failed-bg);
+                   color:var(--color-failed-text);
+                   border:1px solid var(--color-failed-border);
+                 <% else %>
+                   background:var(--color-done-bg);
+                   color:var(--color-done-text);
+                   border:1px solid var(--color-done-border);
+                 <% end %>
+               ">
+            <%= alert || notice %>
+          </div>
+        <% end %>
 
         <%= yield %>
       </main>

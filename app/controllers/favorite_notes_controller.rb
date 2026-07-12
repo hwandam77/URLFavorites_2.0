@@ -1,8 +1,9 @@
 class FavoriteNotesController < ApplicationController
   def update
-    @favorite = Favorite.find(params[:favorite_id])
-    @favorite.update!(note: params.dig(:favorite, :note))
-    ReindexFavoriteJob.perform_later(@favorite.id)
+    @favorite = UrlFavorites::UseCases::Notes::UpdateFavoriteNote.call(
+      favorite_id: params[:favorite_id],
+      note: params.dig(:favorite, :note)
+    )
     redirect_to favorite_url(@favorite), notice: "Note updated"
   end
 end

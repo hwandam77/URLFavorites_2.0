@@ -50,4 +50,7 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # Turbo Cable Stream Source 자동 연결 비활성화 (rack_test는 JS 지원 안 함)
+  config.turbo.test_connect_after_actions = []
 end
