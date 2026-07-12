@@ -42,8 +42,17 @@ bin/rails test:system
 ## Deployment
 
 ```bash
-deploy urlfavorites
+bin/deploy-doctor pre
+bin/deploy urlfavorites_2.0
+bin/deploy-doctor post
 ```
+
+Development happens on macOS. The VPS is a deployment target only; do not edit
+source files there except for emergency investigation. See
+`docs/deploy/git-based-workflow.md`.
+
+Production SQLite files live under `storage/` on the VPS and must never be
+deleted or overwritten by source deploys.
 
 ## Data Migration
 

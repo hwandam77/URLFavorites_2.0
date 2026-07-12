@@ -22,18 +22,57 @@
 
 ---
 
+## Rules 우선순위
+`Rules.md > CLAUDE.md > ~/.claude/CLAUDE.md`
+
+---
+
+## 모델 라우팅
+- **Opus**: 분석/계획/아키텍처/사용자 대화
+- **Sonnet**: 코드 구현/리팩토링/테스트
+- **Haiku**: 파일 탐색/간단 조회
+
+Opus는 설계/검증에 집중, 코드는 Sonnet에 위임.
+
+---
+
+## Multi-Agent Orchestration (Hub & Spoke)
+
+**역할 구조:**
+```
+Main Claude (Hub, Opus) — 계획·분해·위임·검증만. 직접 구현 금지.
+  ├── KIMI peer (K2.6) — 한국어/영문 코드 구현·리팩터링·테스트·문서
+  ├── minimax peer (M2.7) — 영문 작업·시스템·인프라 (※ 한글 깨짐 — 한국어 발주 금지)
+  ├── Sonnet sub-agent — backend/frontend/api/test specialist
+  └── Haiku sub-agent — architecture/impact/dependency/docs analyst
+```
+
+**위임 라우팅:**
+- 한국어 코드·주석·문서 → KIMI peer 또는 Sonnet sub-agent
+- 영문 코드 구현·리팩터링 → KIMI peer 또는 minimax peer
+- 시스템·인프라·MLOps → minimax peer
+- FastAPI/React/DB 도메인 → Sonnet sub-agent
+- 아키텍처 설계만 (코드 X) → Hub 자체 처리
+
+**금지:** `Agent` 도구로 Claude 자체 서브에이전트 직접 스폰 (사용자 명시 요청 제외)
+
+---
+
 ## 하네스: GSD + 커스텀 에이전트 통합
 
 **목표:** GSD의 phase lifecycle 위에 도메인 특화 에이전트 + tmux 2계층 병렬 실행으로 10개 Phase를 완성한다.
 
+> 이 프로젝트의 커스텀 에이전트 구조는 워크스페이스 전역 Hub & Spoke 규칙(`.claude/rules/15-hub-and-spoke.md`) 내에서 운영된다.
+> 워크스페이스 룰과 충돌 시 워크스페이스 룰이 우선한다.
+
 ### tmux 2계층 병렬 실행
 
 ```
-Layer 1: Claude Workers (tmux pane별)
-  Pane 1: Orchestrator (Opus) — GSD 명령, 조율
-  Pane 2: rails-core (Sonnet) — 백엔드
-  Pane 3: rails-ui (Sonnet) — 프론트
-  Pane 4: rails-test (Sonnet) — TDD
+Layer 1: Claude Workers (tmux pane별) = Hub & Spoke
+  Pane 1: Orchestrator (Opus) = Hub — 계획·분해·위임·검증
+  Pane 2: rails-core (Sonnet) = Spoke — 백엔드
+  Pane 3: rails-ui (Sonnet) = Spoke — 프론트
+  Pane 4: rails-test (Sonnet) = Spoke — TDD
 
 Layer 2: Nexus LLM (dispatch.sh, 태스크 단위)
   30B ×2: 단일 메서드/테스트/마이그레이션 (병렬)
@@ -79,10 +118,11 @@ DISPATCH="/Users/hwandam/workspace/infrastructure/llm-orchestration/dispatch.sh"
 - 서비스 클래스 전체 → `$DISPATCH --model 48b --prompt "..." --project urlf2 --lang ruby`
 - 복잡한 리팩토링 → 48b
 
-**Claude 직접 처리 (dispatch 안 함):**
+**Hub (Opus) 직접 처리 (dispatch 안 함):**
 - 아키텍처 결정, 파일 간 통합 로직
 - 디버깅 (로그 분석 → 원인 추론 → 수정)
 - GSD 상태 관리, git 커밋, 검증 명령
+- ※ Hub 코딩 절대 금지: 소스 코드 작성은 Sonnet sub-agent 또는 KIMI peer에게 위임
 
 **호출 → 적용 패턴:**
 1. `$DISPATCH --model 30b --prompt "영어 프롬프트" --project urlf2 --lang ruby` 실행
@@ -142,11 +182,14 @@ DISPATCH="/Users/hwandam/workspace/infrastructure/llm-orchestration/dispatch.sh"
 | 항목 | 값 |
 |------|-----|
 | SSH 호스트 | `vps-server` (`~/.ssh/config`) |
-| 앱 경로 | `/home/hwandam/urlfavorites_2.0/` (symlink → `/home/hwandam/services/rails/urlfavorites_2.0/`) |
+| 앱 경로 | `/home/hwandam/services/rails/urlfavorites_2.0/` |
 | 서비스 | `rails-puma@urlfavorites_2.0.service` |
-| 포트 | `3001` (3000은 구버전 urlfavorites 점유) |
-| URL | `https://urlf.hwandam.kr/ver2.0/` |
+| 포트 | `3003` (3000은 구버전 urlfavorites 점유) |
+| URL | `https://urlf.hwandam.kr/favorites` |
 | nginx 설정 | `/etc/nginx/sites-enabled/URLF.hwandam.kr` |
+
+운영 DB는 `/home/hwandam/services/rails/urlfavorites_2.0/storage/*.sqlite3*`에 있다. 특히
+`storage/production.sqlite3`와 `storage/production_queue.sqlite3`는 삭제하거나 덮어쓰지 않는다.
 
 ### systemd 환경변수 (drop-in)
 
@@ -155,7 +198,7 @@ DISPATCH="/Users/hwandam/workspace/infrastructure/llm-orchestration/dispatch.sh"
 ```ini
 [Service]
 Environment=LLAMA_SERVER_URL=http://10.10.0.5:8282
-Environment=PORT=3001
+Environment=PORT=3003
 Environment=SOLID_QUEUE_IN_PUMA=1
 ```
 
@@ -165,11 +208,33 @@ Environment=SOLID_QUEUE_IN_PUMA=1
 
 ```bash
 # 전체 배포 (bundle + migrate + assets + restart, ~30초)
-deploy urlfavorites_2.0
+bin/deploy urlfavorites_2.0
 
 # 빠른 배포 (코드 sync + restart만, ~5초)
-deploy --quick urlfavorites_2.0
+bin/deploy --quick urlfavorites_2.0
 ```
+
+### 배포 운영 원칙
+
+1. 서버 작업트리 정리
+   - 서버의 미커밋 변경 중 필요한 것과 버릴 것을 분리한다.
+   - 필요한 것은 Mac 로컬 브랜치에 반영한 뒤 커밋한다.
+   - 다음 배포 전 서버는 clean worktree로 되돌린다.
+   - `storage/*.sqlite3*`, `db/*.sqlite3*`는 삭제하거나 덮어쓰지 않는다.
+2. 배포는 커밋 단위로만
+   - `bin/deploy urlfavorites_2.0` 또는 `bin/deploy --quick urlfavorites_2.0`는 특정 커밋 상태를 서버에 반영해야 한다.
+   - 서버에서 애플리케이션 소스 파일을 직접 수정하지 않는다.
+   - 긴급 서버 수정이 필요했던 경우, 변경을 로컬 브랜치로 가져와 커밋한 뒤 정상 배포 경로로 다시 반영한다.
+3. staging/prod 분리
+   - 개인 앱이라도 최소한 staging 포트 하나를 별도로 둔다.
+   - 목표 구조는 `3003`과 `3001`을 staging/prod로 분리하는 것이다. 트래픽 전환 전 어느 포트가 production인지 문서화한다.
+   - nginx 경로는 `/staging` 또는 별도 staging 서브도메인으로 분리한다.
+   - 현재 상태에서는 `3003`이 live production Puma 포트다.
+   - `bin/deploy --environment staging urlfavorites_2.0`는 `URLF_STAGING_*` 대상 변수와 nginx 라우팅을 먼저 구성한 뒤 사용한다.
+4. 장기 배포 방향
+   - 현재 Rails + SQLite 구조에서는 기존 Git 기반 deploy 스크립트 개선이 비용 대비 효과가 가장 크다.
+   - GitHub Actions 또는 Kamal은 장기 검토 대상으로 둔다.
+   - Docker/Kamal은 환경 재현성을 높이지만 SQLite 파일, Solid Queue DB, persistent storage 관리 부담이 추가된다.
 
 ### 배포 후 검증
 
@@ -178,7 +243,7 @@ deploy --quick urlfavorites_2.0
 systemctl status rails-puma@urlfavorites_2.0
 
 # 헬스체크
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3001/ver2.0/favorites
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3003/favorites
 # → 200 이면 정상
 
 # 최근 로그
@@ -189,9 +254,10 @@ journalctl -u rails-puma@urlfavorites_2.0 -n 30 --no-pager
 
 | 증상 | 원인 | 해결 |
 |------|------|------|
-| `EADDRINUSE port 3000` | PORT env 미설정 → 기본값 3000 충돌 | drop-in에 `PORT=3001` 확인 |
+| `EADDRINUSE port 3000` | PORT env 미설정 → 기본값 3000 충돌 | drop-in에 `PORT=3003` 확인 |
 | `LLAMA_SERVER_URL is required` | env.conf 미존재 또는 daemon-reload 누락 | drop-in 재생성 후 daemon-reload |
-| 404 `/ver2.0/favorites` | `RAILS_RELATIVE_URL_ROOT` 미설정 | drop-in에 `/ver2.0` 확인 |
+| 404 `/ver2.0/favorites` | nginx redirect/proxy 규칙 변경 | 현재 Rails route는 `/favorites` |
+| DB 파일 누락 | 운영 DB 삭제/동기화 사고 가능성 | 배포 중단 후 `storage/production.sqlite3` 백업/복구 확인 |
 | 500 ERB syntax error | 뷰 파일 `link_to` 옵션 쉼표 누락 | 해당 파일 수정 후 quick deploy |
 
 ---
@@ -268,9 +334,11 @@ onmouseout="this.style.borderColor='var(--color-border)'"
 1. 로컬에서 뷰 파일 수정
 2. `bin/rails tailwindcss:build` 로 CSS 빌드
 3. `bin/rails assets:precompile` 로 에셋 검증
-4. `git add` + `git commit` (deploy 스크립트가 untracked/staged 파일 차단)
-5. `deploy --quick URLFavorites_2.0` 로 배포
-6. https://urlf.hwandam.kr/ver2.0/favorites 에서 시각 확인
+4. `git add` + `git commit` + `git push`
+5. `bin/deploy-doctor pre`
+6. `bin/deploy --quick urlfavorites_2.0` 로 배포
+7. `bin/deploy-doctor post`
+8. https://urlf.hwandam.kr/favorites 에서 시각 확인
 
 ### 디자인 금지 패턴
 

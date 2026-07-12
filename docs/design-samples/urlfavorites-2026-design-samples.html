@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>URLFavorites 2.0 Design Samples 2026</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f7f3ec;
+      --paper-2: #efe8dc;
+      --ink: #241f18;
+      --muted: #766c60;
+      --line: #d8cec0;
+      --line-strong: #b9ab99;
+      --terracotta: #b76546;
+      --sage: #3d7c6e;
+      --gold: #b98a42;
+      --blue: #385b72;
+      --panel: #fffdf8;
+      --panel-soft: #faf6ee;
+      --shadow: 0 22px 70px rgba(50, 38, 24, 0.12);
+      --mono: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: Georgia, "Times New Roman", serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(183, 101, 70, 0.11), transparent 30rem),
+        linear-gradient(120deg, rgba(255, 253, 248, 0.88), rgba(239, 232, 220, 0.88)),
+        var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      letter-spacing: 0;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.42;
+      background-image:
+        linear-gradient(rgba(36, 31, 24, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(36, 31, 24, 0.028) 1px, transparent 1px);
+      background-size: 18px 18px;
+      mask-image: linear-gradient(to bottom, black, transparent 85%);
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1480px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.6fr);
+      gap: 24px;
+      align-items: end;
+      padding: 22px 0 30px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      color: var(--terracotta);
+      font: 700 11px/1 var(--mono);
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      margin: 12px 0 10px;
+      max-width: 860px;
+      font: 650 clamp(38px, 5vw, 72px)/0.95 var(--sans);
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 720px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.65;
+    }
+
+    .research-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, 0.82);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .research-card h2 {
+      margin: 0 0 12px;
+      font-size: 14px;
+    }
+
+    .source-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .sample-nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(247, 243, 236, 0.88);
+      backdrop-filter: blur(18px);
+    }
+
+    .sample-nav a {
+      flex: 0 0 auto;
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .sample-nav a:hover {
+      color: var(--ink);
+      border-color: var(--line-strong);
+    }
+
+    .sample {
+      margin-top: 24px;
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      background: rgba(255, 253, 248, 0.72);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .sample-header {
+      display: flex;
+      gap: 18px;
+      justify-content: space-between;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(250, 246, 238, 0.88);
+    }
+
+    .sample-title {
+      min-width: 0;
+    }
+
+    .sample-title h2 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .sample-title p {
+      margin: 7px 0 0;
+      max-width: 820px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+      align-content: start;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      height: 25px;
+      padding: 0 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .prototype {
+      min-height: 720px;
+      background: var(--paper);
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 190px minmax(260px, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      height: 56px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 253, 248, 0.88);
+    }
+
+    .brand {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-weight: 750;
+    }
+
+    .mark {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: var(--panel-soft);
+      color: var(--terracotta);
+      font-family: var(--serif);
+      font-weight: 700;
+    }
+
+    .command {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+      height: 38px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fffefa;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .kbd {
+      margin-left: auto;
+      padding: 3px 6px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--paper-2);
+      font: 700 10px/1 var(--mono);
+    }
+
+    .icon-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .layout-three {
+      display: grid;
+      grid-template-columns: 232px minmax(0, 1fr) 360px;
+      min-height: 664px;
+    }
+
+    .side {
+      padding: 16px 12px;
+      border-right: 1px solid var(--line);
+      background: rgba(250, 246, 238, 0.66);
+    }
+
+    .side-section {
+      margin-bottom: 20px;
+    }
+
+    .side-title {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font: 700 10px/1 var(--mono);
+      text-transform: uppercase;
+    }
+
+    .nav-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 10px;
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .nav-item.active {
+      background: #fffdf8;
+      color: var(--ink);
+      box-shadow: inset 0 0 0 1px var(--line);
+    }
+
+    .main {
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .filter-strip {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .filter {
+      display: inline-flex;
+      align-items: center;
+      height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .filter.hot {
+      border-color: rgba(183, 101, 70, 0.4);
+      background: rgba(183, 101, 70, 0.1);
+      color: #8a3f28;
+    }
+
+    .bookmark-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .bookmark {
+      position: relative;
+      min-height: 142px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: rgba(255, 253, 248, 0.92);
+    }
+
+    .bookmark::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 100%;
+      height: 2px;
+      background: var(--terracotta);
+      opacity: 0.76;
+    }
+
+    .bookmark h3 {
+      margin: 12px 0 8px;
+      font-size: 15px;
+      line-height: 1.3;
+      font-weight: 650;
+    }
+
+    .meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font: 11px/1.4 var(--mono);
+    }
+
+    .summary {
+      margin: 10px 0 0;
+      color: #534a40;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .tag-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .tag {
+      padding: 4px 7px;
+      border-radius: 5px;
+      background: var(--paper-2);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .ai-panel {
+      padding: 16px;
+      border-left: 1px solid var(--line);
+      background: rgba(255, 253, 248, 0.94);
+    }
+
+    .panel-label {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font: 700 10px/1 var(--mono);
+      text-transform: uppercase;
+    }
+
+    .ai-panel h3 {
+      margin: 16px 0 10px;
+      font-size: 21px;
+      line-height: 1.12;
+    }
+
+    .insight-block {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel-soft);
+    }
+
+    .insight-block strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .insight-block p,
+    .insight-block li {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .insight-block ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .terminal .prototype {
+      --paper: #14110d;
+      --paper-2: #201b15;
+      --ink: #f2eadc;
+      --muted: #b7aa98;
+      --line: #3f362b;
+      --line-strong: #665644;
+      --panel: #1b1712;
+      --panel-soft: #221d16;
+      --terracotta: #e18a5f;
+      --sage: #7db7a0;
+      --gold: #d2a65a;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(225, 138, 95, 0.08), transparent 220px),
+        var(--paper);
+    }
+
+    .terminal .topbar,
+    .terminal .side,
+    .terminal .main,
+    .terminal .ai-panel,
+    .terminal .bookmark,
+    .terminal .filter,
+    .terminal .command,
+    .terminal .icon-btn {
+      background: var(--panel);
+    }
+
+    .terminal .bookmark {
+      min-height: 112px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .terminal .bookmark h3 {
+      margin-top: 10px;
+      color: var(--ink);
+      font: 600 14px/1.3 var(--mono);
+    }
+
+    .terminal .summary {
+      color: var(--muted);
+    }
+
+    .terminal .bookmark-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .terminal .status {
+      color: var(--sage);
+      font: 700 11px/1 var(--mono);
+    }
+
+    .bento .prototype {
+      --paper: #f5f6f1;
+      --paper-2: #e6eadf;
+      --ink: #18201b;
+      --muted: #657064;
+      --line: #d1d8cd;
+      --line-strong: #aab8a6;
+      --panel: #ffffff;
+      --panel-soft: #f7f9f3;
+      --terracotta: #b76546;
+      --sage: #3f8068;
+      --gold: #bd8f39;
+    }
+
+    .bento .layout-bento {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .bento .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .tile {
+      min-height: 128px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .tile.large {
+      grid-column: span 4;
+      min-height: 220px;
+    }
+
+    .tile.medium {
+      grid-column: span 2;
+      min-height: 220px;
+    }
+
+    .tile.wide {
+      grid-column: span 6;
+    }
+
+    .tile h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    .metric {
+      margin: 10px 0;
+      font-size: 38px;
+      line-height: 1;
+      font-weight: 750;
+    }
+
+    .mini-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .mini-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel-soft);
+      font-size: 12px;
+    }
+
+    .phone {
+      width: min(360px, 100%);
+      margin: 0 auto;
+      border: 1px solid var(--line-strong);
+      border-radius: 22px;
+      background: var(--panel);
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(36, 31, 24, 0.15);
+    }
+
+    .phone-head {
+      display: flex;
+      justify-content: space-between;
+      padding: 18px 16px 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .phone-content {
+      padding: 10px;
+    }
+
+    .sheet {
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 18px 18px 0 0;
+      background: var(--paper-2);
+    }
+
+    .handle {
+      width: 44px;
+      height: 4px;
+      margin: 0 auto 12px;
+      border-radius: 999px;
+      background: var(--line-strong);
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 1100px) {
+      .hero,
+      .layout-three,
+      .bento .layout-bento {
+        grid-template-columns: 1fr;
+      }
+
+      .side,
+      .ai-panel {
+        border: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .bookmark-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100% - 18px, 1480px);
+      }
+
+      .hero h1 {
+        font-size: 38px;
+      }
+
+      .sample-header,
+      .topbar {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+
+      .sample-header {
+        display: grid;
+      }
+
+      .badge-row {
+        justify-content: flex-start;
+      }
+
+      .bento .bento-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tile,
+      .tile.large,
+      .tile.medium,
+      .tile.wide {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <span class="eyebrow">URLFavorites 2.0 · 2026 design research samples</span>
+        <h1>AI 북마크 아카이브를 위한 세 가지 실제 화면 방향</h1>
+        <p>
+          Kimi와 MiniMax 리서치 결과를 분리해 시각화했다. 공통 원칙은 신뢰 중심의 정보 밀도,
+          과시하지 않는 AI, 따뜻한 아카이브 질감, 그리고 반복 사용에 강한 작업대형 화면이다.
+        </p>
+      </div>
+      <aside class="research-card">
+        <h2>리서치 근거 요약</h2>
+        <ul class="source-list">
+          <li>SaaS 2026 흐름: 넓은 여백보다 밀도 높은 의사결정 화면, 명확한 데이터 계층.</li>
+          <li>AI UX 흐름: 별도 마법 버튼보다 검색, 필터, 요약 패널 안에 녹아드는 invisible AI.</li>
+          <li>그래픽 흐름: 차가운 균질 UI보다 따뜻한 질감, 물성, 편집 디자인 감각.</li>
+        </ul>
+      </aside>
+    </section>
+
+    <nav class="sample-nav" aria-label="디자인 샘플">
+      <a href="#kimi">Kimi · Tactile Command Grid</a>
+      <a href="#minimax">MiniMax · Archive Intelligence</a>
+      <a href="#hybrid">Hybrid · Focus Bento</a>
+    </nav>
+
+    <section id="kimi" class="sample">
+      <header class="sample-header">
+        <div class="sample-title">
+          <h2>Kimi Sample · Tactile Command Grid</h2>
+          <p>
+            Warm Archive를 유지하면서 커맨드 스트립과 고밀도 카드/리스트를 결합한 작업대형 화면.
+            AI는 우측 패널과 태그, 요약 줄에 조용히 녹아든다.
+          </p>
+        </div>
+        <div class="badge-row">
+          <span class="badge">Dense SaaS</span>
+          <span class="badge">Command First</span>
+          <span class="badge">Invisible AI</span>
+          <span class="badge">Warm Tactile</span>
+        </div>
+      </header>
+      <div class="prototype">
+        <div class="topbar">
+          <div class="brand"><span class="mark">U</span> URLFavorites</div>
+          <div class="command">
+            저장한 링크, 유튜브 분석, 태그를 자연어로 검색
+            <span class="kbd">⌘ K</span>
+          </div>
+          <div class="icon-actions">
+            <div class="icon-btn">+</div>
+            <div class="icon-btn">↗</div>
+            <div class="icon-btn">⚙</div>
+          </div>
+        </div>
+        <div class="layout-three">
+          <aside class="side">
+            <section class="side-section">
+              <p class="side-title">Library</p>
+              <div class="nav-item active"><span>전체 아카이브</span><span>248</span></div>
+              <div class="nav-item"><span>분석 완료</span><span>181</span></div>
+              <div class="nav-item"><span>유튜브</span><span>42</span></div>
+              <div class="nav-item"><span>재시도 필요</span><span>3</span></div>
+            </section>
+            <section class="side-section">
+              <p class="side-title">Collections</p>
+              <div class="nav-item"><span>AI 워크플로</span><span>31</span></div>
+              <div class="nav-item"><span>Rails 운영</span><span>19</span></div>
+              <div class="nav-item"><span>디자인 레퍼런스</span><span>27</span></div>
+            </section>
+          </aside>
+          <section class="main">
+            <div class="filter-strip">
+              <span class="filter hot">AI 실행 프롬프트 포함</span>
+              <span class="filter">최근 7일</span>
+              <span class="filter">유튜브</span>
+              <span class="filter">요약 긴 글</span>
+              <span class="filter">Grid</span>
+              <span class="filter">List</span>
+            </div>
+            <div class="bookmark-grid">
+              <article class="bookmark">
+                <div class="meta"><span>youtube.com</span><span>12:48</span><span>done</span></div>
+                <h3>AI Agent로 유튜브 콘텐츠를 작업 지시서로 바꾸는 방법</h3>
+                <p class="summary">핵심 주장, 실행 절차, 바로 사용 가능한 프롬프트를 추출했다. 입력값과 리스크는 우측 패널에서 확인 가능.</p>
+                <div class="tag-row"><span class="tag">youtube</span><span class="tag">prompt</span><span class="tag">workflow</span></div>
+              </article>
+              <article class="bookmark">
+                <div class="meta"><span>github.com</span><span>어제</span><span>done</span></div>
+                <h3>Rails 8 Solid Queue 운영 체크리스트</h3>
+                <p class="summary">배포 전 큐 상태, 타임아웃, 재시도 정책을 점검하는 운영 메모로 분류됨.</p>
+                <div class="tag-row"><span class="tag">rails</span><span class="tag">ops</span></div>
+              </article>
+              <article class="bookmark">
+                <div class="meta"><span>figma.com</span><span>월요일</span><span>done</span></div>
+                <h3>고밀도 SaaS 대시보드 패턴 모음</h3>
+                <p class="summary">여백을 줄이되 섹션 경계와 타입 계층으로 스캔성을 유지하는 사례.</p>
+                <div class="tag-row"><span class="tag">design</span><span class="tag">dashboard</span></div>
+              </article>
+              <article class="bookmark">
+                <div class="meta"><span>blog.example</span><span>4일 전</span><span>analyzing</span></div>
+                <h3>AI 기능을 전면에 내세우지 않는 제품 UX</h3>
+                <p class="summary">분석 중. 검색, 필터, 자동 분류 안에 AI를 녹이는 흐름을 추출하고 있음.</p>
+                <div class="tag-row"><span class="tag">ai ux</span><span class="tag">research</span></div>
+              </article>
+            </div>
+          </section>
+          <aside class="ai-panel">
+            <div class="panel-label"><span>AI Context</span><span>confidence 91%</span></div>
+            <h3>선택한 유튜브는 “AI에게 바로 지시 가능한 분석”으로 저장됨</h3>
+            <div class="insight-block">
+              <strong>바로 사용 가능한 프롬프트</strong>
+              <p>역할: 콘텐츠 전략가. 작업: 아래 영상 요약을 기반으로 실행 체크리스트와 자동화 프롬프트를 작성.</p>
+            </div>
+            <div class="insight-block">
+              <strong>주의할 리스크</strong>
+              <ul>
+                <li>자막에 없는 수치는 미확인으로 표시</li>
+                <li>도구명은 원문 근거가 있을 때만 확정</li>
+                <li>실행 절차는 입력값과 출력 형식을 분리</li>
+              </ul>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="minimax" class="sample terminal">
+      <header class="sample-header">
+        <div class="sample-title">
+          <h2>MiniMax Sample · Archive Intelligence</h2>
+          <p>
+            세로로 긴 업무 콘솔 느낌의 다크 웜 인터페이스. MiniMax 제안처럼 AI 분석 패널을 명확히 두고,
+            북마크 목록은 테이블에 가까운 조밀한 행으로 보여준다.
+          </p>
+        </div>
+        <div class="badge-row">
+          <span class="badge">Trust Console</span>
+          <span class="badge">AI Side Panel</span>
+          <span class="badge">Power User</span>
+          <span class="badge">Dark Warm</span>
+        </div>
+      </header>
+      <div class="prototype">
+        <div class="topbar">
+          <div class="brand"><span class="mark">A</span> Archive Intelligence</div>
+          <div class="command">
+            ask: “지난주 저장한 유튜브 중 실행 가능한 프롬프트만 보여줘”
+            <span class="kbd">AI</span>
+          </div>
+          <div class="icon-actions">
+            <div class="icon-btn">⌕</div>
+            <div class="icon-btn">↻</div>
+            <div class="icon-btn">+</div>
+          </div>
+        </div>
+        <div class="layout-three">
+          <aside class="side">
+            <section class="side-section">
+              <p class="side-title">Queues</p>
+              <div class="nav-item active"><span>Inbox</span><span>18</span></div>
+              <div class="nav-item"><span>Analyzing</span><span>2</span></div>
+              <div class="nav-item"><span>Needs Review</span><span>7</span></div>
+              <div class="nav-item"><span>Failed</span><span>1</span></div>
+            </section>
+            <section class="side-section">
+              <p class="side-title">Signals</p>
+              <div class="nav-item"><span>Prompt-ready</span><span>64</span></div>
+              <div class="nav-item"><span>Reference</span><span>102</span></div>
+              <div class="nav-item"><span>Watch later</span><span>29</span></div>
+            </section>
+          </aside>
+          <section class="main">
+            <div class="filter-strip">
+              <span class="filter hot">confidence ≥ 80</span>
+              <span class="filter">source: youtube</span>
+              <span class="filter">sort: actionable</span>
+              <span class="filter">view: compact</span>
+            </div>
+            <div class="bookmark-grid">
+              <article class="bookmark">
+                <div>
+                  <div class="meta"><span>YT-042</span><span>qwen done</span><span>12,000 chars</span></div>
+                  <h3>AI 분석 자동화 파이프라인 설계</h3>
+                  <p class="summary">목적, 입력값, 출력 형식이 분리되어 즉시 실행 가능한 지시서로 변환됨.</p>
+                </div>
+                <span class="status">READY</span>
+              </article>
+              <article class="bookmark">
+                <div>
+                  <div class="meta"><span>WEB-189</span><span>raw cached</span><span>8,000 chars</span></div>
+                  <h3>검색 인덱스 품질을 높이는 태그 구조</h3>
+                  <p class="summary">컬렉션과 자동 태그의 충돌을 줄이는 분류 기준을 추출.</p>
+                </div>
+                <span class="status">DONE</span>
+              </article>
+              <article class="bookmark">
+                <div>
+                  <div class="meta"><span>YT-039</span><span>retry 2/3</span><span>subtitle auto</span></div>
+                  <h3>영상 설명만 있을 때 분석 신뢰도를 표시하는 법</h3>
+                  <p class="summary">자막 부재. 설명과 제목 기반으로 제한 분석 진행.</p>
+                </div>
+                <span class="status">WATCH</span>
+              </article>
+            </div>
+          </section>
+          <aside class="ai-panel">
+            <div class="panel-label"><span>Analysis Panel</span><span>job #1842</span></div>
+            <h3>AI가 한 일보다 사용자가 다음에 할 일을 먼저 보여준다</h3>
+            <div class="insight-block">
+              <strong>Quick Scan</strong>
+              <p>이 링크는 “프롬프트 재사용” 목적에 적합하다. 저장 후 다음 자동화 작업에 바로 연결 가능.</p>
+            </div>
+            <div class="insight-block">
+              <strong>Extracted Actions</strong>
+              <ul>
+                <li>요약을 작업 지시서로 변환</li>
+                <li>입력값 누락 여부 점검</li>
+                <li>리스크 문장을 미확인 근거와 분리</li>
+              </ul>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="hybrid" class="sample bento">
+      <header class="sample-header">
+        <div class="sample-title">
+          <h2>Hybrid Sample · Focus Bento</h2>
+          <p>
+            벤토를 메인 장식으로 쓰지 않고, 작업 상태와 추천 액션을 요약하는 보조 레이아웃으로 제한한 방향.
+            모바일 AI 하단 시트까지 함께 확인할 수 있다.
+          </p>
+        </div>
+        <div class="badge-row">
+          <span class="badge">Bento Minimal</span>
+          <span class="badge">Adaptive UI</span>
+          <span class="badge">Mobile Sheet</span>
+          <span class="badge">Status First</span>
+        </div>
+      </header>
+      <div class="prototype">
+        <div class="topbar">
+          <div class="brand"><span class="mark">F</span> Focus Archive</div>
+          <div class="command">
+            오늘 정리할 링크 12개, 프롬프트로 재사용 가능한 항목 5개
+            <span class="kbd">⌘ J</span>
+          </div>
+          <div class="icon-actions">
+            <div class="icon-btn">▦</div>
+            <div class="icon-btn">☰</div>
+          </div>
+        </div>
+        <div class="layout-bento">
+          <section class="bento-grid">
+            <article class="tile large">
+              <h3>오늘의 정리 큐</h3>
+              <div class="metric">12</div>
+              <p class="summary">분석 완료 8개, 재시도 1개, 아직 읽지 않은 링크 3개. 우선순위는 유튜브와 AI 워크플로 태그가 높다.</p>
+              <div class="mini-list">
+                <div class="mini-row"><span>AI Agent 영상 분석</span><strong>prompt-ready</strong></div>
+                <div class="mini-row"><span>Rails 배포 체크리스트</span><strong>ops</strong></div>
+              </div>
+            </article>
+            <article class="tile medium">
+              <h3>AI 신뢰도</h3>
+              <div class="metric">91%</div>
+              <p class="summary">자막 근거 있음. 미확인 항목은 별도 리스크로 분리.</p>
+            </article>
+            <article class="tile wide">
+              <h3>추천 다음 액션</h3>
+              <div class="mini-list">
+                <div class="mini-row"><span>유튜브 분석 결과에서 “바로 사용 가능한 AI 프롬프트”만 모으기</span><strong>Run</strong></div>
+                <div class="mini-row"><span>실패한 분석 1건은 raw_content 캐시로 재시도</span><strong>Retry</strong></div>
+                <div class="mini-row"><span>디자인 레퍼런스 컬렉션을 Warm Archive 태그로 정리</span><strong>Tag</strong></div>
+              </div>
+            </article>
+          </section>
+          <aside class="phone" aria-label="모바일 샘플">
+            <div class="phone-head"><span>9:41</span><span>URLFavorites</span></div>
+            <div class="phone-content">
+              <div class="command">검색 또는 AI에게 지시 <span class="kbd">AI</span></div>
+              <article class="bookmark">
+                <div class="meta"><span>youtube.com</span><span>done</span></div>
+                <h3>바로 실행 가능한 프롬프트 추출</h3>
+                <p class="summary">요약과 실행 절차가 준비됨.</p>
+              </article>
+              <div class="sheet">
+                <div class="handle"></div>
+                <div class="panel-label"><span>AI Bottom Sheet</span><span>91%</span></div>
+                <h3>이 링크로 다음 작업을 시작할 수 있음</h3>
+                <p class="summary">역할, 작업, 입력, 출력 형식이 분리되어 자동화 에이전트에 바로 붙여 넣을 수 있다.</p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer-note">
+      권장 방향: 실제 제품 적용은 Kimi Sample을 1차 기준으로 삼고, MiniMax Sample의 우측 AI 패널 구조와
+      Hybrid Sample의 모바일 하단 시트를 부분 흡수하는 방식이 가장 적합하다.
+    </p>
+  </main>
+</body>
+</html>
