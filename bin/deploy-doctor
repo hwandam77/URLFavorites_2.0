@@ -30,7 +30,10 @@ PROTECTED_RUNTIME_PATHS = [
   %r{\Astorage/.*\.sqlite3},
   %r{\Adb/.*\.sqlite3},
   %r{\Alog/},
-  %r{\Atmp/}
+  %r{\Atmp/},
+  # public/assets 는 소스가 아니라 assets:precompile 빌드 산출물이다.
+  # 서버 precompile 이 .manifest.json 을 재직렬화해 트리를 더럽혀도 배포 게이트를 막지 않게 제외.
+  %r{\Apublic/assets/}
 ].freeze
 
 mode = ARGV.find { |arg| %w[pre post].include?(arg) } || "pre"
