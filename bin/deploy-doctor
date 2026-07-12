@@ -192,12 +192,14 @@ if mode == "post"
       remote_host,
       "curl -s -o /dev/null -w '%{http_code}' #{Shellwords.escape(url)}"
     )
-    [ ok && output == "200", output ]
+    # 302 = 미인증 요청이 로그인(/session/new)으로 리다이렉트되는 정상 응답(패스워드 로그인 도입 이후)
+    [ ok && %w[200 301 302].include?(output), output ]
   end
 
   add_check(checks, "public health check") do
     ok, output = capture("curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", public_url)
-    [ ok && output == "200", output ]
+    # 302 = 미인증 요청이 로그인(/session/new)으로 리다이렉트되는 정상 응답(패스워드 로그인 도입 이후)
+    [ ok && %w[200 301 302].include?(output), output ]
   end
 end
 
