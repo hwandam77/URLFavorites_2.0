@@ -156,6 +156,14 @@ def remote_rails_env(target)
   )
 end
 
+# rbenv shims are only put on PATH by interactive shell init (~/.bashrc), which a
+# non-interactive `ssh host 'cmd'` shell does not load — so bundle/rails are not found.
+# Prepend the shims explicitly. ponytail: rbenv-specific; revisit only if the host
+# switches Ruby managers (asdf/rvm/system).
+def ruby_env_prefix
+  'PATH="$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"'
+end
+
 def sqlite_backup_command(target, backup_root, db_relative_path)
   source = remote_path(target, db_relative_path)
   destination = File.join(backup_root, "sqlite", File.basename(db_relative_path))
@@ -207,12 +215,13 @@ clean_excludes = PROTECTED_CLEAN_EXCLUDES.map { |pattern| "-e #{Shellwords.escap
 run_remote(target, "clean untracked source files", "git -C #{Shellwords.escape(target[:path])} clean -fd #{clean_excludes}", dry_run: options[:dry_run])
 
 unless options[:quick]
-  run_remote(target, "bundle install", "BUNDLE_GEMFILE=#{Shellwords.escape(remote_path(target, 'Gemfile'))} bundle install", dry_run: options[:dry_run])
-  run_remote(target, "run database migrations", "#{remote_rails_env(target)} #{Shellwords.escape(remote_path(target, 'bin/rails'))} db:migrate", dry_run: options[:dry_run])
-  run_remote(target, "precompile assets", "#{remote_rails_env(target)} #{Shellwords.escape(remote_path(target, 'bin/rails'))} assets:precompile", dry_run: options[:dry_run])
+  cd_app = "cd #{Shellwords.escape(target[:path])} &&"
+  run_remote(target, "bundle install", "#{cd_app} #{ruby_env_prefix} BUNDLE_GEMFILE=#{Shellwords.escape(remote_path(target, 'Gemfile'))} bundle install", dry_run: options[:dry_run])
+  run_remote(target, "run database migrations", "#{cd_app} #{ruby_env_prefix} #{remote_rails_env(target)} bin/rails db:migrate", dry_run: options[:dry_run])
+  run_remote(target, "precompile assets", "#{cd_app} #{ruby_env_prefix} #{remote_rails_env(target)} bin/rails assets:precompile", dry_run: options[:dry_run])
 end
 
-run_remote(target, "restart service", "systemctl restart #{Shellwords.escape(target[:service])}", dry_run: options[:dry_run])
+run_remote(target, "restart service", "sudo systemctl restart #{Shellwords.escape(target[:service])}", dry_run: options[:dry_run])
 
 post_args = [ doctor_path, "post" ]
 post_args << "--report" if options[:dry_run]
