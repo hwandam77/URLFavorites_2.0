@@ -58,4 +58,18 @@ class UrlFavorites::UseCases::Analysis::EnqueueAnalysisTest < ActiveSupport::Tes
 
     assert_equal "analyzing", favorite.reload.status
   end
+
+  test "Twitter URL은 Twitter 분석 작업으로 enqueue한다" do
+    favorite = Favorite.create!(
+      url: "https://x.com/rails/status/123",
+      content_type: "twitter",
+      status: "pending"
+    )
+
+    assert_enqueued_with(job: AnalyzeTwitterJob, args: [ favorite.id, "execution_brief" ]) do
+      UrlFavorites::UseCases::Analysis::EnqueueAnalysis.call(favorite_id: favorite.id)
+    end
+
+    assert_equal "analyzing", favorite.reload.status
+  end
 end

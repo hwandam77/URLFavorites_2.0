@@ -12,10 +12,16 @@ module UrlFavorites
           /\Ahttps?:\/\/(www\.)?github\.com\//i
         ].freeze
 
+        TWITTER_PATTERNS = [
+          /\Ahttps?:\/\/(?:www\.)?x\.com(?:\/|\z)/i,
+          /\Ahttps?:\/\/(?:www\.|mobile\.)?twitter\.com(?:\/|\z)/i
+        ].freeze
+
         def self.call(url)
           return "webpage" unless url.is_a?(String) && url.match?(/\Ahttps?:\/\//i)
           return "youtube" if YOUTUBE_PATTERNS.any? { |pattern| url.match?(pattern) }
           return "github" if GITHUB_PATTERNS.any? { |pattern| url.match?(pattern) }
+          return "twitter" if TWITTER_PATTERNS.any? { |pattern| url.match?(pattern) }
           "webpage"
         end
       end

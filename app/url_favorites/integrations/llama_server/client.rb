@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require Rails.root.join("app/url_favorites/domain/analysis").to_s
+require Rails.root.join("app/url_favorites/domain/analysis/backend_router").to_s
 require Rails.root.join("app/url_favorites/domain/analysis/prompt_style").to_s
 
 module UrlFavorites
@@ -25,9 +26,14 @@ module UrlFavorites
         @@connection_cache = {}
         cattr_accessor :connection_cache, instance_reader: false, instance_writer: false
 
-        def self.call(content, type:, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT)
-          backends = resolve_backends
+        def self.call(content, type:, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT, content_length: nil)
           normalized_style = UrlFavorites::Domain::Analysis::PromptStyle.normalize(analysis_style)
+          backends = prioritize_backends(
+            resolve_backends,
+            content_type: type,
+            content_length: content_length || content.to_s.length,
+            analysis_style: analysis_style
+          )
 
           last_error = nil
           backends.each do |backend|
@@ -107,6 +113,22 @@ module UrlFavorites
           raise ParseError, "Invalid LLM_BACKENDS JSON: #{e.message}"
         end
 
+        def self.prioritize_backends(backends, content_type:, content_length:, analysis_style:)
+          priorities = UrlFavorites::Domain::Analysis::BackendRouter.call(
+            content_type: content_type,
+            content_length: content_length,
+            analysis_style: analysis_style
+          )
+          prioritized = priorities.flat_map do |role|
+            backends.select { |backend| backend[:role].to_s == role }
+          end
+
+          prioritized.empty? ? backends : prioritized + (backends - prioritized)
+        rescue StandardError => e
+          Rails.logger.warn "[LlamaServer::Client] Backend routing failed: #{e.message}"
+          backends
+        end
+
         def self.extract_result_from(parsed)
           if parsed.is_a?(Hash) && parsed.key?(:choices)
             message_content = parsed.dig(:choices, 0, :message, :content)
@@ -150,11 +172,11 @@ module UrlFavorites
 
             if in_string && char.ord < 0x20
               output << case char
-                        when "\n" then "\\n"
-                        when "\r" then "\\r"
-                        when "\t" then "\\t"
-                        else "\\u%04x" % char.ord
-                        end
+              when "\n" then "\\n"
+              when "\r" then "\\r"
+              when "\t" then "\\t"
+              else "\\u%04x" % char.ord
+              end
               next
             end
 
@@ -206,7 +228,20 @@ module UrlFavorites
             - detail_content: 전체 핵심 내용 3~5문단으로 작성
             - Escape all line breaks inside JSON string values as \\n. Do not insert literal newline characters inside quoted JSON strings.
             #{youtube_prompt_rules(normalized_style) if type == "youtube"}
+            #{twitter_prompt_rules if type == "twitter"}
           PROMPT
+        end
+
+        def self.twitter_prompt_rules
+          <<~RULES
+
+            For X (Twitter) content:
+            - Identify the author's central claim and the evidence supporting it.
+            - Reconstruct the thread structure and explain how consecutive posts develop the argument.
+            - Extract quoted claims and external links or resources without inventing missing details.
+            - Preserve the author identity and the context needed to interpret the post.
+            - Distinguish the author's statements from replies, quotations, and your own inference.
+          RULES
         end
 
         def self.youtube_prompt_rules(analysis_style)
@@ -297,12 +332,14 @@ module UrlFavorites
         private_class_method(
           :attempt_backend,
           :resolve_backends,
+          :prioritize_backends,
           :extract_result_from,
           :parse_json_object,
           :escape_control_chars_in_strings,
           :strip_json_fences,
           :validate_required_keys!,
           :system_prompt,
+          :twitter_prompt_rules,
           :youtube_prompt_rules,
           :youtube_detail_content_rules,
           :style_prompt
