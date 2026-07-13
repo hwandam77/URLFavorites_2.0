@@ -225,7 +225,7 @@ module UrlFavorites
             - tags: 3-7 lowercase English words or Korean words
             - summary: under 200 characters
             - key_points: max 5 items
-            - detail_content: 전체 핵심 내용 3~5문단으로 작성
+            - detail_content: 전체 핵심 내용을 3~5문단으로 작성한다. 원문이 어떤 언어이든 detail_content 는 반드시 한국어로 서술한다.
             - Escape all line breaks inside JSON string values as \\n. Do not insert literal newline characters inside quoted JSON strings.
             #{youtube_prompt_rules(normalized_style) if type == "youtube"}
             #{twitter_prompt_rules if type == "twitter"}
