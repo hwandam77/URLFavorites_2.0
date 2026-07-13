@@ -1,10 +1,20 @@
 require "test_helper"
 
 class UrlFavorites::Domain::Analysis::BackendRouterTest < ActiveSupport::TestCase
-  test "routes long video content to heavy first" do
+  test "routes youtube content to fast first" do
     roles = UrlFavorites::Domain::Analysis::BackendRouter.call(
       content_type: "youtube",
       content_length: 6_000
+    )
+
+    assert_equal %w[fast heavy], roles
+  end
+
+  test "routes detailed-style youtube to heavy first" do
+    roles = UrlFavorites::Domain::Analysis::BackendRouter.call(
+      content_type: "youtube",
+      content_length: 12_000,
+      analysis_style: "detail"
     )
 
     assert_equal %w[heavy fast], roles

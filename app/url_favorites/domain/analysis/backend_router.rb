@@ -5,7 +5,9 @@ module UrlFavorites
     module Analysis
       class BackendRouter
         LONG_CONTENT_THRESHOLD = 6_000
-        LONG_CONTENT_TYPES = %w[youtube twitter].freeze
+        # youtube 는 제외: heavy 40B 가 fast 35B(A3B MoE) 보다 5배 느려(~13 vs ~62 tok/s)
+        # 긴 영상 분석에서 read timeout 이 간헐 발생했다. fast 가 안정적으로 빠르므로 fast-first 고정.
+        LONG_CONTENT_TYPES = %w[twitter].freeze
         DETAILED_STYLES = %w[detail qna tutorial prompt_extract].freeze
 
         def self.call(content_type:, content_length:, analysis_style: nil)
