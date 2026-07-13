@@ -27,7 +27,8 @@ module UrlFavorites
           analysis_result = UrlFavorites::Integrations::LlamaServer::Client.call(
             raw_content,
             type: favorite.content_type,
-            analysis_style: normalized_style
+            analysis_style: normalized_style,
+            content_length: raw_content.length
           )
 
           upsert_analysis!(favorite, raw_content, analysis_result, extraction: extraction, analysis_style: normalized_style)
@@ -53,6 +54,11 @@ module UrlFavorites
             favorite.update!(thumbnail_url: extraction[:thumbnail_url]) if extraction[:thumbnail_url].present?
             favorite.update!(title: extraction[:title]) if extraction[:title].present? && (favorite.title.blank? || favorite.title.to_s.start_with?("http://", "https://"))
             extraction.merge(raw_content: youtube_analysis_input(extraction))
+          elsif favorite.content_type == "twitter"
+            extraction = UrlFavorites::Integrations::Twitter::Extractor.call(favorite.url)
+            favorite.update!(thumbnail_url: extraction[:thumbnail_url]) if extraction[:thumbnail_url].present?
+            favorite.update!(title: extraction[:title]) if extraction[:title].present? && (favorite.title.blank? || favorite.title.to_s.start_with?("http://", "https://"))
+            extraction
           else
             extraction = UrlFavorites::Integrations::Webpage::Scraper.call(favorite.url)
             favorite.update!(title: extraction[:title]) if extraction[:title].present?

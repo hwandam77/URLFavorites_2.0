@@ -167,4 +167,21 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
 
     UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "youtube", analysis_style: "tutorial")
   end
+
+  def test_twitter_requests_use_specialized_analysis_prompt
+    stub_request(:post, ENV.fetch("LLAMA_SERVER_URL", "http://localhost:8080") + "/v1/chat/completions")
+      .with do |request|
+        system_message = JSON.parse(request.body).fetch("messages").first.fetch("content")
+
+        assert_includes system_message, "For X (Twitter) content"
+        assert_includes system_message, "central claim"
+        assert_includes system_message, "thread structure"
+        assert_includes system_message, "external links or resources"
+        assert_includes system_message, "author identity"
+        true
+      end
+      .to_return(status: 200, body: @valid_response, headers: { "Content-Type" => "application/json" })
+
+    UrlFavorites::Integrations::LlamaServer::Client.call("thread content", type: "twitter")
+  end
 end

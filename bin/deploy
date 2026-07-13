@@ -1,0 +1,237 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "open3"
+require "optparse"
+require "shellwords"
+require "time"
+
+APP_NAME = "urlfavorites_2.0"
+DEFAULT_PRODUCTION = {
+  host: "vps-server",
+  path: "/home/hwandam/services/rails/urlfavorites_2.0",
+  service: "rails-puma@urlfavorites_2.0",
+  port: "3003",
+  health_path: "/favorites",
+  public_url: "https://urlf.hwandam.kr/favorites",
+  git_remote: "github",
+  llama_server_url: "http://10.10.0.5:8282",
+  primary_db: "storage/production.sqlite3",
+  queue_db: "storage/production_queue.sqlite3"
+}.freeze
+
+PROTECTED_CLEAN_EXCLUDES = [
+  "storage/",
+  "log/",
+  "tmp/",
+  "db/*.sqlite3",
+  "db/*.sqlite3-*",
+  "db/*.sqlite3*"
+].freeze
+
+USAGE = <<~TEXT
+  Usage:
+    bin/deploy [--quick] [--commit SHA] [--environment production] [--dry-run] urlfavorites_2.0
+
+  Defaults deploy the committed Git state of local HEAD to the current production target.
+  Staging is supported only when URLF_STAGING_* environment variables are configured.
+TEXT
+
+options = {
+  quick: false,
+  commit: "HEAD",
+  environment: "production",
+  dry_run: false,
+  backup: true
+}
+
+OptionParser.new do |parser|
+  parser.banner = USAGE
+  parser.on("--quick", "Skip bundle install, migration, and asset precompile.") { options[:quick] = true }
+  parser.on("--commit SHA", "Deploy this committed Git SHA instead of HEAD.") { |value| options[:commit] = value }
+  parser.on("--environment NAME", "Target environment: production or staging.") { |value| options[:environment] = value }
+  parser.on("--dry-run", "Print commands without changing the server.") { options[:dry_run] = true }
+  parser.on("--no-db-backup", "Skip the pre-deploy SQLite backup.") { options[:backup] = false }
+  parser.on("-h", "--help", "Show this help.") do
+    puts parser
+    exit 0
+  end
+end.parse!
+
+app_name = ARGV.shift
+abort USAGE unless app_name == APP_NAME && ARGV.empty?
+
+def capture(*cmd)
+  stdout, stderr, status = Open3.capture3(*cmd)
+  output = stdout.strip
+  output = stderr.strip if output.empty?
+  [ status.success?, output ]
+end
+
+def capture!(*cmd)
+  ok, output = capture(*cmd)
+  abort output unless ok
+  output
+end
+
+def local_git(*args)
+  capture!("git", *args)
+end
+
+def env_fetch(name, fallback = nil)
+  value = ENV[name]
+  return value if value && !value.empty?
+  return fallback if fallback
+
+  abort "#{name} is required"
+end
+
+def target_config(environment)
+  case environment
+  when "production"
+    DEFAULT_PRODUCTION.merge(
+      host: env_fetch("URLF_REMOTE_HOST", DEFAULT_PRODUCTION[:host]),
+      path: env_fetch("URLF_REMOTE_PATH", DEFAULT_PRODUCTION[:path]),
+      service: env_fetch("URLF_SERVICE", DEFAULT_PRODUCTION[:service]),
+      port: env_fetch("URLF_REMOTE_PORT", DEFAULT_PRODUCTION[:port]),
+      health_path: env_fetch("URLF_HEALTH_PATH", DEFAULT_PRODUCTION[:health_path]),
+      public_url: env_fetch("URLF_PUBLIC_URL", DEFAULT_PRODUCTION[:public_url]),
+      git_remote: env_fetch("URLF_REMOTE_GIT", DEFAULT_PRODUCTION[:git_remote]),
+      llama_server_url: env_fetch("URLF_LLAMA_SERVER_URL", DEFAULT_PRODUCTION[:llama_server_url]),
+      primary_db: env_fetch("URLF_PRIMARY_DB", DEFAULT_PRODUCTION[:primary_db]),
+      queue_db: env_fetch("URLF_QUEUE_DB", DEFAULT_PRODUCTION[:queue_db])
+    )
+  when "staging"
+    {
+      host: env_fetch("URLF_STAGING_REMOTE_HOST", DEFAULT_PRODUCTION[:host]),
+      path: env_fetch("URLF_STAGING_REMOTE_PATH"),
+      service: env_fetch("URLF_STAGING_SERVICE"),
+      port: env_fetch("URLF_STAGING_REMOTE_PORT"),
+      health_path: env_fetch("URLF_STAGING_HEALTH_PATH", DEFAULT_PRODUCTION[:health_path]),
+      public_url: env_fetch("URLF_STAGING_PUBLIC_URL"),
+      git_remote: env_fetch("URLF_STAGING_REMOTE_GIT", DEFAULT_PRODUCTION[:git_remote]),
+      llama_server_url: env_fetch("URLF_STAGING_LLAMA_SERVER_URL", DEFAULT_PRODUCTION[:llama_server_url]),
+      primary_db: env_fetch("URLF_STAGING_PRIMARY_DB", DEFAULT_PRODUCTION[:primary_db]),
+      queue_db: env_fetch("URLF_STAGING_QUEUE_DB", DEFAULT_PRODUCTION[:queue_db])
+    }
+  else
+    abort "Unknown environment: #{environment}"
+  end
+end
+
+def shell_env(vars)
+  vars.map { |key, value| "#{key}=#{Shellwords.escape(value.to_s)}" }.join(" ")
+end
+
+def remote_command(target, command)
+  [ "ssh", target[:host], command ]
+end
+
+def run_local(label, cmd, dry_run: false, env: {})
+  printable = [ shell_env(env), cmd.map { |part| Shellwords.escape(part.to_s) }.join(" ") ].reject(&:empty?).join(" ")
+  puts "==> #{label}"
+  puts "    #{printable}"
+  return if dry_run
+
+  system(env, *cmd) || abort("#{label} failed")
+end
+
+def run_remote(target, label, command, dry_run: false)
+  puts "==> #{label}"
+  puts "    ssh #{target[:host]} #{command}"
+  return if dry_run
+
+  system(*remote_command(target, command)) || abort("#{label} failed")
+end
+
+def remote_path(target, relative_path)
+  File.join(target[:path], relative_path)
+end
+
+def remote_rails_env(target)
+  shell_env(
+    "RAILS_ENV" => "production",
+    "LLAMA_SERVER_URL" => target[:llama_server_url],
+    "SECRET_KEY_BASE_DUMMY" => "1"
+  )
+end
+
+# rbenv shims are only put on PATH by interactive shell init (~/.bashrc), which a
+# non-interactive `ssh host 'cmd'` shell does not load — so bundle/rails are not found.
+# Prepend the shims explicitly. ponytail: rbenv-specific; revisit only if the host
+# switches Ruby managers (asdf/rvm/system).
+def ruby_env_prefix
+  'PATH="$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"'
+end
+
+def sqlite_backup_command(target, backup_root, db_relative_path)
+  source = remote_path(target, db_relative_path)
+  destination = File.join(backup_root, "sqlite", File.basename(db_relative_path))
+  "sqlite3 #{Shellwords.escape(source)} #{Shellwords.escape(".backup #{destination}")}"
+end
+
+target = target_config(options[:environment])
+commit = local_git("rev-parse", "--verify", "#{options[:commit]}^{commit}")
+short_commit = local_git("rev-parse", "--short", commit)
+doctor_path = File.expand_path("deploy-doctor", __dir__)
+timestamp = Time.now.utc.strftime("%Y%m%d-%H%M%S")
+backup_root = "/home/hwandam/backups/#{APP_NAME}/#{timestamp}-#{short_commit}"
+
+puts "Deploying #{APP_NAME}"
+puts "environment: #{options[:environment]}"
+puts "commit: #{commit}"
+puts "target: #{target[:host]}:#{target[:path]}"
+puts "mode: #{options[:quick] ? 'quick' : 'full'}"
+puts "dry-run: #{options[:dry_run]}"
+puts
+
+doctor_env = {
+  "URLF_REMOTE_HOST" => target[:host],
+  "URLF_REMOTE_PATH" => target[:path],
+  "URLF_SERVICE" => target[:service],
+  "URLF_REMOTE_PORT" => target[:port],
+  "URLF_HEALTH_PATH" => target[:health_path],
+  "URLF_PUBLIC_URL" => target[:public_url],
+  "URLF_PRIMARY_DB" => target[:primary_db],
+  "URLF_QUEUE_DB" => target[:queue_db],
+  "URLF_EXPECTED_HEAD" => commit
+}
+
+pre_args = [ doctor_path, "pre" ]
+pre_args << "--report" if options[:dry_run]
+run_local("pre-deploy checks", pre_args, dry_run: false, env: doctor_env)
+
+if options[:backup]
+  run_remote(target, "create backup directory", "mkdir -p #{Shellwords.escape(File.join(backup_root, 'sqlite'))}", dry_run: options[:dry_run])
+  run_remote(target, "backup primary SQLite DB", sqlite_backup_command(target, backup_root, target[:primary_db]), dry_run: options[:dry_run])
+  run_remote(target, "backup queue SQLite DB", sqlite_backup_command(target, backup_root, target[:queue_db]), dry_run: options[:dry_run])
+end
+
+run_remote(target, "fetch Git remote", "git -C #{Shellwords.escape(target[:path])} fetch #{Shellwords.escape(target[:git_remote])}", dry_run: options[:dry_run])
+run_remote(target, "verify commit exists on server", "git -C #{Shellwords.escape(target[:path])} cat-file -e #{Shellwords.escape(commit)}^{commit}", dry_run: options[:dry_run])
+run_remote(target, "reset server checkout to commit", "git -C #{Shellwords.escape(target[:path])} reset --hard #{Shellwords.escape(commit)}", dry_run: options[:dry_run])
+
+clean_excludes = PROTECTED_CLEAN_EXCLUDES.map { |pattern| "-e #{Shellwords.escape(pattern)}" }.join(" ")
+run_remote(target, "clean untracked source files", "git -C #{Shellwords.escape(target[:path])} clean -fd #{clean_excludes}", dry_run: options[:dry_run])
+
+unless options[:quick]
+  cd_app = "cd #{Shellwords.escape(target[:path])} &&"
+  run_remote(target, "bundle install", "#{cd_app} #{ruby_env_prefix} BUNDLE_GEMFILE=#{Shellwords.escape(remote_path(target, 'Gemfile'))} bundle install", dry_run: options[:dry_run])
+  run_remote(target, "run database migrations", "#{cd_app} #{ruby_env_prefix} #{remote_rails_env(target)} bin/rails db:migrate", dry_run: options[:dry_run])
+  run_remote(target, "precompile assets", "#{cd_app} #{ruby_env_prefix} #{remote_rails_env(target)} bin/rails assets:precompile", dry_run: options[:dry_run])
+end
+
+run_remote(target, "restart service", "sudo systemctl restart #{Shellwords.escape(target[:service])}", dry_run: options[:dry_run])
+
+post_args = [ doctor_path, "post" ]
+post_args << "--report" if options[:dry_run]
+run_local("post-deploy checks", post_args, dry_run: options[:dry_run], env: doctor_env)
+
+puts
+if options[:dry_run]
+  puts "Dry run complete: #{short_commit}"
+  puts "Planned SQLite backup: #{backup_root}" if options[:backup]
+else
+  puts "Deploy complete: #{short_commit}"
+  puts "SQLite backup: #{backup_root}" if options[:backup]
+end

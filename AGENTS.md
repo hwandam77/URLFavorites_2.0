@@ -23,7 +23,7 @@ Personal URL bookmark manager with automatic AI analysis. Rails 8 + SQLite + Sol
 - AI model: Qwen3.6-35B-A3B-Kimi-K2.6-Reasoning-Distilled.Q5_K_M through llama-server on `beacon`
 - AI transport: HTTP over WireGuard VPN, configured by `LLAMA_SERVER_URL`
 - Web scraping: Nokogiri for webpages, `yt-dlp` for YouTube subtitles and metadata
-- Deployment: `deploy urlfavorites_2.0`
+- Deployment: `bin/deploy urlfavorites_2.0`
 
 ## Mandatory DDD Architecture
 
@@ -189,28 +189,33 @@ Avoid:
 1. Modify view, Stimulus, or style files locally.
 2. Run `bin/rails tailwindcss:build`.
 3. Run `bin/rails assets:precompile`.
-4. Commit before deploy because the deploy script blocks untracked or staged files.
-5. Deploy with `deploy --quick urlfavorites_2.0`.
-6. Visually verify `https://urlf.hwandam.kr/ver2.0/favorites`.
+4. Commit and push before deploy. Git is the source of truth.
+5. Run `bin/deploy-doctor pre`.
+6. Deploy with `bin/deploy --quick urlfavorites_2.0`.
+7. Run `bin/deploy-doctor post`.
+8. Visually verify `https://urlf.hwandam.kr/favorites`.
 
 ## Deployment
 
 Server details:
 
 - SSH host: `vps-server`
-- App path: `/home/hwandam/urlfavorites_2.0/`, symlinked to `/home/hwandam/services/rails/urlfavorites_2.0/`
+- App path: `/home/hwandam/services/rails/urlfavorites_2.0/`
 - Service: `rails-puma@urlfavorites_2.0.service`
-- Port: `3001`; port 3000 is occupied by the older URLFavorites app
-- URL: `https://urlf.hwandam.kr/ver2.0/`
+- Port: `3003`; port 3000 is occupied by the older URLFavorites app
+- URL: `https://urlf.hwandam.kr/favorites`
+- Legacy URL: `https://urlf.hwandam.kr/ver2.0/favorites` redirects to `/favorites`
 - nginx config: `/etc/nginx/sites-enabled/URLF.hwandam.kr`
+- Server source policy: do not edit source files on the VPS. Deploy committed Mac changes only.
+- Production DB policy: never delete or overwrite `/home/hwandam/services/rails/urlfavorites_2.0/storage/*.sqlite3*`.
+- Current primary DB: `storage/production.sqlite3`; current queue DB: `storage/production_queue.sqlite3`.
 
 Systemd drop-in:
 
 ```ini
 [Service]
 Environment=LLAMA_SERVER_URL=http://10.10.0.5:8282
-Environment=PORT=3001
-Environment=RAILS_RELATIVE_URL_ROOT=/ver2.0
+Environment=PORT=3003
 Environment=SOLID_QUEUE_IN_PUMA=1
 ```
 
@@ -222,20 +227,46 @@ Drop-in path:
 
 Deploy commands:
 
-- Full deploy: `deploy urlfavorites_2.0`
-- Quick deploy: `deploy --quick urlfavorites_2.0`
+- Pre-deploy check: `bin/deploy-doctor pre`
+- Full deploy: `bin/deploy urlfavorites_2.0`
+- Quick deploy: `bin/deploy --quick urlfavorites_2.0`
+- Post-deploy check: `bin/deploy-doctor post`
+
+Deployment operating policy:
+
+1. Server worktree cleanup
+   - Separate useful server-side uncommitted changes from disposable artifacts.
+   - Bring useful changes back into the local Mac branch, then commit them.
+   - Return the VPS checkout to a clean worktree before the next deploy.
+   - Never clean by deleting or overwriting `storage/*.sqlite3*` or `db/*.sqlite3*`.
+2. Commit-based deployment only
+   - `bin/deploy urlfavorites_2.0` and `bin/deploy --quick urlfavorites_2.0` must deploy a specific committed Git state.
+   - Do not edit application source files directly on the VPS.
+   - Emergency server edits must be copied back to the local branch, committed, and redeployed through the normal path.
+3. Separate staging and production
+   - Keep at least one staging port even for this personal app.
+   - Target split: one environment on port `3003`, the other on port `3001`; document which is production before switching traffic.
+   - Separate nginx routes with `/staging` or a staging subdomain.
+   - Current state: `3003` is the live production Puma port until a separate staging/prod split is completed.
+   - `bin/deploy --environment staging urlfavorites_2.0` must not be used until `URLF_STAGING_*` target variables and nginx routing are configured.
+4. Longer-term deployment direction
+   - For the current Rails + SQLite app, improving the existing Git-based deploy script is the lightest, highest-value path.
+   - GitHub Actions or Kamal can be revisited later.
+   - Docker/Kamal improves environment reproducibility but adds SQLite, Solid Queue DB, and persistent storage management overhead.
 
 Post-deploy verification:
 
 - Service status: `systemctl status rails-puma@urlfavorites_2.0`
-- Health check: `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3001/ver2.0/favorites`
+- Health check: `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3003/favorites`
 - Recent logs: `journalctl -u rails-puma@urlfavorites_2.0 -n 30 --no-pager`
 
 Common production issues:
 
-- `EADDRINUSE port 3000`: `PORT=3001` missing from drop-in.
+- `EADDRINUSE port 3000`: `PORT=3003` missing from drop-in.
 - `LLAMA_SERVER_URL is required`: env drop-in missing or daemon reload omitted.
-- 404 on `/ver2.0/favorites`: `RAILS_RELATIVE_URL_ROOT=/ver2.0` missing.
+- 404 on `/ver2.0/favorites`: nginx redirect/proxy rules changed; current Rails route is `/favorites`.
+- Dirty server worktree: stop and reconcile the VPS diff back into Git before deploying.
+- Missing production DB: stop deploy; inspect `storage/production.sqlite3` backup/restore before any restart.
 - ERB syntax errors: usually missing commas in `link_to` options.
 
 ## Harness / GSD Notes

@@ -96,6 +96,49 @@ class UrlFavorites::Integrations::LlamaServer::ClientFallbackTest < ActiveSuppor
     assert_equal "Test summary", result[:summary]
   end
 
+  test "routes long video content to heavy backend first" do
+    ENV["LLM_BACKENDS"] = [
+      { "url" => "http://localhost:9997", "model" => "fast", "role" => "fast", "timeout" => 5 },
+      { "url" => "http://localhost:9996", "model" => "heavy", "role" => "heavy", "timeout" => 5 }
+    ].to_json
+
+    fast_request = stub_request(:post, "http://localhost:9997/v1/chat/completions")
+      .to_return(status: 200, body: valid_response.to_json)
+    heavy_request = stub_request(:post, "http://localhost:9996/v1/chat/completions")
+      .to_return(status: 200, body: valid_response.to_json)
+
+    UrlFavorites::Integrations::LlamaServer::Client.call(
+      "video content",
+      type: "youtube",
+      content_length: 8_000
+    )
+
+    assert_requested heavy_request
+    assert_not_requested fast_request
+  end
+
+  test "falls back to fast backend when routed heavy backend fails" do
+    ENV["LLM_BACKENDS"] = [
+      { "url" => "http://localhost:9995", "model" => "fast", "role" => "fast", "timeout" => 5 },
+      { "url" => "http://localhost:9994", "model" => "heavy", "role" => "heavy", "timeout" => 5 }
+    ].to_json
+
+    heavy_request = stub_request(:post, "http://localhost:9994/v1/chat/completions")
+      .to_raise(Faraday::ConnectionFailed.new("Connection refused"))
+    fast_request = stub_request(:post, "http://localhost:9995/v1/chat/completions")
+      .to_return(status: 200, body: valid_response.to_json)
+
+    result = UrlFavorites::Integrations::LlamaServer::Client.call(
+      "video content",
+      type: "youtube",
+      content_length: 8_000
+    )
+
+    assert_equal "Test summary", result[:summary]
+    assert_requested heavy_request
+    assert_requested fast_request
+  end
+
   private
 
   def valid_response

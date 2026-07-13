@@ -1,0 +1,243 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "open3"
+require "shellwords"
+
+USAGE = <<~TEXT
+  Usage:
+    bin/deploy-doctor pre [--report]
+    bin/deploy-doctor post [--report]
+
+  pre  checks that local Git is clean/synced and the VPS checkout has no source drift.
+  post also checks that the VPS checkout matches local HEAD and the app is healthy.
+
+  Environment overrides:
+    URLF_REMOTE_HOST   default: vps-server
+    URLF_REMOTE_PATH   default: /home/hwandam/services/rails/urlfavorites_2.0
+    URLF_SERVICE       default: rails-puma@urlfavorites_2.0
+    URLF_REMOTE_PORT   default: 3003
+    URLF_HEALTH_PATH   default: /favorites
+    URLF_PUBLIC_URL    default: https://urlf.hwandam.kr/favorites
+    URLF_PRIMARY_DB    default: storage/production.sqlite3
+    URLF_QUEUE_DB      default: storage/production_queue.sqlite3
+    URLF_EXPECTED_HEAD optional commit SHA for post deploy checks
+TEXT
+
+Check = Struct.new(:name, :ok, :detail, keyword_init: true)
+
+PROTECTED_RUNTIME_PATHS = [
+  %r{\Astorage/.*\.sqlite3},
+  %r{\Adb/.*\.sqlite3},
+  %r{\Alog/},
+  %r{\Atmp/},
+  # public/assets 는 소스가 아니라 assets:precompile 빌드 산출물이다.
+  # 서버 precompile 이 .manifest.json 을 재직렬화해 트리를 더럽혀도 배포 게이트를 막지 않게 제외.
+  %r{\Apublic/assets/}
+].freeze
+
+mode = ARGV.find { |arg| %w[pre post].include?(arg) } || "pre"
+report_only = ARGV.include?("--report")
+unknown_args = ARGV - [ mode, "--report" ]
+
+if unknown_args.any?
+  warn USAGE
+  abort "Unknown argument(s): #{unknown_args.join(', ')}"
+end
+
+remote_host = ENV.fetch("URLF_REMOTE_HOST", "vps-server")
+remote_path = ENV.fetch("URLF_REMOTE_PATH", "/home/hwandam/services/rails/urlfavorites_2.0")
+service = ENV.fetch("URLF_SERVICE", "rails-puma@urlfavorites_2.0")
+remote_port = ENV.fetch("URLF_REMOTE_PORT", "3003")
+health_path = ENV.fetch("URLF_HEALTH_PATH", "/favorites")
+public_url = ENV.fetch("URLF_PUBLIC_URL", "https://urlf.hwandam.kr/favorites")
+primary_db = ENV.fetch("URLF_PRIMARY_DB", "storage/production.sqlite3")
+queue_db = ENV.fetch("URLF_QUEUE_DB", "storage/production_queue.sqlite3")
+expected_head = ENV["URLF_EXPECTED_HEAD"]
+
+def capture(*cmd)
+  stdout, stderr, status = Open3.capture3(*cmd)
+  output = stdout.strip
+  output = stderr.strip if output.empty?
+  [ status.success?, output ]
+end
+
+def local_git(*args)
+  capture("git", *args)
+end
+
+def remote_capture(remote_host, command)
+  capture("ssh", remote_host, command)
+end
+
+def remote_git(remote_host, remote_path, *args)
+  escaped_args = args.map { |arg| Shellwords.escape(arg) }.join(" ")
+  command = "git -C #{Shellwords.escape(remote_path)} #{escaped_args}"
+  remote_capture(remote_host, command)
+end
+
+def summarize_status(output)
+  lines = output.lines.map(&:chomp)
+  return "clean" if lines.empty?
+
+  preview = lines.first(12).join("\n")
+  extra = lines.length > 12 ? "\n... #{lines.length - 12} more" : ""
+  "#{lines.length} changed path(s):\n#{preview}#{extra}"
+end
+
+def status_paths(line)
+  # git porcelain 은 "XY PATH". capture 가 출력을 strip 하면 선행 공백이 사라져
+  # 고정 오프셋(line[3..])이 어긋난다. 상태코드 1~2자 + 공백을 정규식으로 제거해
+  # strip 여부와 무관하게 PATH 를 얻는다. 리네임("R old -> new")도 처리.
+  line.sub(/\A\s*\S{1,2}\s+/, "").split(" -> ")
+end
+
+def protected_runtime_path?(path)
+  PROTECTED_RUNTIME_PATHS.any? { |pattern| path.match?(pattern) }
+end
+
+def source_status(output)
+  output.lines.reject do |line|
+    paths = status_paths(line.chomp)
+    paths.any? && paths.all? { |path| protected_runtime_path?(path) }
+  end.join
+end
+
+def add_check(checks, name)
+  ok, detail = yield
+  checks << Check.new(name: name, ok: ok, detail: detail)
+end
+
+def branch_sync_status(git_runner)
+  ok, upstream = git_runner.call("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}")
+  return [ false, "no upstream configured" ] unless ok
+
+  ok, counts = git_runner.call("rev-list", "--left-right", "--count", "#{upstream}...HEAD")
+  return [ false, counts ] unless ok
+
+  behind, ahead = counts.split.map(&:to_i)
+  [ behind.zero? && ahead.zero?, "#{upstream}: ahead #{ahead}, behind #{behind}" ]
+end
+
+checks = []
+local_head = nil
+remote_head = nil
+
+puts "URLFavorites deploy doctor (#{mode})"
+puts "remote: #{remote_host}:#{remote_path}"
+puts "service: #{service}, health: http://127.0.0.1:#{remote_port}#{health_path}"
+puts
+
+add_check(checks, "local Git repository") do
+  local_git("rev-parse", "--show-toplevel")
+end
+
+add_check(checks, "local branch") do
+  ok, branch = local_git("branch", "--show-current")
+  [ ok && !branch.empty?, branch.empty? ? "detached HEAD" : branch ]
+end
+
+add_check(checks, "local HEAD") do
+  ok, head = local_git("rev-parse", "HEAD")
+  local_head = head if ok
+  [ ok, head ]
+end
+
+add_check(checks, "local deployable source clean") do
+  ok, status = local_git("status", "--porcelain")
+  source_drift = source_status(status)
+  [ ok && source_drift.empty?, summarize_status(source_drift) ]
+end
+
+add_check(checks, "local branch synced with upstream") do
+  branch_sync_status(method(:local_git))
+end
+
+add_check(checks, "remote path exists") do
+  remote_capture(remote_host, "test -d #{Shellwords.escape(remote_path)}")
+end
+
+add_check(checks, "remote production DB files present") do
+  db_paths = [ primary_db, queue_db ].map { |path| File.join(remote_path, path) }
+  escaped_paths = db_paths.map { |path| Shellwords.escape(path) }.join(" ")
+  ok, output = remote_capture(remote_host, "stat -c '%n %s bytes' #{escaped_paths}")
+  sizes = output.lines.filter_map { |line| line.split[-2].to_i if line.end_with?("bytes\n") || line.end_with?("bytes") }
+  [ ok && sizes.length == db_paths.length && sizes.all?(&:positive?), output ]
+end
+
+add_check(checks, "remote branch") do
+  remote_git(remote_host, remote_path, "branch", "--show-current")
+end
+
+add_check(checks, "remote HEAD") do
+  ok, head = remote_git(remote_host, remote_path, "rev-parse", "HEAD")
+  remote_head = head if ok
+  [ ok, head ]
+end
+
+add_check(checks, "remote deployable source clean") do
+  ok, status = remote_git(remote_host, remote_path, "status", "--porcelain")
+  source_drift = source_status(status)
+  [ ok && source_drift.empty?, summarize_status(source_drift) ]
+end
+
+# 302 = 미인증 요청이 로그인(/session/new)으로 가는 정상 응답(패스워드 로그인 도입 이후)
+HEALTHY_HTTP_CODES = %w[200 301 302].freeze
+
+# 배포 직후엔 systemctl restart 로 Puma 가 아직 부팅 중이라 health 요청이 연결 거부/빈
+# 응답(000)을 낸다. 정상 코드가 나올 때까지 최대 attempts*delay 초 폴링해 재시작 타이밍
+# 오탐을 제거한다. ponytail: 고정 상한(약 18초), 부팅이 더 느려지면 attempts 상향.
+def poll_healthy(attempts: 12, delay: 1.5)
+  result = nil
+  attempts.times do |i|
+    ok, output = yield
+    result = [ ok && HEALTHY_HTTP_CODES.include?(output), output ]
+    return result if result[0]
+
+    sleep delay unless i == attempts - 1
+  end
+  result
+end
+
+if mode == "post"
+  add_check(checks, "remote matches expected HEAD") do
+    expected = expected_head || local_head
+    [ expected && remote_head && expected == remote_head, "expected=#{expected} remote=#{remote_head}" ]
+  end
+
+  add_check(checks, "systemd service active") do
+    ok, output = remote_capture(remote_host, "systemctl is-active #{Shellwords.escape(service)}")
+    [ ok && output == "active", output ]
+  end
+
+  add_check(checks, "remote health check") do
+    url = "http://127.0.0.1:#{remote_port}#{health_path}"
+    poll_healthy do
+      remote_capture(remote_host, "curl -s -o /dev/null -w '%{http_code}' #{Shellwords.escape(url)}")
+    end
+  end
+
+  add_check(checks, "public health check") do
+    poll_healthy do
+      capture("curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", public_url)
+    end
+  end
+end
+
+failures = checks.reject(&:ok)
+
+checks.each do |check|
+  marker = check.ok ? "OK" : "FAIL"
+  puts "#{marker.ljust(5)} #{check.name}"
+  puts check.detail.lines.map { |line| "      #{line}" }.join unless check.detail.to_s.empty?
+end
+
+puts
+
+if failures.empty?
+  puts "Deploy doctor passed."
+  exit 0
+end
+
+puts "Deploy doctor found #{failures.length} issue(s)."
+exit(report_only ? 0 : 1)

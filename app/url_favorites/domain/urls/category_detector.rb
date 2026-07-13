@@ -3,7 +3,7 @@ module UrlFavorites
     module Urls
       class CategoryDetector
         # URL/도메인 기반 카테고리 분류
-        # 대분류: content_type (webpage/youtube/github)
+        # 대분류: content_type (webpage/youtube/github/twitter)
         # 소분류: category (AI에이전트/AI코딩/튜토리얼/AI모델/개발도구/뉴스/커뮤니티/기타)
 
         CATEGORY_PATTERNS = {
@@ -82,6 +82,7 @@ module UrlFavorites
 
         def self.call(url, content_type = nil)
           return "기타" unless url.is_a?(String) && url.present?
+          return "뉴스/커뮤니티" if content_type == "twitter"
 
           # YouTube는 튜토리얼 카테고리 우선
           if content_type == "youtube" || url.match?(/\Ahttps?:\/\/(www\.)?youtube\.com\/(watch|shorts|embed)/i)

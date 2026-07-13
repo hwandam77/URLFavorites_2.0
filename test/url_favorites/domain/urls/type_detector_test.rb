@@ -20,4 +20,16 @@ class UrlFavoritesDomainUrlsTypeDetectorTest < ActiveSupport::TestCase
   test "github URL은 github" do
     assert_equal "github", UrlFavorites::Domain::Urls::TypeDetector.call("https://github.com/rails/rails")
   end
+
+  test "x.com 상태 URL은 twitter" do
+    assert_equal "twitter", UrlFavorites::Domain::Urls::TypeDetector.call("https://x.com/rails/status/123")
+  end
+
+  test "twitter.com 프로필 URL은 twitter" do
+    assert_equal "twitter", UrlFavorites::Domain::Urls::TypeDetector.call("https://twitter.com/rails")
+  end
+
+  test "mobile.twitter.com URL은 twitter" do
+    assert_equal "twitter", UrlFavorites::Domain::Urls::TypeDetector.call("https://mobile.twitter.com/rails/status/123")
+  end
 end
