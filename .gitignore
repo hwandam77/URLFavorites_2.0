@@ -47,3 +47,4 @@ errors.log
 # Machine-local artifacts (not committed)
 .omx/
 .claude/orchestration.installed
+.playwright-mcp/
