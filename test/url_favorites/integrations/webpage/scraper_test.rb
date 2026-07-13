@@ -107,6 +107,27 @@ class UrlFavorites::Integrations::Webpage::ScraperTest < ActiveSupport::TestCase
     assert result[:body_text].length <= 8_000
   end
 
+  test "302 리다이렉트를 따라가 최종 페이지를 스크랩한다 (share.google 유형)" do
+    stub_request(:get, "https://share.example/abc")
+      .to_return(status: 302, headers: { "Location" => "https://example.com/page" }, body: "302 Moved")
+    stub_request(:get, "https://example.com/page")
+      .to_return(status: 200, body: HTML_WITH_OG, headers: { "Content-Type" => "text/html" })
+
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://share.example/abc")
+
+    assert_equal "OG 제목", result[:title]
+    assert_includes result[:body_text], "본문 내용 첫 번째 단락"
+  end
+
+  test "리다이렉트 루프는 FetchError" do
+    stub_request(:get, "https://loop.example/a")
+      .to_return(status: 302, headers: { "Location" => "https://loop.example/a" })
+
+    assert_raises(UrlFavorites::Integrations::Webpage::Scraper::FetchError) do
+      UrlFavorites::Integrations::Webpage::Scraper.call("https://loop.example/a")
+    end
+  end
+
   test "HTTP 오류 시 Scraper::FetchError 발생" do
     stub_request(:get, "https://example.com/error")
       .to_return(status: 500)

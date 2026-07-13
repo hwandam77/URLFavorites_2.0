@@ -8,16 +8,17 @@ module UrlFavorites
 
         JINA_BASE_URL = "https://r.jina.ai/"
         CLOUDFLARE_SIGNATURE = "Just a moment...".freeze
+        MAX_REDIRECTS = 5
 
         def self.call(url)
-          response = Faraday.new(request: { timeout: 30, open_timeout: 10 }).get(url)
+          response, final_url = fetch_following_redirects(url)
 
           # Cloudflare는 403 또는 200+챌린지 페이지로 차단 → Jina fallback
           if cloudflare_blocked?(response)
-            return fetch_via_jina(url)
+            return fetch_via_jina(final_url)
           end
 
-          raise FetchError, "HTTP error: #{response.status}" if response.status >= 400
+          raise FetchError, "HTTP error: #{response.status}" if response.status >= 300
 
           doc = Nokogiri::HTML(response.body)
 
@@ -29,6 +30,17 @@ module UrlFavorites
           }
         rescue Faraday::Error => e
           raise FetchError, "Network error: #{e.message}"
+        end
+
+        # share.google 등 단축링크는 302 체인 뒤에 실제 콘텐츠가 있다 (Faraday 는 기본 미추적)
+        def self.fetch_following_redirects(url)
+          MAX_REDIRECTS.times do
+            response = Faraday.new(request: { timeout: 30, open_timeout: 10 }).get(url)
+            location = response.headers["location"]
+            return [ response, url ] unless response.status.between?(300, 399) && location.present?
+            url = URI.join(url, location).to_s
+          end
+          raise FetchError, "Too many redirects"
         end
 
         def self.cloudflare_blocked?(response)
