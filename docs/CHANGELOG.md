@@ -12,3 +12,8 @@
 | 2026-04-16 | CSS 디자인 토큰 분리 — tokens.css, theme_controller 리팩토링 | 프론트엔드 | 다크/라이트 테마 구조화 |
 | 2026-04-18 | PWA Share Target 구현 — manifest.json, share 액션, CSRF 예외 | PWA | 모바일 공유 타겟 등록 |
 | 2026-04-27 | E2E 시스템 테스트 10개 추가 (전체 138개 통과) | 테스트 | favorites/collections flow, turbo-rails test config fix |
+| 2026-07-12 | **v3.0** 멀티 LLM 태스크 라우팅 — `BackendRouter`(heavy/fast) + `LLM_BACKENDS`·`EMBEDDING_URL` | 백엔드/배포 | beacon=fast·synapse=heavy 콘텐츠별 라우팅 |
+| 2026-07-12 | **v3.0** X(트위터) 분석 — `content_type "twitter"` + `Twitter::Extractor` + `AnalyzeTwitterJob` | 백엔드 | Jina/yt-dlp 재사용, 트윗 전용 프롬프트 |
+| 2026-07-13 | 배포 파이프라인 하드닝 — `bin/deploy`(rbenv PATH·cd·sudo) + `deploy-doctor`(health 302·assets 제외·porcelain·폴링) 6버그 | 배포 도구 | 실전 배포 중 발견·수정, pre/post 전 항목 green |
+| 2026-07-13 | X 분석 수정 — 개별 트윗을 X syndication API로 추출 | `Twitter::Extractor` | Jina 무인증 tier의 x.com 403 우회 |
+| 2026-07-13 | detail_content 한국어 강제 (원문 언어 무관) | LLM 프롬프트 | 영어 원문에서 상세가 영문 출력되던 문제 |
