@@ -17,3 +17,6 @@
 | 2026-07-13 | 배포 파이프라인 하드닝 — `bin/deploy`(rbenv PATH·cd·sudo) + `deploy-doctor`(health 302·assets 제외·porcelain·폴링) 6버그 | 배포 도구 | 실전 배포 중 발견·수정, pre/post 전 항목 green |
 | 2026-07-13 | X 분석 수정 — 개별 트윗을 X syndication API로 추출 | `Twitter::Extractor` | Jina 무인증 tier의 x.com 403 우회 |
 | 2026-07-13 | detail_content 한국어 강제 (원문 언어 무관) | LLM 프롬프트 | 영어 원문에서 상세가 영문 출력되던 문제 |
+| 2026-07-13 | 유튜브 분석 timeout 상향 120→240초 | VPS `env.conf` `LLM_BACKENDS` | 긴 자막 정상 생성(80~150초)이 120초 경계 초과로 간헐 `Net::ReadTimeout` 실패 |
+| 2026-07-13 | `LLM_BACKENDS` JSON 큰따옴표 `\"` 이스케이프 | VPS `env.conf` | systemd가 따옴표 제거 → 무효 JSON → 재시작 시 전체 분석 `ParseError` 회귀 수정 |
+| 2026-07-13 | 유튜브 LLM 라우팅 fast-first (`8dcfe67`) | `BackendRouter` | heavy 40B가 fast 35B보다 5배 느림 → fast 우선(상세 스타일은 heavy 유지), 타임아웃 마진 확보 |
