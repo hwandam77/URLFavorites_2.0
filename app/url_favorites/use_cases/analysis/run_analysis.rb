@@ -35,7 +35,11 @@ module UrlFavorites
 
           favorite.update!(
             status: "done",
-            category: UrlFavorites::Domain::Urls::CategoryDetector.call(favorite.url, favorite.content_type),
+            category: UrlFavorites::Domain::Urls::CategoryDetector.call(
+              favorite.url,
+              favorite.content_type,
+              text: "#{favorite.title} #{Array(analysis_result[:tags]).join(" ")}"
+            ),
             retry_count: 0
           )
         rescue => e

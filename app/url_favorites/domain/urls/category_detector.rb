@@ -28,7 +28,8 @@ module UrlFavorites
             # 경로
             /github\.copilot|cursor|windsurf|claude.?dev|nextjs.?ai/i,
             /v0\.dev|bolt\.new|replit|lovable|devin| SWE.?bench/i,
-            /code.?generation|ai.?code.?review|automated.?refactor/i
+            /code.?generation|ai.?code.?review|automated.?refactor/i,
+            /codex|claude.?code|copilot|coding.?agent|vibe.?coding/i
           ],
           "튜토리얼" => [
             # 도메인
@@ -80,7 +81,9 @@ module UrlFavorites
           ]
         }.freeze
 
-        def self.call(url, content_type = nil)
+        # text: 분석 완료 후 제목·태그 등 내용 신호. URL에 키워드가 없는
+        # 블로그 글(tistory 등)이 전부 "기타"로 떨어지는 것을 보완한다.
+        def self.call(url, content_type = nil, text: nil)
           return "기타" unless url.is_a?(String) && url.present?
           return "뉴스/커뮤니티" if content_type == "twitter"
 
@@ -95,7 +98,7 @@ module UrlFavorites
           end
 
           # 일반 웹페이지
-          detect_web_category(url)
+          detect_web_category("#{url} #{text}")
         end
 
         private_class_method def self.detect_youtube_category(url)
