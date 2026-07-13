@@ -181,6 +181,24 @@ add_check(checks, "remote deployable source clean") do
   [ ok && source_drift.empty?, summarize_status(source_drift) ]
 end
 
+# 302 = 미인증 요청이 로그인(/session/new)으로 가는 정상 응답(패스워드 로그인 도입 이후)
+HEALTHY_HTTP_CODES = %w[200 301 302].freeze
+
+# 배포 직후엔 systemctl restart 로 Puma 가 아직 부팅 중이라 health 요청이 연결 거부/빈
+# 응답(000)을 낸다. 정상 코드가 나올 때까지 최대 attempts*delay 초 폴링해 재시작 타이밍
+# 오탐을 제거한다. ponytail: 고정 상한(약 18초), 부팅이 더 느려지면 attempts 상향.
+def poll_healthy(attempts: 12, delay: 1.5)
+  result = nil
+  attempts.times do |i|
+    ok, output = yield
+    result = [ ok && HEALTHY_HTTP_CODES.include?(output), output ]
+    return result if result[0]
+
+    sleep delay unless i == attempts - 1
+  end
+  result
+end
+
 if mode == "post"
   add_check(checks, "remote matches expected HEAD") do
     expected = expected_head || local_head
@@ -194,18 +212,15 @@ if mode == "post"
 
   add_check(checks, "remote health check") do
     url = "http://127.0.0.1:#{remote_port}#{health_path}"
-    ok, output = remote_capture(
-      remote_host,
-      "curl -s -o /dev/null -w '%{http_code}' #{Shellwords.escape(url)}"
-    )
-    # 302 = 미인증 요청이 로그인(/session/new)으로 리다이렉트되는 정상 응답(패스워드 로그인 도입 이후)
-    [ ok && %w[200 301 302].include?(output), output ]
+    poll_healthy do
+      remote_capture(remote_host, "curl -s -o /dev/null -w '%{http_code}' #{Shellwords.escape(url)}")
+    end
   end
 
   add_check(checks, "public health check") do
-    ok, output = capture("curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", public_url)
-    # 302 = 미인증 요청이 로그인(/session/new)으로 리다이렉트되는 정상 응답(패스워드 로그인 도입 이후)
-    [ ok && %w[200 301 302].include?(output), output ]
+    poll_healthy do
+      capture("curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", public_url)
+    end
   end
 end
 
