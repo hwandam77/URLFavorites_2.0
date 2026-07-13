@@ -182,6 +182,7 @@ journalctl -u rails-puma@urlfavorites_2.0 -n 30 --no-pager
 | 500 ERB syntax error | 뷰 파일 `link_to` 옵션 쉼표 누락 | 해당 파일 수정 후 quick deploy |
 | youtube 분석만 `failed` (`Net::ReadTimeout`) | 긴 트랜스크립트 LLM 생성이 timeout 근접/초과 (heavy 40B 느림) | `LLM_BACKENDS` timeout 상향(240) / heavy·fast 라우팅 점검 |
 | 모든 분석 `failed` (`ParseError: Invalid LLM_BACKENDS JSON`) | env.conf 의 `"` 미이스케이프 → systemd 가 따옴표 제거 | `\"` 로 이스케이프 후 `/proc/PID/environ` 로 유효 JSON 검증 |
+| 배포했는데 잡이 옛 코드로 동작 (2026-07-13 발견) | 이전 재시작 때 죽지 않은 **고아 solid-queue 트리(PPID=1)**가 같은 큐 DB에서 잡을 선점 | `lsof storage/production_queue.sqlite3` 로 워커 트리 확인 → puma 기동 시각과 다른 supervisor `kill <PID>` |
 
 ---
 
