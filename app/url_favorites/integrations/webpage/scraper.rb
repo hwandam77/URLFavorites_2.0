@@ -82,14 +82,24 @@ module UrlFavorites
           doc.at_css("meta[property='og:image']")&.[]("content")
         end
 
-        def self.extract_body_text(doc)
-          element = doc.at_css("article") || doc.at_css("main") || doc.at_css("body")
-          return "" unless element
+        # article 이 광고/헤더 껍데기뿐인 사이트(tistory 등)가 있어, 본문이 충분한 첫 후보를 채택
+        MIN_BODY_TEXT = 200
 
+        def self.extract_body_text(doc)
+          candidates = doc.css("article").to_a + doc.css("main").to_a + [ doc.at_css("body") ].compact
+          best = ""
+          candidates.each do |element|
+            text = cleaned_text(element)
+            return text[0...8_000] if text.length >= MIN_BODY_TEXT
+            best = text if text.length > best.length
+          end
+          best[0...8_000]
+        end
+
+        def self.cleaned_text(element)
           clone = element.dup
           clone.css("script, style, noscript").each(&:remove)
-          text = clone.text.gsub(/\s+/, " ").strip
-          text[0...8_000]
+          clone.text.gsub(/\s+/, " ").strip
         end
       end
     end

@@ -82,6 +82,21 @@ class UrlFavorites::Integrations::Webpage::ScraperTest < ActiveSupport::TestCase
     assert_includes result[:body_text], "메인 본문"
   end
 
+  test "article 이 껍데기면 본문이 충분한 main 으로 폴백한다 (tistory 유형)" do
+    html = <<~HTML
+      <html><body>
+        <article><div>새소식 300x250</div></article>
+        <main><div class="contents_style"><p>#{"실제 본문 내용입니다. " * 30}</p></div></main>
+      </body></html>
+    HTML
+    stub_request(:get, "https://example.com/tistory")
+      .to_return(status: 200, body: html, headers: { "Content-Type" => "text/html" })
+
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/tistory")
+
+    assert_includes result[:body_text], "실제 본문 내용입니다"
+  end
+
   test "body_text 는 8,000 자를 초과하지 않는다" do
     long_body = "<html><body><article><p>#{"가" * 10_000}</p></article></body></html>"
     stub_request(:get, "https://example.com/long")

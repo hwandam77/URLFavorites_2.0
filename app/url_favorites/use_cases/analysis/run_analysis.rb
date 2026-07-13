@@ -40,8 +40,9 @@ module UrlFavorites
           )
         rescue => e
           raise e unless favorite
+          # 재분석 실패가 기존 완성 분석을 "실패"로 가리지 않도록, 완료본이 있으면 done 유지
           favorite.update!(
-            status: "failed",
+            status: favorite.analysis&.summary.present? ? "done" : "failed",
             retry_count: favorite.retry_count.to_i + 1,
             error_message: "#{e.class}: #{e.message}"
           )
