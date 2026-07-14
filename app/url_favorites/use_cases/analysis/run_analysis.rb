@@ -42,6 +42,9 @@ module UrlFavorites
             ),
             retry_count: 0
           )
+
+          # 분석 결과(제목·요약·태그)를 검색 인덱스에 반영 — 이것이 없으면 FTS 검색이 비어 있음
+          ReindexFavoriteJob.perform_later(favorite.id)
         rescue => e
           raise e unless favorite
           # 재분석 실패가 기존 완성 분석을 "실패"로 가리지 않도록, 완료본이 있으면 done 유지

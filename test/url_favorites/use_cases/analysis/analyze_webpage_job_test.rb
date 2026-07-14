@@ -2,6 +2,8 @@ require "test_helper"
 require "webmock/minitest"
 
 class AnalyzeWebpageJobTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   setup do
     WebMock.enable!
     WebMock.disable_net_connect!
@@ -30,6 +32,16 @@ class AnalyzeWebpageJobTest < ActiveSupport::TestCase
         assert_equal "요약 내용", @favorite.analysis.summary
         assert_equal [ "rails", "ruby" ], @favorite.analysis.tags
         assert_equal "positive", @favorite.analysis.sentiment
+      end
+    end
+  end
+
+  test "분석 완료 시 검색 인덱싱 잡을 발주한다" do
+    UrlFavorites::Integrations::Webpage::Scraper.stub(:call, @scraper_result) do
+      UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @analyzer_result) do
+        assert_enqueued_with(job: ReindexFavoriteJob, args: [ @favorite.id ]) do
+          AnalyzeWebpageJob.perform_now(@favorite.id)
+        end
       end
     end
   end
