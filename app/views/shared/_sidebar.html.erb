@@ -3,18 +3,20 @@
      data-sidebar-target="sidebar">
 
   <%# 브랜드 %>
-  <div class="flex items-center gap-2.5 px-5 py-5" style="border-bottom:1px solid var(--color-border);">
-    <div class="flex items-center justify-center w-7 h-7 rounded-sm"
-         style="background:var(--color-surface-raised);border:1px solid var(--color-border-strong);box-shadow:var(--shadow-sm);">
-      <svg class="w-3.5 h-3.5" fill="none" style="color:var(--color-accent-text);" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-      </svg>
+  <%= link_to favorites_path, class: "block", style: "display:block;text-decoration:none;color:inherit;" do %>
+    <div class="flex items-center gap-2.5 px-5 py-5" style="border-bottom:1px solid var(--color-border);">
+      <div class="flex items-center justify-center w-7 h-7 rounded-sm"
+           style="background:var(--color-surface-raised);border:1px solid var(--color-border-strong);box-shadow:var(--shadow-sm);">
+        <svg class="w-3.5 h-3.5" fill="none" style="color:var(--color-accent-text);" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+        </svg>
+      </div>
+      <div>
+        <span style="font-size:17px;font-weight:650;letter-spacing:0;color:var(--color-text);">URLFAV</span>
+        <span style="font-size:12px;font-weight:500;color:var(--color-text-tertiary);margin-left:4px;">v3.0</span>
+      </div>
     </div>
-    <div>
-      <span style="font-size:17px;font-weight:650;letter-spacing:0;color:var(--color-text);">URLFAV</span>
-      <span style="font-size:12px;font-weight:500;color:var(--color-text-tertiary);margin-left:4px;">v3.0</span>
-    </div>
-  </div>
+  <% end %>
 
   <%# 메인 네비게이션 %>
   <div class="px-3 pt-4 space-y-0.5">
