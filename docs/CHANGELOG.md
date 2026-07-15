@@ -27,3 +27,4 @@
 | 2026-07-13 | 단축링크 302 리다이렉트 추적 (`608b9fe`) | `Webpage::Scraper` | share.google 링크가 "302 Moved" 본문으로 분석되던 문제 |
 | 2026-07-13 | 디자인 피드백 — 사이드바 모바일 URL 폼 제거, 버전 라벨 v3.0 (`13ef4c3`, `82292f1`) | 사이드바 | |
 | 2026-07-14 | **v3.0 업그레이드 최종 완료** — 완료 보고서 작성 | `docs/work-log/2026-07-14-v3-final-completion.md` | 계획 대비 완료 매트릭스 + 안정화 이력 + 운영 검증 evidence |
+| 2026-07-15 | 디자인 피드백 — 사이드바 로고(URLFAV v3.0) 클릭 시 `/favorites` 이동 (`9385dc1`) | `shared/_sidebar.html.erb` | 브랜드 블록을 `link_to favorites_path`로 감쌈 (`display:block` inline으로 레이아웃 유지) |
