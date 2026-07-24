@@ -40,9 +40,11 @@ module UrlFavorites
           raise ExtractionError, "rdt JSON parse failed: #{e.message}"
         end
 
-        # --json 실 출력 스키마는 미실측 — 방어적으로 키를 탐색하고
-        # 예상 밖 구조(최상위가 Hash가 아닌 경우 등)에서도 예외 없이 텍스트를 활용한다.
+        # 1차 경로: rdt read --json 실측 스키마 { ok, schema_version, data: { post, comments, ... } }.
+        # 그 밖의 구조는 방어적 fallback으로 처리해 예외 없이 텍스트를 최대한 활용한다.
         def self.build_result(data)
+          return build_from_rdt_schema(data["data"]) if data.is_a?(Hash) && data["data"].is_a?(Hash)
+
           case data
           when Hash
             title = first_string(data, "title")
@@ -67,6 +69,23 @@ module UrlFavorites
           }
         end
 
+        def self.build_from_rdt_schema(data)
+          post = data["post"].is_a?(Hash) ? data["post"] : {}
+          title = post["title"].to_s.presence
+          body_text = post["selftext"].to_s.presence
+          author = post["author"].to_s.presence
+          link_url = post["is_self"] ? nil : post["url"].to_s.presence
+          comments = normalize_comments(data["comments"])
+
+          {
+            title: title,
+            body_text: body_text,
+            author: author,
+            thumbnail_url: nil,
+            raw_content: raw_content(title, body_text, author, comments, link_url)
+          }
+        end
+
         def self.first_string(data, *keys)
           keys.each do |key|
             value = data[key]
@@ -86,7 +105,7 @@ module UrlFavorites
           end.first(TOP_COMMENT_LIMIT)
         end
 
-        def self.raw_content(title, body_text, author, comments)
+        def self.raw_content(title, body_text, author, comments, link_url = nil)
           comments_text = comments.map do |comment|
             header = comment[:author].present? ? "- #{comment[:author]}: " : "- "
             "#{header}#{comment[:text][0...COMMENT_TEXT_LIMIT]}"
@@ -95,6 +114,7 @@ module UrlFavorites
           [
             ("Title: #{title}" if title.present?),
             ("Author: #{author}" if author.present?),
+            ("URL: #{link_url}" if link_url.present?),
             ("Post:\n#{body_text}" if body_text.present?),
             ("Top comments:\n#{comments_text}" if comments_text.present?)
           ].compact.join("\n\n")[0...RAW_CONTENT_LIMIT]
@@ -106,8 +126,8 @@ module UrlFavorites
           tail.presence || "no stderr output"
         end
 
-        private_class_method :extract_post_id, :parse_json, :build_result, :first_string,
-                             :normalize_comments, :raw_content, :stderr_tail
+        private_class_method :extract_post_id, :parse_json, :build_result, :build_from_rdt_schema,
+                             :first_string, :normalize_comments, :raw_content, :stderr_tail
       end
     end
   end

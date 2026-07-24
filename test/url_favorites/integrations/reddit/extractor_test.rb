@@ -123,6 +123,61 @@ class UrlFavorites::Integrations::Reddit::ExtractorTest < ActiveSupport::TestCas
     end
   end
 
+  test "parses the measured rdt read fixture schema" do
+    payload = file_fixture("rdt_read_sample.json").read
+
+    Open3.stub(:capture3, [ payload, "", status(success: true) ]) do
+      result = UrlFavorites::Integrations::Reddit::Extractor.call(COMMENTS_URL)
+
+      assert_equal "What's the creepiest Ask Reddit thread you have come across?", result[:title]
+      assert_nil result[:body_text]
+      assert_equal "Semi_HadrOn", result[:author]
+      assert_includes result[:raw_content], "Title: What's the creepiest Ask Reddit thread you have come across?"
+      assert_includes result[:raw_content], "Cobalt-Royal: There was one I saw a while ago"
+      assert_includes result[:raw_content], "Top comments:"
+      # 주어진 순서 상위 10개만 사용 — 11번째 이후 댓글은 제외
+      assert_not_includes result[:raw_content], "Dawgs919"
+      # is_self가 true이므로 URL 줄 없음
+      assert_not_includes result[:raw_content], "URL:"
+    end
+  end
+
+  test "parses the real schema with selftext and adds a URL line for link posts" do
+    payload = {
+      "ok" => true,
+      "schema_version" => "1",
+      "data" => {
+        "post" => {
+          "id" => "abc123",
+          "title" => "흥미로운 링크",
+          "selftext" => "링크 설명 본문",
+          "author" => "alice",
+          "is_self" => false,
+          "url" => "https://example.com/article"
+        },
+        "comments" => [
+          { "id" => "c1", "author" => "bob", "body" => "첫 댓글",
+            "replies" => [ { "id" => "c2", "author" => "carol", "body" => "대댓글" } ] }
+        ],
+        "more_count" => 0,
+        "more_children" => []
+      }
+    }.to_json
+
+    Open3.stub(:capture3, [ payload, "", status(success: true) ]) do
+      result = UrlFavorites::Integrations::Reddit::Extractor.call(COMMENTS_URL)
+
+      assert_equal "흥미로운 링크", result[:title]
+      assert_equal "링크 설명 본문", result[:body_text]
+      assert_equal "alice", result[:author]
+      assert_includes result[:raw_content], "URL: https://example.com/article"
+      assert_includes result[:raw_content], "Post:\n링크 설명 본문"
+      assert_includes result[:raw_content], "bob: 첫 댓글"
+      # replies 재귀는 펼치지 않음
+      assert_not_includes result[:raw_content], "대댓글"
+    end
+  end
+
   private
 
   def status(success:)
