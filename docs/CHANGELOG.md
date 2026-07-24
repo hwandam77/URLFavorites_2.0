@@ -30,3 +30,5 @@
 | 2026-07-15 | 디자인 피드백 — 사이드바 로고(URLFAV v3.0) 클릭 시 `/favorites` 이동 (`9385dc1`) | `shared/_sidebar.html.erb` | 브랜드 블록을 `link_to favorites_path`로 감쌈 (`display:block` inline으로 레이아웃 유지) |
 | 2026-07-24 | Reddit 게시물 분석 지원 — `content_type "reddit"` + `Reddit::Extractor` (rdt-cli, `4a90b6d`/`1fc7154`) | 백엔드 | Agent-Reach 조사 결과 채택: 익명 API 전면 차단이라 rdt-cli+쿠키가 유일 경로. 실측 스키마 fixture 기반 파서. kimi+minimax 워커 병렬 발주 |
 | 2026-07-24 | rdt-cli 설치·쿠키 운영 runbook (`cb1033c`) | `docs/runbooks/reddit-extraction.md` | 쿠키 7일 만료·headless 서버 credential 배치·PATH 함정 (yt-dlp 함정과 동일 클래스) |
+| 2026-07-24 | **2단계 분석** — fast(35B) 즉시 제공 → heavy(40B) 정밀 갱신 (`e426e26`) | `RefineAnalysis`/`RefineAnalysisJob`/`Client`/`queue.yml`/뷰 배지 | Consensus 절차(sol 2회 검토 → grok·luna 병렬 구현 → grok 채택). `analysis_tier` 컬럼 추가, `limits_concurrency`로 정밀 전역 직렬화(요구: 순차+컨텍스트 리셋), CAS 재검사로 세대 역행 차단 |
+| 2026-07-24 | **queue.yml 잠복 버그 수정** — 콤마 문자열 큐가 미소비되던 문제 (`e426e26` 포함) | `config/queue.yml` | Solid Queue 1.4는 `"a,b"`를 단일 큐 이름으로 해석 (QueueSelector 실증). 운영은 별도 `solid-queue@` 서비스의 `*` 소비로 은폐돼 있었음 → 배포 시 supervisor 단일성 검증 필수 |
