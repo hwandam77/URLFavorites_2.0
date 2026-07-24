@@ -94,12 +94,14 @@ Main Claude (Hub) — 계획·분해·위임·검증. Orca CLI로 워크트리/�
 
 | 항목 | 값 |
 |------|-----|
-| SSH 호스트 | `vps-server` (`~/.ssh/config`) |
+| SSH 호스트 | `bastion` (LAN `10.10.0.1` / Tailscale `100.111.118.109`, `~/.ssh/config`) |
 | 앱 경로 | `/home/hwandam/services/rails/urlfavorites_2.0/` |
-| 서비스 | `rails-puma@urlfavorites_2.0.service` |
-| 포트 | `3003` (3000은 구버전 urlfavorites 점유) |
+| 서비스 | `rails-puma@urlfavorites_2.0.service` (+ `solid-queue@urlfavorites_2.0.service` 별도) |
+| 포트 | `3003` (Puma loopback `127.0.0.1:3003`) |
 | URL | `https://urlf.hwandam.kr/favorites` |
-| nginx 설정 | `/etc/nginx/sites-enabled/URLF.hwandam.kr` |
+| nginx 설정 | `/etc/nginx/sites-enabled/URLF.hwandam.kr` (bastion 실측 미확정 — 변경 시 확인) |
+
+> **이력 (2026-07-22 이관)**: `vps-server`(192.168.0.31, Tailscale `100.97.46.29`) → `bastion` 으로 이전. vps-server는 해체됨. **SSH/배포 대상은 반드시 `bastion`** (Tailscale에 vps-server가 offline 잔재로 남아 혼선 주의 — 2026-07-24 장애 진단 초기 혼선 원인). 이관 As-Built: `wiki/서버관리/VPS_server/리포트/서버-이전-완료-보고서-2026-07-22.md`.
 
 운영 DB는 `/home/hwandam/services/rails/urlfavorites_2.0/storage/*.sqlite3*`에 있다. 특히
 `storage/production.sqlite3`와 `storage/production_queue.sqlite3`는 삭제하거나 덮어쓰지 않는다.
@@ -180,6 +182,7 @@ journalctl -u rails-puma@urlfavorites_2.0 -n 30 --no-pager
 | 404 `/ver2.0/favorites` | nginx redirect/proxy 규칙 변경 | 현재 Rails route는 `/favorites` |
 | DB 파일 누락 | 운영 DB 삭제/동기화 사고 가능성 | 배포 중단 후 `storage/production.sqlite3` 백업/복구 확인 |
 | 500 ERB syntax error | 뷰 파일 `link_to` 옵션 쉼표 누락 | 해당 파일 수정 후 quick deploy |
+| youtube 분석만 `failed` (`yt-dlp failed` / `ExtractionError`) | **`yt-dlp` 바이너리 미설치 또는 구버전** (vps→bastion 이관 시 누락, 2026-07-24 장애). `extractor.rb`가 `Open3`로 yt-dlp를 외부 명령 호출 | `/usr/local/bin/yt-dlp --version` 확인 → 미설치 시 standalone 바이너리 설치 (systemd PATH에 `/usr/local/bin` 포함돼 Puma 재기동 불필요, ffmpeg 불필요). 재발 방지: 이관 체크리스트에 `Open3`/`system` 외부 바이너리 의존성 점검 추가 |
 | youtube 분석만 `failed` (`Net::ReadTimeout`) | 긴 트랜스크립트 LLM 생성이 timeout 근접/초과 (heavy 40B 느림) | `LLM_BACKENDS` timeout 상향(240) / heavy·fast 라우팅 점검 |
 | 모든 분석 `failed` (`ParseError: Invalid LLM_BACKENDS JSON`) | env.conf 의 `"` 미이스케이프 → systemd 가 따옴표 제거 | `\"` 로 이스케이프 후 `/proc/PID/environ` 로 유효 JSON 검증 |
 | 배포했는데 잡이 옛 코드로 동작 (2026-07-13 발견) | 이전 재시작 때 죽지 않은 **고아 solid-queue 트리(PPID=1)**가 같은 큐 DB에서 잡을 선점 | `lsof storage/production_queue.sqlite3` 로 워커 트리 확인 → puma 기동 시각과 다른 supervisor `kill <PID>` |
