@@ -96,9 +96,9 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
       .with do |request|
         body = JSON.parse(request.body)
         system_message = body.fetch("messages").first.fetch("content")
-        style_message = body.fetch("messages").second.fetch("content")
         user_message = body.fetch("messages").last.fetch("content")
 
+        assert_equal 1, body.fetch("messages").count { |message| message.fetch("role") == "system" }
         assert_includes system_message, "For YouTube content"
         assert_includes system_message, "professional AI analysis artifact"
         assert_includes system_message, "ready-to-use prompt"
@@ -117,9 +117,9 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
         assert_includes system_message, "Timestamped transcript sample"
         assert_includes system_message, "use only timestamps shown"
         assert_includes system_message, "timestamp may be an empty string"
-        assert_includes style_message, "Analysis style: execution_brief"
-        assert_includes style_message, "mandatory"
-        assert_includes style_message, "AI execution brief"
+        assert_includes system_message, "\n\nAnalysis style: execution_brief"
+        assert_includes system_message, "mandatory"
+        assert_includes system_message, "AI execution brief"
         assert_includes user_message, "youtube:"
         true
       end
@@ -133,16 +133,16 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
       .with do |request|
         body = JSON.parse(request.body)
         system_message = body.fetch("messages").first.fetch("content")
-        style_message = body.fetch("messages").second.fetch("content")
 
+        assert_equal 1, body.fetch("messages").count { |message| message.fetch("role") == "system" }
         assert_includes system_message, "## 기본 질문"
         assert_includes system_message, "## 심화 질문"
         assert_includes system_message, "## 흔한 오해"
         assert_includes system_message, "do not use the execution_brief section order"
         assert_not_includes system_message, "## 콘텐츠의 목적과 핵심 주장"
         assert_not_includes system_message, "## 실행 가능한 절차"
-        assert_includes style_message, "Analysis style: qna"
-        assert_includes style_message, "Korean Q&A document"
+        assert_includes system_message, "\n\nAnalysis style: qna"
+        assert_includes system_message, "Korean Q&A document"
         true
       end
       .to_return(status: 200, body: @valid_response, headers: { "Content-Type" => "application/json" })

@@ -65,8 +65,7 @@ module UrlFavorites
           body = {
             model: model,
             messages: [
-              { role: "system", content: system_prompt(type, analysis_style) },
-              { role: "system", content: style_prompt(analysis_style) },
+              { role: "system", content: [ system_prompt(type, analysis_style), style_prompt(analysis_style) ].join("\n\n") },
               { role: "user", content: "#{type}: #{content}" }
             ],
             response_format: { type: "json_object" }
