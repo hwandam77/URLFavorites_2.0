@@ -26,13 +26,14 @@ module UrlFavorites
         @@connection_cache = {}
         cattr_accessor :connection_cache, instance_reader: false, instance_writer: false
 
-        def self.call(content, type:, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT, content_length: nil)
+        def self.call(content, type:, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT, content_length: nil, backend_role: nil)
           normalized_style = UrlFavorites::Domain::Analysis::PromptStyle.normalize(analysis_style)
           backends = prioritize_backends(
             resolve_backends,
             content_type: type,
             content_length: content_length || content.to_s.length,
-            analysis_style: analysis_style
+            analysis_style: analysis_style,
+            backend_role: backend_role
           )
 
           last_error = nil
@@ -79,6 +80,8 @@ module UrlFavorites
 
           result = inner.slice(:summary, :key_points, :tags, :sentiment)
           result[:detail_content] = inner[:detail_content] if inner.key?(:detail_content)
+          result[:used_backend_role] = backend[:role].to_s
+          result[:used_backend_model] = model
           result
         rescue Faraday::ServerError => e
           raise ServerError, "HTTP server error: #{e.message}"
@@ -113,12 +116,17 @@ module UrlFavorites
           raise ParseError, "Invalid LLM_BACKENDS JSON: #{e.message}"
         end
 
-        def self.prioritize_backends(backends, content_type:, content_length:, analysis_style:)
-          priorities = UrlFavorites::Domain::Analysis::BackendRouter.call(
-            content_type: content_type,
-            content_length: content_length,
-            analysis_style: analysis_style
-          )
+        def self.prioritize_backends(backends, content_type:, content_length:, analysis_style:, backend_role: nil)
+          priorities = if backend_role.present?
+            role = backend_role.to_s
+            [ role ] + (%w[fast heavy] - [ role ])
+          else
+            UrlFavorites::Domain::Analysis::BackendRouter.call(
+              content_type: content_type,
+              content_length: content_length,
+              analysis_style: analysis_style
+            )
+          end
           prioritized = priorities.flat_map do |role|
             backends.select { |backend| backend[:role].to_s == role }
           end

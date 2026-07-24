@@ -1,4 +1,5 @@
 require Rails.root.join("app/url_favorites/domain/analysis").to_s
+require Rails.root.join("app/url_favorites/domain/analysis/backend_router").to_s
 require Rails.root.join("app/url_favorites/domain/analysis/prompt_style").to_s
 
 module UrlFavorites
@@ -28,10 +29,23 @@ module UrlFavorites
             raw_content,
             type: favorite.content_type,
             analysis_style: normalized_style,
-            content_length: raw_content.length
+            content_length: raw_content.length,
+            backend_role: "fast"
           )
 
-          upsert_analysis!(favorite, raw_content, analysis_result, extraction: extraction, analysis_style: normalized_style)
+          used_role = analysis_result[:used_backend_role].to_s
+          used_model = analysis_result[:used_backend_model]
+          tier = used_role == "heavy" ? "heavy" : "fast"
+
+          # done 처리 후 reload 금지 — upsert 직후 snapshot (동시 세대 결합 방지)
+          analysis = upsert_analysis!(
+            favorite, raw_content, analysis_result,
+            extraction: extraction,
+            analysis_style: normalized_style,
+            analysis_tier: tier,
+            model_used: used_model
+          )
+          snapshot = analysis.updated_at.to_f
 
           favorite.update!(
             status: "done",
@@ -45,6 +59,11 @@ module UrlFavorites
 
           # 분석 결과(제목·요약·태그)를 검색 인덱스에 반영 — 이것이 없으면 FTS 검색이 비어 있음
           ReindexFavoriteJob.perform_later(favorite.id)
+
+          # heavy 폴백 성공 시 이미 정밀본 → refine 생략
+          if tier == "fast" && refine_candidate?(normalized_style, raw_content)
+            RefineAnalysisJob.perform_later(favorite.id, normalized_style, snapshot)
+          end
         rescue => e
           raise e unless favorite
           # 재분석 실패가 기존 완성 분석을 "실패"로 가리지 않도록, 완료본이 있으면 done 유지
@@ -55,6 +74,12 @@ module UrlFavorites
           )
           raise e if favorite.retry_count < MAX_RETRIES
         end
+
+        def self.refine_candidate?(style, raw_content)
+          UrlFavorites::Domain::Analysis::BackendRouter::DETAILED_STYLES.include?(style.to_s) ||
+            raw_content.to_s.length >= UrlFavorites::Domain::Analysis::BackendRouter::LONG_CONTENT_THRESHOLD
+        end
+        private_class_method :refine_candidate?
 
         def self.extract_content(favorite)
           if favorite.content_type == "youtube"
@@ -129,7 +154,7 @@ module UrlFavorites
           normalized_links.map { |link| "- #{link}" }.join("\n")
         end
 
-        def self.upsert_analysis!(favorite, raw_content, analysis_result, extraction: nil, analysis_style: DEFAULT_ANALYSIS_STYLE)
+        def self.upsert_analysis!(favorite, raw_content, analysis_result, extraction: nil, analysis_style: DEFAULT_ANALYSIS_STYLE, analysis_tier: "fast", model_used: nil)
           attrs = {
             raw_content: raw_content,
             summary: analysis_result[:summary],
@@ -137,7 +162,9 @@ module UrlFavorites
             tags: analysis_result[:tags],
             sentiment: analysis_result[:sentiment],
             detail_content: analysis_result[:detail_content],
-            analysis_style: analysis_style
+            analysis_style: analysis_style,
+            analysis_tier: analysis_tier,
+            model_used: model_used
           }
           if extraction
             attrs[:transcript] = extraction[:transcript]
@@ -147,6 +174,7 @@ module UrlFavorites
 
           if favorite.analysis
             favorite.analysis.update!(**attrs)
+            favorite.analysis
           else
             favorite.create_analysis!(**attrs)
           end

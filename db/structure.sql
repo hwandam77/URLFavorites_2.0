@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS 'favorites_fts_idx'(segid, term, pgno, PRIMARY KEY(se
 CREATE TABLE IF NOT EXISTS 'favorites_fts_content'(id INTEGER PRIMARY KEY, c0, c1, c2, c3, c4, c5);
 CREATE TABLE IF NOT EXISTS 'favorites_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
 CREATE TABLE IF NOT EXISTS 'favorites_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID;
-CREATE TABLE IF NOT EXISTS "analyses" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "analyzed_at" datetime(6), "created_at" datetime(6) NOT NULL, "favorite_id" integer NOT NULL, "key_points" text, "model_used" varchar, "raw_content" text, "sentiment" varchar, "subtitle_source" varchar, "summary" text, "tags" text, "transcript" text, "updated_at" datetime(6) NOT NULL, "video_metadata" text, "detail_content" text /*application='UrlFavorites20'*/, "transcript_segments" text /*application='UrlFavorites20'*/, "analysis_style" varchar DEFAULT 'execution_brief' NOT NULL /*application='UrlFavorites20'*/, CONSTRAINT "fk_rails_b11216332f"
+CREATE TABLE IF NOT EXISTS "analyses" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "analyzed_at" datetime(6), "created_at" datetime(6) NOT NULL, "favorite_id" integer NOT NULL, "key_points" text, "model_used" varchar, "raw_content" text, "sentiment" varchar, "subtitle_source" varchar, "summary" text, "tags" text, "transcript" text, "updated_at" datetime(6) NOT NULL, "video_metadata" text, "detail_content" text /*application='UrlFavorites20'*/, "transcript_segments" text /*application='UrlFavorites20'*/, "analysis_style" varchar DEFAULT 'execution_brief' NOT NULL /*application='UrlFavorites20'*/, "analysis_tier" varchar DEFAULT 'fast' NOT NULL, CONSTRAINT "fk_rails_b11216332f"
 FOREIGN KEY ("favorite_id")
   REFERENCES "favorites" ("id")
 );
@@ -52,6 +52,7 @@ FOREIGN KEY ("user_id")
 CREATE INDEX "index_sessions_on_user_id" ON "sessions" ("user_id") /*application='UrlFavorites20'*/;
 CREATE UNIQUE INDEX "index_sessions_on_token" ON "sessions" ("token") /*application='UrlFavorites20'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260724000001'),
 ('20260509000001'),
 ('20260429000002'),
 ('20260429000001'),
@@ -66,3 +67,4 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260407000003'),
 ('20260407000002'),
 ('20260407000001');
+

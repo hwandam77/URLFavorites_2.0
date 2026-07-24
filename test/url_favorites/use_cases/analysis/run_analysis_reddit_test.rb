@@ -24,11 +24,12 @@ class RunAnalysisRedditTest < ActiveSupport::TestCase
   end
 
   test "routes reddit favorites through the Reddit extractor and stores raw_content" do
-    analyzer = lambda do |content, type:, analysis_style:, content_length:|
+    analyzer = lambda do |content, type:, analysis_style:, content_length:, backend_role: nil|
       assert_equal @extraction[:raw_content], content
       assert_equal "reddit", type
       assert_equal "execution_brief", analysis_style
       assert_equal content.length, content_length
+      assert_equal "fast", backend_role
       @analysis
     end
 

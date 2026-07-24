@@ -63,11 +63,12 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
   test "YouTube 분석 입력에 제목 설명 자막 출처와 AI 실행 브리프 지시를 포함한다" do
     captured_content = nil
 
-    analyzer = lambda do |content, type:, analysis_style:, content_length:|
+    analyzer = lambda do |content, type:, analysis_style:, content_length:, backend_role: nil|
       captured_content = content
       assert_equal "youtube", type
       assert_equal "execution_brief", analysis_style
       assert_equal content.length, content_length
+      assert_equal "fast", backend_role
       @analyzer_result
     end
 
@@ -92,7 +93,7 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
     captured_content = nil
     extractor_result = @extractor_result.merge(github_links: [])
 
-    analyzer = lambda do |content, type:, analysis_style:, content_length:|
+    analyzer = lambda do |content, type:, analysis_style:, content_length:, backend_role: nil|
       captured_content = content
       assert_equal "youtube", type
       assert_equal "execution_brief", analysis_style
@@ -120,7 +121,7 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
       end
     )
 
-    analyzer = lambda do |content, type:, analysis_style:, content_length:|
+    analyzer = lambda do |content, type:, analysis_style:, content_length:, backend_role: nil|
       captured_content = content
       assert_equal "youtube", type
       assert_equal "execution_brief", analysis_style
@@ -170,9 +171,10 @@ class AnalyzeYoutubeJobTest < ActiveSupport::TestCase
 
   test "선택한 분석 스타일을 LLM 호출과 Analysis에 저장한다" do
     captured_style = nil
-    analyzer = lambda do |_content, type:, analysis_style:, content_length:|
+    analyzer = lambda do |_content, type:, analysis_style:, content_length:, backend_role: nil|
       assert_equal "youtube", type
       assert_operator content_length, :>, 0
+      assert_equal "fast", backend_role
       captured_style = analysis_style
       @analyzer_result
     end

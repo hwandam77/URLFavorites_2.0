@@ -114,7 +114,11 @@
       <span style="background:<%= s[:bg] %>;color:<%= s[:text] %>;border:1px solid <%= s[:border] %>;padding:3px 8px;border-radius:var(--radius-sm);font-size:var(--text-xs);font-weight:700;<%= s[:pulse] ? 'animation:animate-pulse 2s infinite;' : '' %>">
         <%= s[:label] %>
       </span>
+      <% if favorite.analysis&.analysis_tier == "heavy" %>
+        <span style="background:var(--color-accent-muted);color:var(--color-accent-text);border:1px solid var(--color-border);padding:3px 8px;border-radius:var(--radius-sm);font-size:var(--text-xs);font-weight:700;">정밀</span>
+      <% end %>
       <% if tags.present? %>
+
         <% tags.first(2).each do |tag| %>
           <span style="color:var(--color-accent-text);padding:1px 0;font-size:var(--text-xs);font-weight:650;">
             #<%= tag %>
