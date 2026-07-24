@@ -67,6 +67,11 @@ module UrlFavorites
             favorite.update!(thumbnail_url: extraction[:thumbnail_url]) if extraction[:thumbnail_url].present?
             favorite.update!(title: extraction[:title]) if extraction[:title].present? && (favorite.title.blank? || favorite.title.to_s.start_with?("http://", "https://"))
             extraction
+          elsif favorite.content_type == "reddit"
+            extraction = UrlFavorites::Integrations::Reddit::Extractor.call(favorite.url)
+            favorite.update!(thumbnail_url: extraction[:thumbnail_url]) if extraction[:thumbnail_url].present?
+            favorite.update!(title: extraction[:title]) if extraction[:title].present? && (favorite.title.blank? || favorite.title.to_s.start_with?("http://", "https://"))
+            extraction
           else
             extraction = UrlFavorites::Integrations::Webpage::Scraper.call(favorite.url)
             favorite.update!(title: extraction[:title]) if extraction[:title].present?
