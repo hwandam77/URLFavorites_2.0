@@ -28,3 +28,5 @@
 | 2026-07-13 | 디자인 피드백 — 사이드바 모바일 URL 폼 제거, 버전 라벨 v3.0 (`13ef4c3`, `82292f1`) | 사이드바 | |
 | 2026-07-14 | **v3.0 업그레이드 최종 완료** — 완료 보고서 작성 | `docs/work-log/2026-07-14-v3-final-completion.md` | 계획 대비 완료 매트릭스 + 안정화 이력 + 운영 검증 evidence |
 | 2026-07-15 | 디자인 피드백 — 사이드바 로고(URLFAV v3.0) 클릭 시 `/favorites` 이동 (`9385dc1`) | `shared/_sidebar.html.erb` | 브랜드 블록을 `link_to favorites_path`로 감쌈 (`display:block` inline으로 레이아웃 유지) |
+| 2026-07-24 | Reddit 게시물 분석 지원 — `content_type "reddit"` + `Reddit::Extractor` (rdt-cli, `4a90b6d`/`1fc7154`) | 백엔드 | Agent-Reach 조사 결과 채택: 익명 API 전면 차단이라 rdt-cli+쿠키가 유일 경로. 실측 스키마 fixture 기반 파서. kimi+minimax 워커 병렬 발주 |
+| 2026-07-24 | rdt-cli 설치·쿠키 운영 runbook (`cb1033c`) | `docs/runbooks/reddit-extraction.md` | 쿠키 7일 만료·headless 서버 credential 배치·PATH 함정 (yt-dlp 함정과 동일 클래스) |
