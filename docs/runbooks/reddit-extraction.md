@@ -58,24 +58,26 @@ rdt status --json
 
 bastion 은 headless 라 `rdt login` 불가. **Mac 에서 생성한 credential.json 을 그대로 복사**한다.
 
-### 1. pipx + rdt-cli 설치 (bastion 에서)
+### 1. rdt-cli 설치 (bastion 에서) — **Python 3.12 고정 필수**
+
+> **함정 (2026-07-24 실측)**: bastion 시스템 Python 3.14로 설치하면 `rdt status`가
+> `authenticated: false`, 모든 read가 403이 된다 (같은 쿠키·같은 IP가 3.12에선 정상 —
+> 3.14 쿠키 처리 비호환). bastion apt엔 3.12가 없으므로 **pipx 대신 uv**로 3.12 고정 설치한다.
 
 ```bash
 ssh bastion
 
-# pipx 가 없으면
-sudo apt install -y pipx
-pipx ensurepath
-# (대안) sudo 없이 --user 설치
-python3 -m pip install --user pipx
-python3 -m pipx ensurepath --user
+# uv 설치 (1회)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 고정 커밋 설치
-pipx install 'git+https://github.com/public-clis/rdt-cli.git@5e4fb3720d5c174e976cd425ccc3b879d52cac66'
+# Python 3.12 고정으로 고정 커밋 설치
+~/.local/bin/uv tool install --python 3.12 'git+https://github.com/public-clis/rdt-cli.git@5e4fb3720d5c174e976cd425ccc3b879d52cac66'
 
-# PATH 확인
-which rdt
-# → /home/hwandam/.local/bin/rdt
+# systemd PATH 대비 심링크 (/usr/local/bin 은 Puma PATH에 포함)
+sudo ln -sf /home/hwandam/.local/bin/rdt /usr/local/bin/rdt
+
+# 확인
+/usr/local/bin/rdt --version   # → rdt, version 0.4.2
 ```
 
 ### 2. credential.json 이관 (Mac → bastion)

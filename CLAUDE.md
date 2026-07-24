@@ -96,7 +96,7 @@ Main Claude (Hub) — 계획·분해·위임·검증. Orca CLI로 워크트리/�
 |------|-----|
 | SSH 호스트 | `bastion` (LAN `10.10.0.1` / Tailscale `100.111.118.109`, `~/.ssh/config`) |
 | 앱 경로 | `/home/hwandam/services/rails/urlfavorites_2.0/` |
-| 서비스 | `rails-puma@urlfavorites_2.0.service` (+ `solid-queue@urlfavorites_2.0.service` 별도) |
+| 서비스 | `rails-puma@urlfavorites_2.0.service` (Solid Queue는 `SOLID_QUEUE_IN_PUMA=1` 내장 단일 supervisor — 2026-07-24 `solid-queue@` 별도 서비스 stop+disable로 단일화. 이중 supervisor는 "배포 후 옛 코드 잡" 사고 클래스의 원인) |
 | 포트 | `3003` (Puma loopback `127.0.0.1:3003`) |
 | URL | `https://urlf.hwandam.kr/favorites` |
 | nginx 설정 | `/etc/nginx/sites-enabled/URLF.hwandam.kr` (bastion 실측 미확정 — 변경 시 확인) |
@@ -115,7 +115,9 @@ Main Claude (Hub) — 계획·분해·위임·검증. Orca CLI로 워크트리/�
 Environment=LLAMA_SERVER_URL=http://10.10.0.4:8282
 Environment=PORT=3003
 Environment=SOLID_QUEUE_IN_PUMA=1
-Environment=EMBEDDING_URL=http://10.10.0.4:8282
+Environment=EMBEDDING_URL=http://127.0.0.1:8900
+# ⚠️ EMBEDDING_URL은 bastion 로컬 embedding-service(:8900). LLM 서버(8282)는 /v1/embeddings 미지원(501)
+#    — 2026-07-24 이전 오설정이 큐 미소비 버그에 가려져 있었음
 # LLM_BACKENDS: heavy(40B, 느림 ~13tok/s) + fast(35B-A3B, 빠름 ~62tok/s), 둘 다 timeout 240
 # ⚠️ systemd Environment= 는 큰따옴표를 quoting 으로 해석해 벗겨낸다 → JSON 은 반드시 \" 로 이스케이프
 Environment=LLM_BACKENDS=[{\"url\":\"http://10.10.0.5:8282\",\"model\":\"...heavy.gguf\",\"role\":\"heavy\",\"timeout\":240},{\"url\":\"http://10.10.0.4:8282\",\"model\":\"...fast.gguf\",\"role\":\"fast\",\"timeout\":240}]
@@ -185,6 +187,7 @@ journalctl -u rails-puma@urlfavorites_2.0 -n 30 --no-pager
 | youtube 분석만 `failed` (`yt-dlp failed` / `ExtractionError`) | **`yt-dlp` 바이너리 미설치 또는 구버전** (vps→bastion 이관 시 누락, 2026-07-24 장애). `extractor.rb`가 `Open3`로 yt-dlp를 외부 명령 호출 | `/usr/local/bin/yt-dlp --version` 확인 → 미설치 시 standalone 바이너리 설치 (systemd PATH에 `/usr/local/bin` 포함돼 Puma 재기동 불필요, ffmpeg 불필요). 재발 방지: 이관 체크리스트에 `Open3`/`system` 외부 바이너리 의존성 점검 추가 |
 | youtube 분석만 `failed` (`Net::ReadTimeout`) | 긴 트랜스크립트 LLM 생성이 timeout 근접/초과 (heavy 40B 느림) | `LLM_BACKENDS` timeout 상향(240) / heavy·fast 라우팅 점검 |
 | reddit 분석만 `failed` (`ExtractionError`) | **`rdt` CLI 미설치 또는 쿠키 만료(기본 7일)** — Reddit은 익명 API 전면 차단이라 로그인 쿠키 필수. yt-dlp와 같은 `Open3` 외부 바이너리 의존 클래스 | `rdt status --json` 으로 `authenticated` 확인 → 만료 시 Mac에서 `rdt login` 후 `~/.config/rdt-cli/credential.json` 재배치. 상세: `docs/runbooks/reddit-extraction.md` |
+| reddit만 403/`authenticated: false` (쿠키·IP 정상인데) | **rdt가 Python 3.14로 구동** — 쿠키를 요청에 싣지 못함 (2026-07-24 실측: 같은 쿠키가 3.12에선 성공, 3.14에선 403) | `uv tool install --python 3.12 'git+…rdt-cli…@고정커밋'` 으로 3.12 고정 재설치 (bastion은 apt에 3.12 없어 uv 사용) + `/usr/local/bin/rdt` 심링크 |
 | 모든 분석 `failed` (`ParseError: Invalid LLM_BACKENDS JSON`) | env.conf 의 `"` 미이스케이프 → systemd 가 따옴표 제거 | `\"` 로 이스케이프 후 `/proc/PID/environ` 로 유효 JSON 검증 |
 | 배포했는데 잡이 옛 코드로 동작 (2026-07-13 발견) | 이전 재시작 때 죽지 않은 **고아 solid-queue 트리(PPID=1)**가 같은 큐 DB에서 잡을 선점 | `lsof storage/production_queue.sqlite3` 로 워커 트리 확인 → puma 기동 시각과 다른 supervisor `kill <PID>` |
 
