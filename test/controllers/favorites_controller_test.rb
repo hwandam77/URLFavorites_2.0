@@ -268,6 +268,33 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     assert_select "form[action='#{reanalyze_favorite_path(fav)}']", count: 0
   end
 
+  test "GET /favorites/:id/manual 섹션이 있으면 매뉴얼 페이지를 표시합니다" do
+    fav = Favorite.create!(title: "Manual Target", url: "https://example.com/manual", content_type: "webpage", status: "done")
+    analysis = Analysis.create!(favorite: fav, summary: "s", tags: [], key_points: [])
+    AnalysisSection.create!(analysis: analysis, position: 1, heading: "시작하기", body: "## 본문\n\n내용", backend_model: "qwen-test")
+
+    get manual_favorite_url(fav)
+
+    assert_response :success
+    assert_includes response.body, "시작하기"
+  end
+
+  test "GET /favorites/:id/manual 섹션이 없으면 상세페이지로 리다이렉트합니다" do
+    fav = Favorite.create!(title: "No Manual", url: "https://example.com/no-manual", content_type: "webpage", status: "done")
+    Analysis.create!(favorite: fav, summary: "s", tags: [], key_points: [])
+
+    get manual_favorite_url(fav)
+
+    assert_redirected_to favorite_url(fav)
+    assert_equal "생성된 매뉴얼이 없습니다.", flash[:alert]
+  end
+
+  test "GET /favorites/:id/manual 존재하지 않는 즐겨찾기는 404를 반환합니다" do
+    get manual_favorite_url(id: 0)
+
+    assert_response :not_found
+  end
+
   test "POST /favorites/:id/reanalyze 완료된 즐겨찾기를 다시 큐에 추가합니다" do
     fav = Favorite.create!(
       title: "Done",

@@ -18,6 +18,17 @@ class FavoritesController < ApplicationController
     @favorite = Favorite.find(params[:id])
   end
 
+  # GET /favorites/:id/manual — 온보딩 매뉴얼 전용 페이지
+  def manual
+    @favorite = Favorite.find(params[:id])
+    @analysis = @favorite.analysis
+    @sections = @analysis&.analysis_sections || []
+
+    if @sections.empty?
+      redirect_to favorite_url(@favorite), alert: "생성된 매뉴얼이 없습니다."
+    end
+  end
+
   def create
     url = params.dig(:favorite, :url).to_s.strip
 
