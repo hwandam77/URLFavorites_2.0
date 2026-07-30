@@ -71,9 +71,14 @@
 
   <%# 상태 %>
   <td class="py-3 px-4">
-    <span style="background:<%= s[:bg] %>;color:<%= s[:text] %>;border:1px solid <%= s[:border] %>;padding:2px 10px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600;">
-      <%= s[:label] %>
-    </span>
+    <div class="flex items-center gap-1.5 flex-wrap">
+      <span style="background:<%= s[:bg] %>;color:<%= s[:text] %>;border:1px solid <%= s[:border] %>;padding:2px 10px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600;">
+        <%= s[:label] %>
+      </span>
+      <% if favorite.analysis&.analysis_tier == "heavy" %>
+        <span style="background:var(--color-accent-muted);color:var(--color-accent-text);border:1px solid var(--color-border);padding:2px 8px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600;">정밀</span>
+      <% end %>
+    </div>
   </td>
 
   <%# 태그 %>

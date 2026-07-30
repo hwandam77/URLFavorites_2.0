@@ -17,6 +17,7 @@ Rails.application.routes.draw do
     resource :note, only: %i[update], controller: "favorite_notes"
     resource :collection_membership, only: %i[create destroy]
     patch :update_category, on: :member
+    get :manual, on: :member
     post :retry, on: :member
     post :reanalyze, on: :member
     post :toggle_pin, on: :member

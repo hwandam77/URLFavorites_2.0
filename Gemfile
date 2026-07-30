@@ -23,6 +23,8 @@ gem "nokogiri"
 # HTTP client for llama-server
 gem "faraday"
 gem "faraday-retry"
+# Markdown rendering for onboarding manual sections
+gem "redcarpet"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"

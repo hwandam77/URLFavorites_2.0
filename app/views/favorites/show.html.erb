@@ -68,6 +68,9 @@
     <span style="background:<%= s[:bg] %>;color:<%= s[:text] %>;border:1px solid <%= s[:border] %>;padding:3px 10px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600;">
       <%= s[:label] %>
     </span>
+    <% if @favorite.analysis&.analysis_tier == "heavy" %>
+      <span style="background:var(--color-accent-muted);color:var(--color-accent-text);border:1px solid var(--color-border);padding:3px 10px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600;">정밀</span>
+    <% end %>
     <span style="flex:1"></span>
     <% if @favorite.status == "failed" %>
       <%= button_to "재시도", retry_favorite_path(@favorite), method: :post,
@@ -215,6 +218,25 @@
           <% end %>
         </div>
       </section>
+    <% end %>
+
+    <%# ── 4.5 온보딩 매뉴얼 링크 ── %>
+    <% manual_sections = @favorite.analysis&.analysis_sections || [] %>
+    <% if manual_sections.any? %>
+      <% manual_done = manual_sections.count { |sec| sec.body.present? } %>
+      <div class="mb-10">
+        <%= link_to manual_favorite_path(@favorite),
+              class: "inline-flex items-center gap-2 transition-all",
+              style: "background:var(--color-accent-muted);color:var(--color-accent-text);border:1px solid var(--color-accent-muted);padding:8px 16px;border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:600;text-decoration:none;",
+              onmouseover: "this.style.borderColor='var(--color-accent)'",
+              onmouseout: "this.style.borderColor='var(--color-accent-muted)'" do %>
+          <% if manual_done < manual_sections.size %>
+            매뉴얼 생성 중 (<%= manual_done %>/<%= manual_sections.size %> 섹션)
+          <% else %>
+            온보딩 매뉴얼 보기
+          <% end %>
+        <% end %>
+      </div>
     <% end %>
 
     <%# ── 5. 상세내용 ── %>

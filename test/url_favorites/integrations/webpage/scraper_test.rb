@@ -82,14 +82,74 @@ class UrlFavorites::Integrations::Webpage::ScraperTest < ActiveSupport::TestCase
     assert_includes result[:body_text], "메인 본문"
   end
 
-  test "body_text 는 8,000 자를 초과하지 않는다" do
-    long_body = "<html><body><article><p>#{"가" * 10_000}</p></article></body></html>"
+  test "article 이 껍데기면 본문이 충분한 main 으로 폴백한다 (tistory 유형)" do
+    html = <<~HTML
+      <html><body>
+        <article><div>새소식 300x250</div></article>
+        <main><div class="contents_style"><p>#{"실제 본문 내용입니다. " * 30}</p></div></main>
+      </body></html>
+    HTML
+    stub_request(:get, "https://example.com/tistory")
+      .to_return(status: 200, body: html, headers: { "Content-Type" => "text/html" })
+
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/tistory")
+
+    assert_includes result[:body_text], "실제 본문 내용입니다"
+  end
+
+  test "body_text 는 20,000 자를 초과하지 않는다 (HTML 경로)" do
+    long_body = "<html><body><article><p>#{"가" * 30_000}</p></article></body></html>"
     stub_request(:get, "https://example.com/long")
       .to_return(status: 200, body: long_body, headers: { "Content-Type" => "text/html" })
 
     result = UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/long")
 
-    assert result[:body_text].length <= 8_000
+    assert result[:body_text].length <= 20_000
+  end
+
+  test "body_text 는 8,000 자를 넘어 20,000 자까지 보존한다 (HTML 경로)" do
+    long_body = "<html><body><article><p>#{"가" * 10_000}</p></article></body></html>"
+    stub_request(:get, "https://example.com/mid")
+      .to_return(status: 200, body: long_body, headers: { "Content-Type" => "text/html" })
+
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/mid")
+
+    assert_equal 10_000, result[:body_text].length
+  end
+
+  test "body_text 는 20,000 자를 초과하지 않는다 (Jina 경로)" do
+    stub_request(:get, "https://example.com/blocked")
+      .to_return(status: 403, body: "blocked by cloudflare")
+    jina_body = "Title: Jina 제목\n\nMarkdown Content:\n#{"나" * 30_000}"
+    stub_request(:get, "https://r.jina.ai/https://example.com/blocked")
+      .to_return(status: 200, body: jina_body)
+
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/blocked")
+
+    assert_equal "Jina 제목", result[:title]
+    assert result[:body_text].length <= 20_000
+    assert result[:body_text].length > 8_000
+  end
+
+  test "302 리다이렉트를 따라가 최종 페이지를 스크랩한다 (share.google 유형)" do
+    stub_request(:get, "https://share.example/abc")
+      .to_return(status: 302, headers: { "Location" => "https://example.com/page" }, body: "302 Moved")
+    stub_request(:get, "https://example.com/page")
+      .to_return(status: 200, body: HTML_WITH_OG, headers: { "Content-Type" => "text/html" })
+
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://share.example/abc")
+
+    assert_equal "OG 제목", result[:title]
+    assert_includes result[:body_text], "본문 내용 첫 번째 단락"
+  end
+
+  test "리다이렉트 루프는 FetchError" do
+    stub_request(:get, "https://loop.example/a")
+      .to_return(status: 302, headers: { "Location" => "https://loop.example/a" })
+
+    assert_raises(UrlFavorites::Integrations::Webpage::Scraper::FetchError) do
+      UrlFavorites::Integrations::Webpage::Scraper.call("https://loop.example/a")
+    end
   end
 
   test "HTTP 오류 시 Scraper::FetchError 발생" do

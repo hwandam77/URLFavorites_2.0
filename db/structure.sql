@@ -30,12 +30,7 @@ CREATE VIRTUAL TABLE favorites_fts USING fts5(
   tokenize='porter ascii'
 )
 /* favorites_fts(favorite_id,title,summary,tags,note,content_embedding) */;
-CREATE TABLE IF NOT EXISTS 'favorites_fts_data'(id INTEGER PRIMARY KEY, block BLOB);
-CREATE TABLE IF NOT EXISTS 'favorites_fts_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID;
-CREATE TABLE IF NOT EXISTS 'favorites_fts_content'(id INTEGER PRIMARY KEY, c0, c1, c2, c3, c4, c5);
-CREATE TABLE IF NOT EXISTS 'favorites_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
-CREATE TABLE IF NOT EXISTS 'favorites_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID;
-CREATE TABLE IF NOT EXISTS "analyses" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "analyzed_at" datetime(6), "created_at" datetime(6) NOT NULL, "favorite_id" integer NOT NULL, "key_points" text, "model_used" varchar, "raw_content" text, "sentiment" varchar, "subtitle_source" varchar, "summary" text, "tags" text, "transcript" text, "updated_at" datetime(6) NOT NULL, "video_metadata" text, "detail_content" text /*application='UrlFavorites20'*/, "transcript_segments" text /*application='UrlFavorites20'*/, "analysis_style" varchar DEFAULT 'execution_brief' NOT NULL /*application='UrlFavorites20'*/, CONSTRAINT "fk_rails_b11216332f"
+CREATE TABLE IF NOT EXISTS "analyses" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "analyzed_at" datetime(6), "created_at" datetime(6) NOT NULL, "favorite_id" integer NOT NULL, "key_points" text, "model_used" varchar, "raw_content" text, "sentiment" varchar, "subtitle_source" varchar, "summary" text, "tags" text, "transcript" text, "updated_at" datetime(6) NOT NULL, "video_metadata" text, "detail_content" text /*application='UrlFavorites20'*/, "transcript_segments" text /*application='UrlFavorites20'*/, "analysis_style" varchar DEFAULT 'execution_brief' NOT NULL /*application='UrlFavorites20'*/, "analysis_tier" varchar DEFAULT 'fast' NOT NULL /*application='UrlFavorites20'*/, CONSTRAINT "fk_rails_b11216332f"
 FOREIGN KEY ("favorite_id")
   REFERENCES "favorites" ("id")
 );
@@ -51,7 +46,15 @@ FOREIGN KEY ("user_id")
 );
 CREATE INDEX "index_sessions_on_user_id" ON "sessions" ("user_id") /*application='UrlFavorites20'*/;
 CREATE UNIQUE INDEX "index_sessions_on_token" ON "sessions" ("token") /*application='UrlFavorites20'*/;
+CREATE TABLE IF NOT EXISTS "analysis_sections" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "analysis_id" integer NOT NULL, "position" integer NOT NULL, "heading" varchar NOT NULL, "focus" text, "body" text, "backend_model" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_4a858decad"
+FOREIGN KEY ("analysis_id")
+  REFERENCES "analyses" ("id")
+);
+CREATE INDEX "index_analysis_sections_on_analysis_id" ON "analysis_sections" ("analysis_id") /*application='UrlFavorites20'*/;
+CREATE UNIQUE INDEX "index_analysis_sections_on_analysis_id_and_position" ON "analysis_sections" ("analysis_id", "position") /*application='UrlFavorites20'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260730000001'),
+('20260724000001'),
 ('20260509000001'),
 ('20260429000002'),
 ('20260429000001'),
@@ -66,3 +69,4 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260407000003'),
 ('20260407000002'),
 ('20260407000001');
+

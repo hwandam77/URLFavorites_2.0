@@ -1,5 +1,6 @@
 class Analysis < ApplicationRecord
   belongs_to :favorite
+  has_many :analysis_sections, -> { order(:position) }, dependent: :destroy
 
   serialize :key_points, coder: JSON
   serialize :tags, coder: JSON

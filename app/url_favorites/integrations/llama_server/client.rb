@@ -26,13 +26,14 @@ module UrlFavorites
         @@connection_cache = {}
         cattr_accessor :connection_cache, instance_reader: false, instance_writer: false
 
-        def self.call(content, type:, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT, content_length: nil)
+        def self.call(content, type:, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT, content_length: nil, backend_role: nil)
           normalized_style = UrlFavorites::Domain::Analysis::PromptStyle.normalize(analysis_style)
           backends = prioritize_backends(
             resolve_backends,
             content_type: type,
             content_length: content_length || content.to_s.length,
-            analysis_style: analysis_style
+            analysis_style: analysis_style,
+            backend_role: backend_role
           )
 
           last_error = nil
@@ -45,6 +46,66 @@ module UrlFavorites
           end
 
           raise ServerError, "All LLM backends failed. Last error: #{last_error&.message}"
+        end
+
+        # Raw-text completion for multi-pass generation (e.g. manual sections).
+        # Returns [text, backend_model]. No response_format (no JSON enforcement),
+        # no required-key validation. messages = exactly one system + one user.
+        def self.complete(system:, user:, backend_role: nil, timeout: nil)
+          backends = prioritize_backends(
+            resolve_backends,
+            content_type: "webpage",
+            content_length: user.to_s.length,
+            analysis_style: nil,
+            backend_role: backend_role
+          )
+
+          last_error = nil
+          backends.each do |backend|
+            result = attempt_completion(backend, system, user, timeout)
+            return result if result
+          rescue ServerError => e
+            last_error = e
+            Rails.logger.warn "[LlamaServer::Client] Backend #{backend[:url]} failed: #{e.message}"
+          end
+
+          raise ServerError, "All LLM backends failed. Last error: #{last_error&.message}"
+        end
+
+        def self.attempt_completion(backend, system, user, timeout)
+          base_url = backend[:url]
+          timeout ||= backend[:timeout] || DEFAULT_TIMEOUT_SECONDS
+          model = backend[:model] || "local"
+
+          @@connection_cache[base_url] ||= Faraday.new(base_url) do |f|
+            f.options.timeout      = timeout
+            f.options.open_timeout = DEFAULT_OPEN_TIMEOUT_SECONDS
+            f.request :json
+            f.response :raise_error
+          end
+          conn = @@connection_cache[base_url]
+          conn.options.timeout = timeout
+
+          body = {
+            model: model,
+            messages: [
+              { role: "system", content: system.to_s },
+              { role: "user", content: user.to_s }
+            ]
+          }
+
+          response = conn.post("/v1/chat/completions", body)
+
+          content = JSON.parse(response.body).dig("choices", 0, "message", "content")
+          raise ServerError, "Blank completion content" if content.blank?
+
+          [ content, model ]
+        rescue Faraday::ServerError => e
+          raise ServerError, "HTTP server error: #{e.message}"
+        rescue JSON::ParserError => e
+          raise ServerError, "Invalid response envelope: #{e.message}"
+        rescue Faraday::Error => e
+          raise ServerError, "Connection error: #{e.message}"
         end
 
         def self.attempt_backend(backend, content, type, analysis_style)
@@ -64,8 +125,7 @@ module UrlFavorites
           body = {
             model: model,
             messages: [
-              { role: "system", content: system_prompt(type, analysis_style) },
-              { role: "system", content: style_prompt(analysis_style) },
+              { role: "system", content: [ system_prompt(type, analysis_style), style_prompt(analysis_style) ].join("\n\n") },
               { role: "user", content: "#{type}: #{content}" }
             ],
             response_format: { type: "json_object" }
@@ -79,6 +139,8 @@ module UrlFavorites
 
           result = inner.slice(:summary, :key_points, :tags, :sentiment)
           result[:detail_content] = inner[:detail_content] if inner.key?(:detail_content)
+          result[:used_backend_role] = backend[:role].to_s
+          result[:used_backend_model] = model
           result
         rescue Faraday::ServerError => e
           raise ServerError, "HTTP server error: #{e.message}"
@@ -113,12 +175,17 @@ module UrlFavorites
           raise ParseError, "Invalid LLM_BACKENDS JSON: #{e.message}"
         end
 
-        def self.prioritize_backends(backends, content_type:, content_length:, analysis_style:)
-          priorities = UrlFavorites::Domain::Analysis::BackendRouter.call(
-            content_type: content_type,
-            content_length: content_length,
-            analysis_style: analysis_style
-          )
+        def self.prioritize_backends(backends, content_type:, content_length:, analysis_style:, backend_role: nil)
+          priorities = if backend_role.present?
+            role = backend_role.to_s
+            [ role ] + (%w[fast heavy] - [ role ])
+          else
+            UrlFavorites::Domain::Analysis::BackendRouter.call(
+              content_type: content_type,
+              content_length: content_length,
+              analysis_style: analysis_style
+            )
+          end
           prioritized = priorities.flat_map do |role|
             backends.select { |backend| backend[:role].to_s == role }
           end
@@ -330,6 +397,7 @@ module UrlFavorites
         end
 
         private_class_method(
+          :attempt_completion,
           :attempt_backend,
           :resolve_backends,
           :prioritize_backends,

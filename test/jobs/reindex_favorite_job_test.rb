@@ -28,4 +28,15 @@ class ReindexFavoriteJobTest < ActiveSupport::TestCase
   def test_enqueues_to_default_queue
     assert_equal "default", ReindexFavoriteJob.queue_name
   end
+
+  def test_limits_concurrency_per_favorite
+    assert_equal 1, ReindexFavoriteJob.concurrency_limit
+    assert_equal 10.minutes, ReindexFavoriteJob.concurrency_duration
+
+    job = ReindexFavoriteJob.new(42)
+    assert_includes job.concurrency_key, "reindex_42"
+
+    all_job = ReindexFavoriteJob.new(nil)
+    assert_includes all_job.concurrency_key, "reindex_all"
+  end
 end

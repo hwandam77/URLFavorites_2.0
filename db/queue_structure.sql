@@ -122,7 +122,7 @@ CREATE INDEX index_solid_queue_semaphores_on_key_and_value ON solid_queue_semaph
 CREATE UNIQUE INDEX index_solid_queue_semaphores_on_key ON solid_queue_semaphores (key);
 CREATE TABLE IF NOT EXISTS "favorites" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "url" varchar NOT NULL, "title" varchar, "favicon_url" varchar, "thumbnail_url" varchar, "content_type" varchar DEFAULT 'webpage' NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "raw_content" text, "error_message" text, "retry_count" integer DEFAULT 0 NOT NULL, "note" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "category" varchar DEFAULT '기타' /*application='UrlFavorites20'*/, "pinned" boolean DEFAULT FALSE /*application='UrlFavorites20'*/);
 CREATE UNIQUE INDEX "index_favorites_on_url" ON "favorites" ("url") /*application='UrlFavorites20'*/;
-CREATE TABLE IF NOT EXISTS "analyses" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "favorite_id" integer NOT NULL, "summary" text, "tags" text, "key_points" text, "sentiment" varchar, "transcript" text, "subtitle_source" varchar, "video_metadata" text, "model_used" varchar, "analyzed_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "raw_content" text /*application='UrlFavorites20'*/, "detail_content" text /*application='UrlFavorites20'*/, "transcript_segments" text /*application='UrlFavorites20'*/, "analysis_style" varchar DEFAULT 'execution_brief' NOT NULL /*application='UrlFavorites20'*/, CONSTRAINT "fk_rails_b11216332f"
+CREATE TABLE IF NOT EXISTS "analyses" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "favorite_id" integer NOT NULL, "summary" text, "tags" text, "key_points" text, "sentiment" varchar, "transcript" text, "subtitle_source" varchar, "video_metadata" text, "model_used" varchar, "analyzed_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "raw_content" text /*application='UrlFavorites20'*/, "detail_content" text /*application='UrlFavorites20'*/, "transcript_segments" text /*application='UrlFavorites20'*/, "analysis_style" varchar DEFAULT 'execution_brief' NOT NULL /*application='UrlFavorites20'*/, "analysis_tier" varchar DEFAULT 'fast' NOT NULL /*application='UrlFavorites20'*/, CONSTRAINT "fk_rails_b11216332f"
 FOREIGN KEY ("favorite_id")
   REFERENCES "favorites" ("id")
 );
@@ -155,11 +155,6 @@ CREATE VIRTUAL TABLE favorites_fts USING fts5(
   tokenize='porter ascii'
 )
 /* favorites_fts(favorite_id,title,summary,tags,note,content_embedding) */;
-CREATE TABLE IF NOT EXISTS 'favorites_fts_data'(id INTEGER PRIMARY KEY, block BLOB);
-CREATE TABLE IF NOT EXISTS 'favorites_fts_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID;
-CREATE TABLE IF NOT EXISTS 'favorites_fts_content'(id INTEGER PRIMARY KEY, c0, c1, c2, c3, c4, c5);
-CREATE TABLE IF NOT EXISTS 'favorites_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
-CREATE TABLE IF NOT EXISTS 'favorites_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID;
 CREATE INDEX "index_favorites_on_category" ON "favorites" ("category") /*application='UrlFavorites20'*/;
 CREATE INDEX "index_favorites_on_pinned" ON "favorites" ("pinned") /*application='UrlFavorites20'*/;
 CREATE UNIQUE INDEX "index_favorites_on_id" ON "favorites" ("id") /*application='UrlFavorites20'*/;
@@ -171,7 +166,15 @@ FOREIGN KEY ("user_id")
 );
 CREATE INDEX "index_sessions_on_user_id" ON "sessions" ("user_id") /*application='UrlFavorites20'*/;
 CREATE UNIQUE INDEX "index_sessions_on_token" ON "sessions" ("token") /*application='UrlFavorites20'*/;
+CREATE TABLE IF NOT EXISTS "analysis_sections" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "analysis_id" integer NOT NULL, "position" integer NOT NULL, "heading" varchar NOT NULL, "focus" text, "body" text, "backend_model" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_4a858decad"
+FOREIGN KEY ("analysis_id")
+  REFERENCES "analyses" ("id")
+);
+CREATE INDEX "index_analysis_sections_on_analysis_id" ON "analysis_sections" ("analysis_id") /*application='UrlFavorites20'*/;
+CREATE UNIQUE INDEX "index_analysis_sections_on_analysis_id_and_position" ON "analysis_sections" ("analysis_id", "position") /*application='UrlFavorites20'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260730000001'),
+('20260724000001'),
 ('20260509000001'),
 ('20260429000002'),
 ('20260429000001'),

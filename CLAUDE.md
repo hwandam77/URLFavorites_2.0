@@ -36,142 +36,55 @@ Opus는 설계/검증에 집중, 코드는 Sonnet에 위임.
 
 ---
 
-## Multi-Agent Orchestration (Hub & Spoke)
+## Multi-Agent Orchestration (Orca)
+
+[Orca](https://github.com/stablyai/orca) ADE 기반 오케스트레이션. 기존 Hub & Spoke(claude-peers/tmux) 구조는 이 프로젝트에서 폐기.
 
 **역할 구조:**
 ```
-Main Claude (Hub, Opus) — 계획·분해·위임·검증만. 직접 구현 금지.
-  ├── KIMI peer (K2.6) — 한국어/영문 코드 구현·리팩터링·테스트·문서
-  ├── minimax peer (M2.7) — 영문 작업·시스템·인프라 (※ 한글 깨짐 — 한국어 발주 금지)
-  ├── Sonnet sub-agent — backend/frontend/api/test specialist
-  └── Haiku sub-agent — architecture/impact/dependency/docs analyst
+Main Claude (Hub) — 계획·분해·위임·검증. Orca CLI로 워크트리/터미널/태스크 제어. 직접 구현 금지.
+  ├── codex             — 코드 구현·리팩터링 주력, 교차 리뷰
+  ├── grok              — 리서치·디버깅·대안 관점 교차검증
+  ├── kimi (K2.7)       — 정밀 단일 코드·테스트·한국어 문서 (한글 정상)
+  ├── minimax (M3)      — 멀티스텝·시스템·인프라·장기 자율 (1M ctx, 한글 정상)
+  └── mimo (V2.5-Pro)   — 코드 구현 보조·병렬 발주 시 추가 워커
 ```
+역할 배정은 운영하며 조정. 동급 코딩 태스크는 2개 에이전트 병렬 발주 → diff 비교 후 채택 (Orca의 워크트리 격리가 이를 전제로 설계됨).
 
-**위임 라우팅:**
-- 한국어 코드·주석·문서 → KIMI peer 또는 Sonnet sub-agent
-- 영문 코드 구현·리팩터링 → KIMI peer 또는 minimax peer
-- 시스템·인프라·MLOps → minimax peer
-- FastAPI/React/DB 도메인 → Sonnet sub-agent
-- 아키텍처 설계만 (코드 X) → Hub 자체 처리
+**핵심 플로우:**
+1. `orca worktree create` — 에이전트별 격리 git 워크트리 생성
+2. `orca terminal create` / `terminal send` — 워크트리에서 에이전트 CLI 기동·오더
+3. `orca orchestration task-create` → `dispatch` — 태스크 발주
+4. `orca orchestration check` / `inbox` — 결과 수신, `terminal wait` — 완료 대기
+5. diff 리뷰(주석 → 에이전트 재발주) → 병합, `orca worktree rm` — 정리
 
-**금지:** `Agent` 도구로 Claude 자체 서브에이전트 직접 스폰 (사용자 명시 요청 제외)
+명령 스키마 정본: `orca agent-context` (기계가독 스키마 출력)
+
+**금지:**
+- `Agent` 도구로 Claude 자체 서브에이전트 직접 스폰 (사용자 명시 요청 제외)
+- Hub가 직접 소스 코드 Write/Edit (문서·룰 파일 제외)
 
 ---
 
-## 하네스: GSD + 커스텀 에이전트 통합
+## 하네스: Orca 기반 (GSD/tmux 대체)
 
-**목표:** GSD의 phase lifecycle 위에 도메인 특화 에이전트 + tmux 2계층 병렬 실행으로 10개 Phase를 완성한다.
+기존 GSD phase lifecycle + tmux 2계층 구조는 폐기. 하네스 기능은 Orca 프리미티브로 대체한다.
 
-> 이 프로젝트의 커스텀 에이전트 구조는 워크스페이스 전역 Hub & Spoke 규칙(`.claude/rules/15-hub-and-spoke.md`) 내에서 운영된다.
-> 워크스페이스 룰과 충돌 시 워크스페이스 룰이 우선한다.
+| 하네스 요구 | Orca 대체 | 명령 |
+|------------|-----------|------|
+| 병렬 워커 실행 (구 tmux pane) | 워크트리별 에이전트 격리 실행 | `worktree create/ps`, `terminal create/send/read/wait` |
+| Phase/태스크 관리 (구 GSD) | 태스크 생성·발주·상태 추적 + 코디네이터 루프 | `orchestration task-create/task-list/task-update/dispatch/run` |
+| 검증 게이트 (구 verify-work) | 결정 게이트 — 승인 전 태스크 차단 | `orchestration gate-create/gate-resolve/gate-list` |
+| 에이전트 간 보고/에스컬레이션 | 인터에이전트 메시지 (ask/reply 블로킹 지원) | `orchestration send/check/reply/inbox` |
+| 정기 검증 (nightly E2E, 배포 후 체크) | 스케줄 자동화 | `automations create/run/runs` |
+| UI/E2E 스모크 검증 | 내장 브라우저 자동화 + Design Mode | `tab create`, `goto`, `snapshot`, `click`, `fill` |
+| 리뷰 루프 | diff 인라인 주석 → 에이전트 재발주 | Orca 앱 UI (diff annotate) |
+| 관측성 (run 상태 요약) | 워크트리 오케스트레이션 대시보드 | `worktree ps`, `orchestration inbox` |
 
-### tmux 2계층 병렬 실행
-
-```
-Layer 1: Claude Workers (tmux pane별) = Hub & Spoke
-  Pane 1: Orchestrator (Opus) = Hub — 계획·분해·위임·검증
-  Pane 2: rails-core (Sonnet) = Spoke — 백엔드
-  Pane 3: rails-ui (Sonnet) = Spoke — 프론트
-  Pane 4: rails-test (Sonnet) = Spoke — TDD
-
-Layer 2: Nexus LLM (dispatch.sh, 태스크 단위)
-  30B ×2: 단일 메서드/테스트/마이그레이션 (병렬)
-  48B: 복잡한 서비스/복합 뷰 (단일)
-```
-
-상세: `.claude/skills/urlf2-build/references/tmux-orchestration.md`
-
-### GSD 프로젝트 구조
-
-```
-.planning/
-├── PROJECT.md          # 비전, 제약, 결정
-├── REQUIREMENTS.md     # 요구사항 R01-R22
-├── ROADMAP.md          # 10 Phase 로드맵 + 에이전트 매핑
-├── STATE.md            # 세션 간 상태
-├── config.json         # GSD 설정
-└── phases/             # Phase별 산출물 (PLAN, SUMMARY, VERIFICATION)
-```
-
-### 커스텀 에이전트 (역할 플레이북)
-
-| 에이전트 | 역할 | GSD 연결 |
-|---------|------|----------|
-| rails-core | 모델, 서비스, Job, 컨트롤러, 이관 | gsd-executor가 Read하여 구현 원칙 준수 |
-| rails-ui | 뷰, Stimulus, Tailwind, PWA | gsd-executor가 UI Phase에서 Read |
-| rails-test | TDD 테스트 선행 작성 | gsd-executor가 구현 전 RED 단계 선행 |
-| rails-qa | 경계면 교차 비교, E2E 검증 | gsd-verifier가 Read하여 체크리스트 적용 |
-
-### Nexus LLM 위임 규칙 (MANDATORY)
-
-코드 생성 시 반드시 로컬 LLM(dispatch.sh)을 **먼저** 시도한다. Claude가 직접 코드를 작성하는 것은 dispatch 실패 시 에스컬레이션으로만 허용.
-
-```bash
-DISPATCH="/Users/hwandam/workspace/infrastructure/llm-orchestration/dispatch.sh"
-```
-
-**위임 대상 (dispatch.sh 필수):**
-- 단일 메서드/함수 (< 50줄) → `$DISPATCH --model 30b --prompt "..." --project urlf2 --lang ruby`
-- migration, factory, fixture → 30b
-- 모델, 시리얼라이저, 라우트 boilerplate → 30b
-- 테스트 스켈레톤 → 30b
-- 서비스 클래스 전체 → `$DISPATCH --model 48b --prompt "..." --project urlf2 --lang ruby`
-- 복잡한 리팩토링 → 48b
-
-**Hub (Opus) 직접 처리 (dispatch 안 함):**
-- 아키텍처 결정, 파일 간 통합 로직
-- 디버깅 (로그 분석 → 원인 추론 → 수정)
-- GSD 상태 관리, git 커밋, 검증 명령
-- ※ Hub 코딩 절대 금지: 소스 코드 작성은 Sonnet sub-agent 또는 KIMI peer에게 위임
-
-**호출 → 적용 패턴:**
-1. `$DISPATCH --model 30b --prompt "영어 프롬프트" --project urlf2 --lang ruby` 실행
-2. stdout에 출력된 result 파일 경로를 Read
-3. 코드 블록 추출 → Write/Edit로 대상 파일에 적용
-4. verify 명령으로 검증
-
-**프롬프트 규칙:** 영어 전용, 입출력 스펙 명확, 30b는 100 tokens 이내, 48b는 300 tokens 이내.
-
-**에스컬레이션:** dispatch 실패 → 프롬프트 개선 1회 재시도 → 재실패 시 Claude 직접 구현 + SUMMARY.md에 기록.
-
-**서킷 확인:** 코드 생성 전 `/Users/hwandam/workspace/infrastructure/llm-orchestration/circuit.sh status` 로 모델 상태 확인. OPEN이면 해당 모델 건너뛰기.
-
-### 실행 규칙
-
-- **GSD 경유 (기본):** `/gsd:plan-phase N` → `/gsd:execute-phase N` → `/gsd:verify-work N`
-- **자동 모드:** `/gsd:autonomous` 또는 `/gsd:next`
-- **직접 호출 (GSD 우회):** `urlf2 구현/빌드/태스크 실행` → `urlf2-build` 스킬
-- gsd-executor는 Phase에 따라 `.claude/agents/rails-{core,ui,test,qa}.md`를 Read하여 역할/원칙 준수
-- 서브에이전트는 `model: "sonnet"` (워크스페이스 모델 라우팅 정책)
-
-### Phase 로드맵 (v1.0)
-
-| Phase | 이름 | 에이전트 | 상태 |
-|-------|------|---------|------|
-| 01 | Rails Bootstrap + 문서 | rails-core | pending |
-| 02 | 코어 모델 + URL 서비스 | rails-test → rails-core | pending |
-| 03 | AI 추출 + 비동기 Job | rails-test → rails-core | pending |
-| 04 | FTS5 검색 엔진 | rails-test → rails-core | pending |
-| 05 | 컨트롤러 + 라우트 | rails-test → rails-core | pending |
-| 06 | 아카이브 UI + 메모 | rails-ui | pending |
-| 07 | 컬렉션 UX | rails-ui | pending |
-| 08 | PWA + 모바일 공유 | rails-ui | pending |
-| 09 | urlf 데이터 이관 | rails-test → rails-core | pending |
-| 10 | E2E 검증 + 릴리즈 | rails-qa | pending |
-
-### 디렉토리 구조
-
-```
-.claude/
-├── agents/
-│   ├── rails-core.md
-│   ├── rails-ui.md
-│   ├── rails-test.md
-│   └── rails-qa.md
-└── skills/
-    └── urlf2-build/
-        └── SKILL.md         # GSD 브릿지 오케스트레이터
-```
+**운영 원칙:**
+- 태스크 단위 = 워크트리 단위. 완료·병합 후 `worktree rm`으로 정리.
+- 검증(테스트 pass/fail 판정)은 기존 규칙대로 VPS에서 실행 — Orca 게이트는 판정 결과를 승인하는 관문이지 판정 주체가 아님.
+- 커스텀 에이전트 플레이북(`.claude/agents/rails-{core,ui,test,qa}.md`)은 역할 참고 문서로 유지 — Orca로 발주 시 태스크 명세에 해당 원칙을 포함시킨다.
 
 ---
 
@@ -181,12 +94,14 @@ DISPATCH="/Users/hwandam/workspace/infrastructure/llm-orchestration/dispatch.sh"
 
 | 항목 | 값 |
 |------|-----|
-| SSH 호스트 | `vps-server` (`~/.ssh/config`) |
+| SSH 호스트 | `bastion` (LAN `10.10.0.1` / Tailscale `100.111.118.109`, `~/.ssh/config`) |
 | 앱 경로 | `/home/hwandam/services/rails/urlfavorites_2.0/` |
-| 서비스 | `rails-puma@urlfavorites_2.0.service` |
-| 포트 | `3003` (3000은 구버전 urlfavorites 점유) |
+| 서비스 | `rails-puma@urlfavorites_2.0.service` (Solid Queue는 `SOLID_QUEUE_IN_PUMA=1` 내장 단일 supervisor — 2026-07-24 `solid-queue@` 별도 서비스 stop+disable로 단일화. 이중 supervisor는 "배포 후 옛 코드 잡" 사고 클래스의 원인) |
+| 포트 | `3003` (Puma loopback `127.0.0.1:3003`) |
 | URL | `https://urlf.hwandam.kr/favorites` |
-| nginx 설정 | `/etc/nginx/sites-enabled/URLF.hwandam.kr` |
+| nginx 설정 | `/etc/nginx/sites-enabled/URLF.hwandam.kr` (bastion 실측 미확정 — 변경 시 확인) |
+
+> **이력 (2026-07-22 이관)**: `vps-server`(192.168.0.31, Tailscale `100.97.46.29`) → `bastion` 으로 이전. vps-server는 해체됨. **SSH/배포 대상은 반드시 `bastion`** (Tailscale에 vps-server가 offline 잔재로 남아 혼선 주의 — 2026-07-24 장애 진단 초기 혼선 원인). 이관 As-Built: `wiki/서버관리/VPS_server/리포트/서버-이전-완료-보고서-2026-07-22.md`.
 
 운영 DB는 `/home/hwandam/services/rails/urlfavorites_2.0/storage/*.sqlite3*`에 있다. 특히
 `storage/production.sqlite3`와 `storage/production_queue.sqlite3`는 삭제하거나 덮어쓰지 않는다.
@@ -200,7 +115,9 @@ DISPATCH="/Users/hwandam/workspace/infrastructure/llm-orchestration/dispatch.sh"
 Environment=LLAMA_SERVER_URL=http://10.10.0.4:8282
 Environment=PORT=3003
 Environment=SOLID_QUEUE_IN_PUMA=1
-Environment=EMBEDDING_URL=http://10.10.0.4:8282
+Environment=EMBEDDING_URL=http://127.0.0.1:8900
+# ⚠️ EMBEDDING_URL은 bastion 로컬 embedding-service(:8900). LLM 서버(8282)는 /v1/embeddings 미지원(501)
+#    — 2026-07-24 이전 오설정이 큐 미소비 버그에 가려져 있었음
 # LLM_BACKENDS: heavy(40B, 느림 ~13tok/s) + fast(35B-A3B, 빠름 ~62tok/s), 둘 다 timeout 240
 # ⚠️ systemd Environment= 는 큰따옴표를 quoting 으로 해석해 벗겨낸다 → JSON 은 반드시 \" 로 이스케이프
 Environment=LLM_BACKENDS=[{\"url\":\"http://10.10.0.5:8282\",\"model\":\"...heavy.gguf\",\"role\":\"heavy\",\"timeout\":240},{\"url\":\"http://10.10.0.4:8282\",\"model\":\"...fast.gguf\",\"role\":\"fast\",\"timeout\":240}]
@@ -267,8 +184,12 @@ journalctl -u rails-puma@urlfavorites_2.0 -n 30 --no-pager
 | 404 `/ver2.0/favorites` | nginx redirect/proxy 규칙 변경 | 현재 Rails route는 `/favorites` |
 | DB 파일 누락 | 운영 DB 삭제/동기화 사고 가능성 | 배포 중단 후 `storage/production.sqlite3` 백업/복구 확인 |
 | 500 ERB syntax error | 뷰 파일 `link_to` 옵션 쉼표 누락 | 해당 파일 수정 후 quick deploy |
+| youtube 분석만 `failed` (`yt-dlp failed` / `ExtractionError`) | **`yt-dlp` 바이너리 미설치 또는 구버전** (vps→bastion 이관 시 누락, 2026-07-24 장애). `extractor.rb`가 `Open3`로 yt-dlp를 외부 명령 호출 | `/usr/local/bin/yt-dlp --version` 확인 → 미설치 시 standalone 바이너리 설치 (systemd PATH에 `/usr/local/bin` 포함돼 Puma 재기동 불필요, ffmpeg 불필요). 재발 방지: 이관 체크리스트에 `Open3`/`system` 외부 바이너리 의존성 점검 추가 |
 | youtube 분석만 `failed` (`Net::ReadTimeout`) | 긴 트랜스크립트 LLM 생성이 timeout 근접/초과 (heavy 40B 느림) | `LLM_BACKENDS` timeout 상향(240) / heavy·fast 라우팅 점검 |
+| reddit 분석만 `failed` (`ExtractionError`) | **`rdt` CLI 미설치 또는 쿠키 만료(기본 7일)** — Reddit은 익명 API 전면 차단이라 로그인 쿠키 필수. yt-dlp와 같은 `Open3` 외부 바이너리 의존 클래스 | `rdt status --json` 으로 `authenticated` 확인 → 만료 시 Mac에서 `rdt login` 후 `~/.config/rdt-cli/credential.json` 재배치. 상세: `docs/runbooks/reddit-extraction.md` |
+| reddit만 403/`authenticated: false` (쿠키·IP 정상인데) | **rdt가 Python 3.14로 구동** — 쿠키를 요청에 싣지 못함 (2026-07-24 실측: 같은 쿠키가 3.12에선 성공, 3.14에선 403) | `uv tool install --python 3.12 'git+…rdt-cli…@고정커밋'` 으로 3.12 고정 재설치 (bastion은 apt에 3.12 없어 uv 사용) + `/usr/local/bin/rdt` 심링크 |
 | 모든 분석 `failed` (`ParseError: Invalid LLM_BACKENDS JSON`) | env.conf 의 `"` 미이스케이프 → systemd 가 따옴표 제거 | `\"` 로 이스케이프 후 `/proc/PID/environ` 로 유효 JSON 검증 |
+| 배포했는데 잡이 옛 코드로 동작 (2026-07-13 발견) | 이전 재시작 때 죽지 않은 **고아 solid-queue 트리(PPID=1)**가 같은 큐 DB에서 잡을 선점 | `lsof storage/production_queue.sqlite3` 로 워커 트리 확인 → puma 기동 시각과 다른 supervisor `kill <PID>` |
 
 ---
 

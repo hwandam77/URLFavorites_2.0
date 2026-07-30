@@ -217,7 +217,7 @@
     <div class="mt-3 flex items-center justify-between gap-3 flex-wrap" style="border-top:1px solid var(--color-border);padding-top:12px;">
       <div class="flex items-center gap-2 flex-wrap">
         <%
-          type_options = [["전체", nil], ["웹", "webpage"], ["YouTube", "youtube"], ["GitHub", "github"]]
+          type_options = [["전체", nil], ["웹", "webpage"], ["YouTube", "youtube"], ["GitHub", "github"], ["X", "twitter"]]
           type_options.each do |label, value|
             is_active = value.nil? ? params[:content_type].blank? : params[:content_type] == value
         %>

@@ -28,11 +28,12 @@ class AnalyzeTwitterJobTest < ActiveSupport::TestCase
   end
 
   test "extracts Twitter content and delegates analysis with length hint" do
-    analyzer = lambda do |content, type:, analysis_style:, content_length:|
+    analyzer = lambda do |content, type:, analysis_style:, content_length:, backend_role: nil|
       assert_equal @extraction[:raw_content], content
       assert_equal "twitter", type
       assert_equal "execution_brief", analysis_style
       assert_equal content.length, content_length
+      assert_equal "fast", backend_role
       @analysis
     end
 
