@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Orca가 새 워크트리를 만들 때 실행하는 설정 스크립트 (orca.yaml → scripts.setup).
+# 수동 실행도 가능: bin/orca-setup
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+# 워크트리에는 gitignore된 로컬 설정이 없다 — 메인 체크아웃에서 복사.
+main="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
+for f in config/master.key .env; do
+  [[ -f $f || ! -f $main/$f ]] || cp "$main/$f" "$f"
+done
+
+bin/setup --skip-server   # bundle + db:prepare + log/tmp clear
+bin/rails tailwindcss:build
