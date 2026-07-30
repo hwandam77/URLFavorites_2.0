@@ -48,6 +48,66 @@ module UrlFavorites
           raise ServerError, "All LLM backends failed. Last error: #{last_error&.message}"
         end
 
+        # Raw-text completion for multi-pass generation (e.g. manual sections).
+        # Returns [text, backend_model]. No response_format (no JSON enforcement),
+        # no required-key validation. messages = exactly one system + one user.
+        def self.complete(system:, user:, backend_role: nil, timeout: nil)
+          backends = prioritize_backends(
+            resolve_backends,
+            content_type: "webpage",
+            content_length: user.to_s.length,
+            analysis_style: nil,
+            backend_role: backend_role
+          )
+
+          last_error = nil
+          backends.each do |backend|
+            result = attempt_completion(backend, system, user, timeout)
+            return result if result
+          rescue ServerError => e
+            last_error = e
+            Rails.logger.warn "[LlamaServer::Client] Backend #{backend[:url]} failed: #{e.message}"
+          end
+
+          raise ServerError, "All LLM backends failed. Last error: #{last_error&.message}"
+        end
+
+        def self.attempt_completion(backend, system, user, timeout)
+          base_url = backend[:url]
+          timeout ||= backend[:timeout] || DEFAULT_TIMEOUT_SECONDS
+          model = backend[:model] || "local"
+
+          @@connection_cache[base_url] ||= Faraday.new(base_url) do |f|
+            f.options.timeout      = timeout
+            f.options.open_timeout = DEFAULT_OPEN_TIMEOUT_SECONDS
+            f.request :json
+            f.response :raise_error
+          end
+          conn = @@connection_cache[base_url]
+          conn.options.timeout = timeout
+
+          body = {
+            model: model,
+            messages: [
+              { role: "system", content: system.to_s },
+              { role: "user", content: user.to_s }
+            ]
+          }
+
+          response = conn.post("/v1/chat/completions", body)
+
+          content = JSON.parse(response.body).dig("choices", 0, "message", "content")
+          raise ServerError, "Blank completion content" if content.blank?
+
+          [ content, model ]
+        rescue Faraday::ServerError => e
+          raise ServerError, "HTTP server error: #{e.message}"
+        rescue JSON::ParserError => e
+          raise ServerError, "Invalid response envelope: #{e.message}"
+        rescue Faraday::Error => e
+          raise ServerError, "Connection error: #{e.message}"
+        end
+
         def self.attempt_backend(backend, content, type, analysis_style)
           base_url = backend[:url]
           timeout = backend[:timeout] || DEFAULT_TIMEOUT_SECONDS
@@ -337,6 +397,7 @@ module UrlFavorites
         end
 
         private_class_method(
+          :attempt_completion,
           :attempt_backend,
           :resolve_backends,
           :prioritize_backends,

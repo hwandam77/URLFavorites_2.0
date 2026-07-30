@@ -97,14 +97,38 @@ class UrlFavorites::Integrations::Webpage::ScraperTest < ActiveSupport::TestCase
     assert_includes result[:body_text], "실제 본문 내용입니다"
   end
 
-  test "body_text 는 8,000 자를 초과하지 않는다" do
-    long_body = "<html><body><article><p>#{"가" * 10_000}</p></article></body></html>"
+  test "body_text 는 20,000 자를 초과하지 않는다 (HTML 경로)" do
+    long_body = "<html><body><article><p>#{"가" * 30_000}</p></article></body></html>"
     stub_request(:get, "https://example.com/long")
       .to_return(status: 200, body: long_body, headers: { "Content-Type" => "text/html" })
 
     result = UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/long")
 
-    assert result[:body_text].length <= 8_000
+    assert result[:body_text].length <= 20_000
+  end
+
+  test "body_text 는 8,000 자를 넘어 20,000 자까지 보존한다 (HTML 경로)" do
+    long_body = "<html><body><article><p>#{"가" * 10_000}</p></article></body></html>"
+    stub_request(:get, "https://example.com/mid")
+      .to_return(status: 200, body: long_body, headers: { "Content-Type" => "text/html" })
+
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/mid")
+
+    assert_equal 10_000, result[:body_text].length
+  end
+
+  test "body_text 는 20,000 자를 초과하지 않는다 (Jina 경로)" do
+    stub_request(:get, "https://example.com/blocked")
+      .to_return(status: 403, body: "blocked by cloudflare")
+    jina_body = "Title: Jina 제목\n\nMarkdown Content:\n#{"나" * 30_000}"
+    stub_request(:get, "https://r.jina.ai/https://example.com/blocked")
+      .to_return(status: 200, body: jina_body)
+
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://example.com/blocked")
+
+    assert_equal "Jina 제목", result[:title]
+    assert result[:body_text].length <= 20_000
+    assert result[:body_text].length > 8_000
   end
 
   test "302 리다이렉트를 따라가 최종 페이지를 스크랩한다 (share.google 유형)" do

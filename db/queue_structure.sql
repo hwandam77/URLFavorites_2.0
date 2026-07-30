@@ -171,7 +171,14 @@ FOREIGN KEY ("user_id")
 );
 CREATE INDEX "index_sessions_on_user_id" ON "sessions" ("user_id") /*application='UrlFavorites20'*/;
 CREATE UNIQUE INDEX "index_sessions_on_token" ON "sessions" ("token") /*application='UrlFavorites20'*/;
+CREATE TABLE IF NOT EXISTS "analysis_sections" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "analysis_id" integer NOT NULL, "position" integer NOT NULL, "heading" varchar NOT NULL, "focus" text, "body" text, "backend_model" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_4a858decad"
+FOREIGN KEY ("analysis_id")
+  REFERENCES "analyses" ("id")
+);
+CREATE INDEX "index_analysis_sections_on_analysis_id" ON "analysis_sections" ("analysis_id") /*application='UrlFavorites20'*/;
+CREATE UNIQUE INDEX "index_analysis_sections_on_analysis_id_and_position" ON "analysis_sections" ("analysis_id", "position") /*application='UrlFavorites20'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260730000001'),
 ('20260724000001'),
 ('20260509000001'),
 ('20260429000002'),

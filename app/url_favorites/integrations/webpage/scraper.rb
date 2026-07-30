@@ -9,6 +9,8 @@ module UrlFavorites
         JINA_BASE_URL = "https://r.jina.ai/"
         CLOUDFLARE_SIGNATURE = "Just a moment...".freeze
         MAX_REDIRECTS = 5
+        # 본문 상한: fast n_ctx 262,144 기준 20,000자 ≈ 7k 토큰 — 매뉴얼 섹션 생성의 근거 원문 확보용
+        BODY_TEXT_LIMIT = 20_000
 
         def self.call(url)
           response, final_url = fetch_following_redirects(url)
@@ -64,7 +66,7 @@ module UrlFavorites
           title = body.match(/^Title:\s*([^\n]+)/)&.captures&.first&.strip || ""
           # Markdown Content 이후 텍스트를 body_text로 사용
           content_after_marker = body.split(/^Markdown Content:\s*\n/, 2).last || body
-          body_text = content_after_marker.gsub(/\s+/, " ").strip[0...8_000]
+          body_text = content_after_marker.gsub(/\s+/, " ").strip[0...BODY_TEXT_LIMIT]
 
           {
             title: title,
@@ -102,10 +104,10 @@ module UrlFavorites
           best = ""
           candidates.each do |element|
             text = cleaned_text(element)
-            return text[0...8_000] if text.length >= MIN_BODY_TEXT
+            return text[0...BODY_TEXT_LIMIT] if text.length >= MIN_BODY_TEXT
             best = text if text.length > best.length
           end
-          best[0...8_000]
+          best[0...BODY_TEXT_LIMIT]
         end
 
         def self.cleaned_text(element)

@@ -60,9 +60,13 @@ module UrlFavorites
           # 분석 결과(제목·요약·태그)를 검색 인덱스에 반영 — 이것이 없으면 FTS 검색이 비어 있음
           ReindexFavoriteJob.perform_later(favorite.id)
 
-          # heavy 폴백 성공 시 이미 정밀본 → refine 생략
-          if tier == "fast" && refine_candidate?(normalized_style, raw_content)
-            RefineAnalysisJob.perform_later(favorite.id, normalized_style, snapshot)
+          # heavy 폴백 성공 시 이미 정밀본 → 후속 발주 생략
+          if tier == "fast"
+            if normalized_style == "onboarding_manual"
+              PlanManualOutlineJob.perform_later(favorite.id, snapshot)
+            elsif refine_candidate?(normalized_style, raw_content)
+              RefineAnalysisJob.perform_later(favorite.id, normalized_style, snapshot)
+            end
           end
         rescue => e
           raise e unless favorite

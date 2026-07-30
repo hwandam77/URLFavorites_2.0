@@ -160,4 +160,25 @@ class RefineAnalysisTest < ActiveSupport::TestCase
     assert_equal "done", @favorite.status
     assert_nil(@favorite.error_message)
   end
+
+  test "긴 raw_content 는 REFINE_INPUT_LIMIT(8,000자)로 절단해 heavy 에 전달" do
+    long_content = "x" * 20_000
+    @favorite.update!(raw_content: long_content)
+    @analysis.update!(raw_content: long_content)
+    captured = nil
+    stub = ->(content, **_kwargs) {
+      captured = content
+      @heavy_result
+    }
+
+    UrlFavorites::Integrations::LlamaServer::Client.stub(:call, stub) do
+      UrlFavorites::UseCases::Analysis::RefineAnalysis.call(
+        favorite_id: @favorite.id,
+        analysis_style: "tutorial",
+        analysis_snapshot: @analysis.reload.updated_at.to_f
+      )
+    end
+
+    assert_equal UrlFavorites::UseCases::Analysis::RefineAnalysis::REFINE_INPUT_LIMIT, captured.length
+  end
 end

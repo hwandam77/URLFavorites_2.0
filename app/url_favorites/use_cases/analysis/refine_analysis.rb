@@ -8,6 +8,9 @@ module UrlFavorites
   module UseCases
     module Analysis
       class RefineAnalysis
+        # heavy(13 tok/s) 가 받는 입력량을 본문 상한 상향(20,000자) 이전 수준으로 고정 — 그대로 넣으면 Net::ReadTimeout 회귀
+        REFINE_INPUT_LIMIT = 8_000
+
         def self.call(favorite_id:, analysis_style:, analysis_snapshot:)
           favorite = Favorite.find_by(id: favorite_id)
           if favorite.nil?
@@ -37,12 +40,14 @@ module UrlFavorites
 
           style = UrlFavorites::Domain::Analysis::PromptStyle.normalize(analysis_style)
 
+          llm_input = raw_content[0...REFINE_INPUT_LIMIT]
+
           # LLM 호출은 트랜잭션/락 밖
           result = UrlFavorites::Integrations::LlamaServer::Client.call(
-            raw_content,
+            llm_input,
             type: favorite.content_type,
             analysis_style: style,
-            content_length: raw_content.length,
+            content_length: llm_input.length,
             backend_role: "heavy"
           )
 
