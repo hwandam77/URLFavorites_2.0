@@ -33,11 +33,9 @@ class FavoritesController < ApplicationController
   def brief
     @favorite = Favorite.find(params[:id])
     @analysis = @favorite.analysis
-    @sections = @analysis&.analysis_sections || []
+    @sections = @analysis&.analysis_sections&.to_a || []
 
-    if @sections.empty?
-      redirect_to favorite_url(@favorite), alert: "생성된 매뉴얼이 없습니다."
-    end
+    redirect_to favorite_url(@favorite), alert: "아직 분석 결과가 없습니다." if @analysis.nil?
   end
 
   def create
