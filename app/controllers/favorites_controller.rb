@@ -29,6 +29,17 @@ class FavoritesController < ApplicationController
     end
   end
 
+  # GET /favorites/:id/brief — 뉴스레터 레이아웃 프리뷰 (manual 비교용)
+  def brief
+    @favorite = Favorite.find(params[:id])
+    @analysis = @favorite.analysis
+    @sections = @analysis&.analysis_sections || []
+
+    if @sections.empty?
+      redirect_to favorite_url(@favorite), alert: "생성된 매뉴얼이 없습니다."
+    end
+  end
+
   def create
     url = params.dig(:favorite, :url).to_s.strip
 
