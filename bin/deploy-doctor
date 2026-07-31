@@ -58,7 +58,7 @@ expected_head = ENV["URLF_EXPECTED_HEAD"]
 def capture(*cmd)
   stdout, stderr, status = Open3.capture3(*cmd)
   output = stdout.strip
-  output = stderr.strip if output.empty?
+  output = stderr.strip if output.empty? && !status.success?
   [ status.success?, output ]
 end
 
