@@ -22,10 +22,10 @@ module UrlFavorites
             f.response :raise_error
           end
 
-          body = { model: EMBEDDING_MODEL, prompt: truncated }
+          body = { model: EMBEDDING_MODEL, input: truncated }
           response = conn.post("/v1/embeddings", body)
           parsed = JSON.parse(response.body, symbolize_names: true)
-          parsed[:embedding] || []
+          parsed.dig(:data, 0, :embedding) || []
         rescue => e
           Rails.logger.error "[EmbeddingClient] Error: #{e.message}"
           []
