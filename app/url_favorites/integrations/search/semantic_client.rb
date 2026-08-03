@@ -4,6 +4,11 @@ module UrlFavorites
   module Integrations
     module Search
       class SemanticClient
+        # 코사인 유사도 하한. 아래는 무관한 결과로 간주해 버린다.
+        # 2026-08-03 운영 293건 실측: 무의미 질의 최고 0.376~0.414, 유효 질의 최고 0.487~0.668.
+        # 임베딩 모델이나 코퍼스가 바뀌면 재측정해서 조정할 것.
+        SIMILARITY_THRESHOLD = 0.45
+
         def self.call(query:, content_type: nil, status: nil, collection_id: nil, sort: "recent", limit: 50)
           new(query: query, content_type: content_type, status: status,
               collection_id: collection_id, sort: sort, limit: limit).call
@@ -34,6 +39,7 @@ module UrlFavorites
             candidate.merge(similarity: similarity)
           end.compact
 
+          scored = scored.select { |c| c[:similarity] >= SIMILARITY_THRESHOLD }
           scored = scored.sort_by { |c| -c[:similarity] }
           return [] if scored.empty?
 
