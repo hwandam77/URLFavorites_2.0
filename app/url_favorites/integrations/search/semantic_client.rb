@@ -22,7 +22,7 @@ module UrlFavorites
           return [] if @query.blank?
 
           query_embedding = UrlFavorites::Integrations::Search::EmbeddingClient.call(@query)
-          return fts_search if query_embedding.empty?
+          return [] if query_embedding.empty?
 
           candidates = fetch_candidates_with_embeddings
 
@@ -51,20 +51,10 @@ module UrlFavorites
 
         private
 
-        def fts_search
-          UrlFavorites::UseCases::Search::FavoriteSearch.call(
-            query: @query,
-            content_type: @content_type,
-            status: @status,
-            collection_id: @collection_id,
-            sort: @sort
-          ).first(@limit)
-        end
-
         def fetch_candidates_with_embeddings
-          sql = "SELECT favorite_id, content_embedding FROM favorites_fts WHERE content_embedding IS NOT NULL LIMIT 1000"
+          sql = "SELECT favorite_id, embedding FROM favorite_embeddings LIMIT 1000"
           rows = ActiveRecord::Base.connection.execute(sql)
-          rows.map { |r| { favorite_id: r["favorite_id"], content_embedding: r["content_embedding"] } }
+          rows.map { |r| { favorite_id: r["favorite_id"], content_embedding: r["embedding"] } }
         end
 
         def parse_embedding(embedding_str)

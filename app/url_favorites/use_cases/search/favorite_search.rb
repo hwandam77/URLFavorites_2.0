@@ -16,11 +16,12 @@ module UrlFavorites
         end
 
         def call
-          if @query.present?
-            fts_search
-          else
-            filtered_favorites
-          end
+          return filtered_favorites if @query.blank?
+
+          results = fts_search
+          return results if results.present?
+
+          semantic_search
         end
 
         private
@@ -64,6 +65,24 @@ module UrlFavorites
           scope = scope.where(category: @category) if @category.present? && @category != "전체"
           scope = scope.where(pinned: true) if @category == "핀"
           scope
+        end
+
+        def semantic_search
+          results = UrlFavorites::Integrations::Search::SemanticClient.call(
+            query: @query,
+            content_type: @content_type,
+            status: @status,
+            collection_id: @collection_id,
+            sort: @sort
+          )
+          apply_array_filters(results)
+        end
+
+        # SemanticClient 는 category·pinned 를 모른다. 배열에 사후 적용한다
+        def apply_array_filters(results)
+          return results if @category.blank? || @category == "전체"
+          return results.select(&:pinned) if @category == "핀"
+          results.select { |f| f.category == @category }
         end
       end
     end
