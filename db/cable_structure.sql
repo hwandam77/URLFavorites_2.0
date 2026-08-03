@@ -52,7 +52,13 @@ FOREIGN KEY ("analysis_id")
 );
 CREATE INDEX "index_analysis_sections_on_analysis_id" ON "analysis_sections" ("analysis_id") /*application='UrlFavorites20'*/;
 CREATE UNIQUE INDEX "index_analysis_sections_on_analysis_id_and_position" ON "analysis_sections" ("analysis_id", "position") /*application='UrlFavorites20'*/;
+CREATE TABLE IF NOT EXISTS "favorite_embeddings" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "favorite_id" integer NOT NULL, "embedding" text NOT NULL, "model" varchar NOT NULL, "dimensions" integer NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_65f8f3e3d0"
+FOREIGN KEY ("favorite_id")
+  REFERENCES "favorites" ("id")
+ ON DELETE CASCADE);
+CREATE UNIQUE INDEX "index_favorite_embeddings_on_favorite_id" ON "favorite_embeddings" ("favorite_id") /*application='UrlFavorites20'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260803000001'),
 ('20260730000001'),
 ('20260724000001'),
 ('20260509000001'),
