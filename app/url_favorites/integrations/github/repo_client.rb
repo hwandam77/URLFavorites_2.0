@@ -60,6 +60,14 @@ module UrlFavorites
         # [meta_hash_or_nil, x-ratelimit-remaining 헤더값 또는 nil]
         def self.fetch(owner, repo)
           response = connection.get("/repos/#{owner}/#{repo}")
+
+          # GitHub 는 리포 이름 변경/이전 시 301 을 준다. 같은 호스트로 딱 한 번만 따라간다.
+          location = response.headers["location"]
+          if response.status == 301 && location.present? && location.start_with?("#{API_BASE}/")
+            Rails.logger.info("[RepoClient] following redirect owner=#{owner} repo=#{repo} location=#{location}")
+            response = connection.get(location)
+          end
+
           remaining = response.headers["x-ratelimit-remaining"]
           Rails.logger.warn("[RepoClient] x-ratelimit-remaining is 0") if remaining == "0"
 
