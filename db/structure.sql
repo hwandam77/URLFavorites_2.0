@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS "collections" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "description" text, "name" varchar NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_collections_on_name" ON "collections" ("name") /*application='UrlFavorites20'*/;
-CREATE TABLE IF NOT EXISTS "favorites" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "content_type" varchar DEFAULT 'webpage' NOT NULL, "created_at" datetime(6) NOT NULL, "error_message" text, "favicon_url" varchar, "note" text, "raw_content" text, "retry_count" integer DEFAULT 0 NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "thumbnail_url" varchar, "title" varchar, "updated_at" datetime(6) NOT NULL, "url" varchar NOT NULL, "category" varchar DEFAULT '기타' /*application='UrlFavorites20'*/, "pinned" boolean DEFAULT FALSE /*application='UrlFavorites20'*/);
+CREATE TABLE IF NOT EXISTS "favorites" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "content_type" varchar DEFAULT 'webpage' NOT NULL, "created_at" datetime(6) NOT NULL, "error_message" text, "favicon_url" varchar, "note" text, "raw_content" text, "retry_count" integer DEFAULT 0 NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "thumbnail_url" varchar, "title" varchar, "updated_at" datetime(6) NOT NULL, "url" varchar NOT NULL, "category" varchar DEFAULT '기타' /*application='UrlFavorites20'*/, "pinned" boolean DEFAULT FALSE /*application='UrlFavorites20'*/, "source_metadata" text /*application='UrlFavorites20'*/);
 CREATE UNIQUE INDEX "index_favorites_on_url" ON "favorites" ("url") /*application='UrlFavorites20'*/;
 CREATE TABLE IF NOT EXISTS "collection_memberships" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "collection_id" integer NOT NULL, "created_at" datetime(6) NOT NULL, "favorite_id" integer NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_8a440d7672"
 FOREIGN KEY ("collection_id")
@@ -58,6 +58,7 @@ FOREIGN KEY ("favorite_id")
  ON DELETE CASCADE);
 CREATE UNIQUE INDEX "index_favorite_embeddings_on_favorite_id" ON "favorite_embeddings" ("favorite_id") /*application='UrlFavorites20'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260804000001'),
 ('20260803000001'),
 ('20260730000001'),
 ('20260724000001'),

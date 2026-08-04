@@ -120,7 +120,7 @@ CREATE TABLE solid_queue_semaphores (
 CREATE INDEX index_solid_queue_semaphores_on_expires_at ON solid_queue_semaphores (expires_at);
 CREATE INDEX index_solid_queue_semaphores_on_key_and_value ON solid_queue_semaphores (key, value);
 CREATE UNIQUE INDEX index_solid_queue_semaphores_on_key ON solid_queue_semaphores (key);
-CREATE TABLE IF NOT EXISTS "favorites" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "url" varchar NOT NULL, "title" varchar, "favicon_url" varchar, "thumbnail_url" varchar, "content_type" varchar DEFAULT 'webpage' NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "raw_content" text, "error_message" text, "retry_count" integer DEFAULT 0 NOT NULL, "note" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "category" varchar DEFAULT '기타' /*application='UrlFavorites20'*/, "pinned" boolean DEFAULT FALSE /*application='UrlFavorites20'*/);
+CREATE TABLE IF NOT EXISTS "favorites" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "url" varchar NOT NULL, "title" varchar, "favicon_url" varchar, "thumbnail_url" varchar, "content_type" varchar DEFAULT 'webpage' NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "raw_content" text, "error_message" text, "retry_count" integer DEFAULT 0 NOT NULL, "note" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "category" varchar DEFAULT '기타' /*application='UrlFavorites20'*/, "pinned" boolean DEFAULT FALSE /*application='UrlFavorites20'*/, "source_metadata" text /*application='UrlFavorites20'*/);
 CREATE UNIQUE INDEX "index_favorites_on_url" ON "favorites" ("url") /*application='UrlFavorites20'*/;
 CREATE TABLE IF NOT EXISTS "analyses" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "favorite_id" integer NOT NULL, "summary" text, "tags" text, "key_points" text, "sentiment" varchar, "transcript" text, "subtitle_source" varchar, "video_metadata" text, "model_used" varchar, "analyzed_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "raw_content" text /*application='UrlFavorites20'*/, "detail_content" text /*application='UrlFavorites20'*/, "transcript_segments" text /*application='UrlFavorites20'*/, "analysis_style" varchar DEFAULT 'execution_brief' NOT NULL /*application='UrlFavorites20'*/, "analysis_tier" varchar DEFAULT 'fast' NOT NULL /*application='UrlFavorites20'*/, CONSTRAINT "fk_rails_b11216332f"
 FOREIGN KEY ("favorite_id")
@@ -178,6 +178,7 @@ FOREIGN KEY ("favorite_id")
 );
 CREATE UNIQUE INDEX "index_favorite_embeddings_on_favorite_id" ON "favorite_embeddings" ("favorite_id") /*application='UrlFavorites20'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260804000001'),
 ('20260803000001'),
 ('20260730000001'),
 ('20260724000001'),
