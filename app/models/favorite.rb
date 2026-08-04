@@ -8,6 +8,8 @@ class Favorite < ApplicationRecord
   has_many :collection_memberships, dependent: :destroy
   has_many :collections, through: :collection_memberships
 
+  serialize :source_metadata, coder: JSON
+
   validates :url, presence: true, uniqueness: true
   validates :content_type, inclusion: { in: CONTENT_TYPES }
   validates :status, inclusion: { in: STATUSES }
