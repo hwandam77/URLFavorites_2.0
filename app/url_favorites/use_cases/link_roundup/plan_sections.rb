@@ -32,7 +32,11 @@ module UrlFavorites
             Rails.logger.info("[LinkRoundup::PlanSections] skip too_few_links id=#{favorite_id} links=#{links.length}")
             return
           end
+          total_links = links.length
           links = links.first(MAX_LINKS)
+          if links.length < total_links
+            Rails.logger.info("[LinkRoundup::PlanSections] truncated id=#{favorite_id} 원본 #{total_links}개 중 #{links.length}개 수록, #{total_links - links.length}개 생략")
+          end
 
           sections = analysis.analysis_sections.to_a
           if sections.any?

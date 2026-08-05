@@ -219,6 +219,10 @@
       <% end %>
       <span>본문 <b><%= number_with_delimiter(total_chars) %></b>자</span><span>·</span>
       <span>읽는 데 <b>약 <%= [ (total_chars / 500.0).ceil, 1 ].max %>분</b></span>
+      <% all_links = Array((@favorite.source_metadata || {})["github_links"]).size %>
+      <% if all_links > 0 && @sections.any? && all_links > @sections.size %>
+        <span>·</span><span>링크 <b><%= all_links %></b>개 중 <b><%= @sections.size %></b>개 수록</span>
+      <% end %>
     </div>
   </div>
 
