@@ -9,11 +9,11 @@ USAGE = <<~TEXT
     bin/deploy-doctor pre [--report]
     bin/deploy-doctor post [--report]
 
-  pre  checks that local Git is clean/synced and the VPS checkout has no source drift.
-  post also checks that the VPS checkout matches local HEAD and the app is healthy.
+  pre  checks that local Git is clean/synced and the server checkout has no source drift.
+  post also checks that the server checkout matches local HEAD and the app is healthy.
 
   Environment overrides:
-    URLF_REMOTE_HOST   default: vps-server
+    URLF_REMOTE_HOST   default: bastion
     URLF_REMOTE_PATH   default: /home/hwandam/services/rails/urlfavorites_2.0
     URLF_SERVICE       default: rails-puma@urlfavorites_2.0
     URLF_REMOTE_PORT   default: 3003
@@ -45,7 +45,7 @@ if unknown_args.any?
   abort "Unknown argument(s): #{unknown_args.join(', ')}"
 end
 
-remote_host = ENV.fetch("URLF_REMOTE_HOST", "vps-server")
+remote_host = ENV.fetch("URLF_REMOTE_HOST", "bastion")
 remote_path = ENV.fetch("URLF_REMOTE_PATH", "/home/hwandam/services/rails/urlfavorites_2.0")
 service = ENV.fetch("URLF_SERVICE", "rails-puma@urlfavorites_2.0")
 remote_port = ENV.fetch("URLF_REMOTE_PORT", "3003")
