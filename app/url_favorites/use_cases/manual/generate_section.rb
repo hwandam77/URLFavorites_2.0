@@ -6,7 +6,8 @@ module UrlFavorites
   module UseCases
     module Manual
       class GenerateSection
-        SYSTEM_PROMPT = <<~PROMPT
+        SYSTEM_PROMPTS = {
+          "onboarding_manual" => <<~PROMPT,
           당신은 한국어 온보딩 매뉴얼의 섹션 하나를 작성하는 전문 필자다.
           형식 요건 (엄격히 준수):
           - markdown으로 작성하고, 섹션 제목은 반드시 `##`로 시작한다.
@@ -18,7 +19,21 @@ module UrlFavorites
             > **주의** 주의 내용...
           - 원문에 근거 없는 사실은 쓰지 않는다. 추측이 필요하면 추측임을 명시한다.
           - 한국어로 서술하고, 코드·명령어·고유명사는 원문 표기를 유지한다.
-        PROMPT
+          PROMPT
+          "link_roundup" => <<~PROMPT
+            당신은 한국어 기술 뉴스레터의 "이번 호에 나온 리포지토리" 꼭지를 쓰는 필자다.
+            섹션 하나 = 리포지토리 하나다.
+            형식 요건 (엄격히 준수):
+            - markdown으로 작성하고, 섹션 제목은 반드시 `##`로 시작한다.
+            - 분량은 600~900자. 길게 쓰지 마라.
+            - 다음 순서로 서술한다: ① 이 리포가 무엇인지 한 문장 ② 원문(영상)에서 이 리포를
+              어떤 맥락으로 다뤘는지 ③ 언제 쓸 만한지 또는 주의점.
+            - 원문에 근거 없는 사실은 쓰지 않는다. 원문이 이 리포를 스치듯 언급만 했다면
+              그 사실을 밝히고 짧게 끝낸다. 추측으로 채우지 마라.
+            - 용어/비유/주의 박스는 쓰지 않는다 (이 형식에서는 과하다).
+            - 한국어로 서술하고, 리포명·명령어·고유명사는 원문 표기를 유지한다.
+          PROMPT
+        }.freeze
 
         def self.call(analysis_id:, position:, analysis_snapshot:)
           analysis = ::Analysis.find_by(id: analysis_id)
@@ -51,8 +66,9 @@ module UrlFavorites
             #{raw_content}
           USER
 
+          system_prompt = SYSTEM_PROMPTS[analysis.analysis_style] || SYSTEM_PROMPTS["onboarding_manual"]
           text, backend_model = UrlFavorites::Integrations::LlamaServer::Client.complete(
-            system: SYSTEM_PROMPT,
+            system: system_prompt,
             user: user,
             backend_role: "fast"
           )

@@ -64,6 +64,8 @@ module UrlFavorites
           if tier == "fast"
             if normalized_style == "onboarding_manual"
               PlanManualOutlineJob.perform_later(favorite.id, snapshot)
+            elsif normalized_style == "link_roundup"
+              PlanLinkRoundupJob.perform_later(favorite.id, snapshot)
             elsif refine_candidate?(normalized_style, raw_content)
               RefineAnalysisJob.perform_later(favorite.id, normalized_style, snapshot)
             end
@@ -90,6 +92,10 @@ module UrlFavorites
             extraction = UrlFavorites::Integrations::Youtube::Extractor.call(favorite.url)
             favorite.update!(thumbnail_url: extraction[:thumbnail_url]) if extraction[:thumbnail_url].present?
             favorite.update!(title: extraction[:title]) if extraction[:title].present? && (favorite.title.blank? || favorite.title.to_s.start_with?("http://", "https://"))
+            links = Array(extraction[:github_links]).reject(&:blank?)
+            if links.any?
+              favorite.update!(source_metadata: (favorite.source_metadata || {}).merge("github_links" => links))
+            end
             extraction.merge(raw_content: youtube_analysis_input(extraction))
           elsif favorite.content_type == "twitter"
             extraction = UrlFavorites::Integrations::Twitter::Extractor.call(favorite.url)

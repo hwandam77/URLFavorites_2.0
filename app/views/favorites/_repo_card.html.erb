@@ -1,0 +1,37 @@
+<% compact = local_assigns.fetch(:compact, false) %>
+<section class="repo-card<%= " repo-card-compact" if compact %>">
+  <div class="repo-head">
+    <span class="repo-name mono"><%= repo["full_name"] %></span>
+    <% if repo["archived"] %><span class="repo-flag">보관됨</span><% end %>
+    <% if repo["fork"] %><span class="repo-flag">포크</span><% end %>
+  </div>
+  <% if !compact && repo["description"].present? %>
+    <p class="repo-desc"><%= repo["description"] %></p>
+  <% end %>
+  <% pushed_at = (Time.parse(repo["pushed_at"]).strftime("%Y.%m.%d") rescue nil) %>
+  <dl class="repo-stats">
+    <% unless repo["stars"].nil? %>
+      <div><dt>★</dt><dd class="mono"><%= number_with_delimiter(repo["stars"]) %></dd></div>
+    <% end %>
+    <% unless repo["forks"].nil? %>
+      <div><dt>포크</dt><dd class="mono"><%= number_with_delimiter(repo["forks"]) %></dd></div>
+    <% end %>
+    <% if repo["language"].present? %>
+      <div><dt>언어</dt><dd><%= repo["language"] %></dd></div>
+    <% end %>
+    <% if repo["license"].present? %>
+      <div><dt>라이선스</dt><dd><%= repo["license"] %></dd></div>
+    <% end %>
+    <% unless repo["open_issues"].nil? %>
+      <div><dt>이슈</dt><dd class="mono"><%= number_with_delimiter(repo["open_issues"]) %></dd></div>
+    <% end %>
+    <% if pushed_at.present? %>
+      <div><dt>최근 푸시</dt><dd class="mono"><%= pushed_at %></dd></div>
+    <% end %>
+  </dl>
+  <% if repo["topics"].present? %>
+    <div class="repo-topics">
+      <% Array(repo["topics"]).first(8).each do |t| %><span><%= t %></span><% end %>
+    </div>
+  <% end %>
+</section>
