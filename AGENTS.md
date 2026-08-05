@@ -199,14 +199,14 @@ Avoid:
 
 Server details:
 
-- SSH host: `vps-server`
+- SSH host: `bastion` (main address = LAN `192.168.0.11`; WireGuard `10.10.0.1` and Tailscale `100.111.118.109` are alternate paths to the same host)
 - App path: `/home/hwandam/services/rails/urlfavorites_2.0/`
 - Service: `rails-puma@urlfavorites_2.0.service`
 - Port: `3003`; port 3000 is occupied by the older URLFavorites app
 - URL: `https://urlf.hwandam.kr/favorites`
 - Legacy URL: `https://urlf.hwandam.kr/ver2.0/favorites` redirects to `/favorites`
 - nginx config: `/etc/nginx/sites-enabled/URLF.hwandam.kr`
-- Server source policy: do not edit source files on the VPS. Deploy committed Mac changes only.
+- Server source policy: do not edit source files on the server. Deploy committed Mac changes only.
 - Production DB policy: never delete or overwrite `/home/hwandam/services/rails/urlfavorites_2.0/storage/*.sqlite3*`.
 - Current primary DB: `storage/production.sqlite3`; current queue DB: `storage/production_queue.sqlite3`.
 
@@ -237,11 +237,11 @@ Deployment operating policy:
 1. Server worktree cleanup
    - Separate useful server-side uncommitted changes from disposable artifacts.
    - Bring useful changes back into the local Mac branch, then commit them.
-   - Return the VPS checkout to a clean worktree before the next deploy.
+   - Return the server checkout to a clean worktree before the next deploy.
    - Never clean by deleting or overwriting `storage/*.sqlite3*` or `db/*.sqlite3*`.
 2. Commit-based deployment only
    - `bin/deploy urlfavorites_2.0` and `bin/deploy --quick urlfavorites_2.0` must deploy a specific committed Git state.
-   - Do not edit application source files directly on the VPS.
+   - Do not edit application source files directly on the server.
    - Emergency server edits must be copied back to the local branch, committed, and redeployed through the normal path.
 3. Separate staging and production
    - Keep at least one staging port even for this personal app.
@@ -265,7 +265,7 @@ Common production issues:
 - `EADDRINUSE port 3000`: `PORT=3003` missing from drop-in.
 - `LLAMA_SERVER_URL is required`: env drop-in missing or daemon reload omitted.
 - 404 on `/ver2.0/favorites`: nginx redirect/proxy rules changed; current Rails route is `/favorites`.
-- Dirty server worktree: stop and reconcile the VPS diff back into Git before deploying.
+- Dirty server worktree: stop and reconcile the server diff back into Git before deploying.
 - Missing production DB: stop deploy; inspect `storage/production.sqlite3` backup/restore before any restart.
 - ERB syntax errors: usually missing commas in `link_to` options.
 

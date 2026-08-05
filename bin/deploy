@@ -8,14 +8,14 @@ require "time"
 
 APP_NAME = "urlfavorites_2.0"
 DEFAULT_PRODUCTION = {
-  host: "vps-server",
+  host: "bastion",
   path: "/home/hwandam/services/rails/urlfavorites_2.0",
   service: "rails-puma@urlfavorites_2.0",
   port: "3003",
   health_path: "/favorites",
   public_url: "https://urlf.hwandam.kr/favorites",
   git_remote: "github",
-  llama_server_url: "http://10.10.0.5:8282",
+  llama_server_url: "http://10.10.0.4:8282",
   primary_db: "storage/production.sqlite3",
   queue_db: "storage/production_queue.sqlite3"
 }.freeze
