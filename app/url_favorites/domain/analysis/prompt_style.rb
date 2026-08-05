@@ -8,7 +8,8 @@ module UrlFavorites
           "qna" => "Q&A",
           "tutorial" => "튜토리얼",
           "prompt_extract" => "프롬프트 추출",
-          "onboarding_manual" => "온보딩 매뉴얼"
+          "onboarding_manual" => "온보딩 매뉴얼",
+          "link_roundup" => "링크 라운드업"
         }.freeze
 
         INSTRUCTIONS = {
@@ -30,9 +31,13 @@ module UrlFavorites
             Extract role, task, input format, output format, constraints, examples, and validation checklist.
             The result should be directly copyable into another AI session.
           TEXT
-          "onboarding_manual" => <<~TEXT
+          "onboarding_manual" => <<~TEXT,
             Summarize the content for first-time readers as a quick overview.
             detail_content stays short (3~5 paragraphs as usual); the full onboarding manual is generated separately in sections.
+          TEXT
+          "link_roundup" => <<~TEXT
+            Summarize the content as an overview of the repositories/links it covers.
+            detail_content stays short (3~5 paragraphs); per-link sections are generated separately.
           TEXT
         }.freeze
 

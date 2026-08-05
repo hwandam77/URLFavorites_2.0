@@ -32,6 +32,10 @@
   .repo-stats dd { margin: 0; font-size: 14px; font-weight: 650; color: var(--color-text); }
   .repo-topics { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; }
   .repo-topics span { font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: var(--radius-full); background: var(--color-accent-muted); color: var(--color-accent-text); }
+  .section-head .repo-card { grid-column: 2; }
+  .repo-card-compact { padding: 12px 14px; }
+  .repo-card-compact .repo-name { font-size: 14px; }
+  @media (max-width: 560px) { .section-head .repo-card { grid-column: 1; } }
 
   .lead { margin: 30px 0 0; padding-left: 20px; border-left: 2px solid var(--color-accent); font-size: 19px; line-height: 1.62; font-weight: 500; color: var(--color-text); letter-spacing: -0.2px; }
 
@@ -174,42 +178,7 @@
   <% repo = @favorite.content_type == "github" ? @favorite.source_metadata : nil %>
   <% repo = nil unless repo.is_a?(Hash) && repo["full_name"].present? %>
   <% if repo %>
-    <section class="repo-card">
-      <div class="repo-head">
-        <span class="repo-name mono"><%= repo["full_name"] %></span>
-        <% if repo["archived"] %><span class="repo-flag">보관됨</span><% end %>
-        <% if repo["fork"] %><span class="repo-flag">포크</span><% end %>
-      </div>
-      <% if repo["description"].present? %>
-        <p class="repo-desc"><%= repo["description"] %></p>
-      <% end %>
-      <% pushed_at = (Time.parse(repo["pushed_at"]).strftime("%Y.%m.%d") rescue nil) %>
-      <dl class="repo-stats">
-        <% unless repo["stars"].nil? %>
-          <div><dt>★</dt><dd class="mono"><%= number_with_delimiter(repo["stars"]) %></dd></div>
-        <% end %>
-        <% unless repo["forks"].nil? %>
-          <div><dt>포크</dt><dd class="mono"><%= number_with_delimiter(repo["forks"]) %></dd></div>
-        <% end %>
-        <% if repo["language"].present? %>
-          <div><dt>언어</dt><dd><%= repo["language"] %></dd></div>
-        <% end %>
-        <% if repo["license"].present? %>
-          <div><dt>라이선스</dt><dd><%= repo["license"] %></dd></div>
-        <% end %>
-        <% unless repo["open_issues"].nil? %>
-          <div><dt>이슈</dt><dd class="mono"><%= number_with_delimiter(repo["open_issues"]) %></dd></div>
-        <% end %>
-        <% if pushed_at.present? %>
-          <div><dt>최근 푸시</dt><dd class="mono"><%= pushed_at %></dd></div>
-        <% end %>
-      </dl>
-      <% if repo["topics"].present? %>
-        <div class="repo-topics">
-          <% Array(repo["topics"]).first(8).each do |t| %><span><%= t %></span><% end %>
-        </div>
-      <% end %>
-    </section>
+    <%= render "favorites/repo_card", repo: repo %>
   <% end %>
 
   <p class="lead"><%= @analysis.summary %></p>
@@ -260,6 +229,10 @@
           <div class="section-n mono"><%= section.position.to_s.rjust(2, "0") %></div>
           <h2><%= section.heading %></h2>
           <% if section.focus.present? %><p class="dek"><%= section.focus %></p><% end %>
+          <% sec_repo = (@favorite.source_metadata || {}).dig("repos", section.heading) %>
+          <% if sec_repo.is_a?(Hash) %>
+            <%= render "favorites/repo_card", repo: sec_repo, compact: true %>
+          <% end %>
           <% if section.body.present? %>
             <div class="section-body"><%= markdown(section.body) %></div>
           <% else %>
