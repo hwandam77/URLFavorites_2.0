@@ -22,11 +22,6 @@
 
 ---
 
-## Rules 우선순위
-`Rules.md > CLAUDE.md > ~/.claude/CLAUDE.md`
-
----
-
 ## 모델 라우팅
 - **Opus**: 분석/계획/아키텍처/사용자 대화
 - **Sonnet**: 코드 구현/리팩토링/테스트
@@ -38,18 +33,12 @@ Opus는 설계/검증에 집중, 코드는 Sonnet에 위임.
 
 ## Multi-Agent Orchestration (Orca)
 
-[Orca](https://github.com/stablyai/orca) ADE 기반 오케스트레이션. 기존 Hub & Spoke(claude-peers/tmux) 구조는 이 프로젝트에서 폐기.
+Hub & Spoke 원칙(Hub 직접 구현 금지, 탐색은 Hub·작성은 Spoke, 검토자≠구현자)과 Spoke 모델 라우팅(codex/grok/kimi/minimax)은 **workspace CLAUDE.md + `rules/15-hub-and-spoke.md`가 정본**. 여기엔 이 프로젝트의 델타만 적는다.
 
-**역할 구조:**
-```
-Main Claude (Hub) — 계획·분해·위임·검증. Orca CLI로 워크트리/터미널/태스크 제어. 직접 구현 금지.
-  ├── codex             — 코드 구현·리팩터링 주력, 교차 리뷰
-  ├── grok              — 리서치·디버깅·대안 관점 교차검증
-  ├── kimi (K2.7)       — 정밀 단일 코드·테스트·한국어 문서 (한글 정상)
-  ├── minimax (M3)      — 멀티스텝·시스템·인프라·장기 자율 (1M ctx, 한글 정상)
-  └── mimo (V2.5-Pro)   — 코드 구현 보조·병렬 발주 시 추가 워커
-```
-역할 배정은 운영하며 조정. 동급 코딩 태스크는 2개 에이전트 병렬 발주 → diff 비교 후 채택 (Orca의 워크트리 격리가 이를 전제로 설계됨).
+- 실행 기반: [Orca](https://github.com/stablyai/orca) ADE. 기존 claude-peers/tmux 기반 실행 구조는 이 프로젝트에서 폐기.
+- Spoke 추가: `mimo (V2.5-Pro)` — 코드 구현 보조, 병렬 발주 시 추가 워커.
+- 동급 코딩 태스크는 2개 에이전트 병렬 발주 → diff 비교 후 채택 (Orca 워크트리 격리가 이를 전제로 설계됨).
+- 추가 금지: `Agent` 도구로 Claude 자체 서브에이전트 직접 스폰 (사용자 명시 요청 제외).
 
 **핵심 플로우:**
 1. `orca worktree create` — 에이전트별 격리 git 워크트리 생성
@@ -59,10 +48,6 @@ Main Claude (Hub) — 계획·분해·위임·검증. Orca CLI로 워크트리/�
 5. diff 리뷰(주석 → 에이전트 재발주) → 병합, `orca worktree rm` — 정리
 
 명령 스키마 정본: `orca agent-context` (기계가독 스키마 출력)
-
-**금지:**
-- `Agent` 도구로 Claude 자체 서브에이전트 직접 스폰 (사용자 명시 요청 제외)
-- Hub가 직접 소스 코드 Write/Edit (문서·룰 파일 제외)
 
 ---
 
@@ -83,7 +68,7 @@ Main Claude (Hub) — 계획·분해·위임·검증. Orca CLI로 워크트리/�
 
 **운영 원칙:**
 - 태스크 단위 = 워크트리 단위. 완료·병합 후 `worktree rm`으로 정리.
-- 검증(테스트 pass/fail 판정)은 기존 규칙대로 VPS에서 실행 — Orca 게이트는 판정 결과를 승인하는 관문이지 판정 주체가 아님.
+- Orca 게이트는 판정 결과를 승인하는 관문이지 판정 주체가 아니다. pass/fail 실행 위치는 workspace CLAUDE.md "검증 evidence 위치"를 따른다.
 - 커스텀 에이전트 플레이북(`.claude/agents/rails-{core,ui,test,qa}.md`)은 역할 참고 문서로 유지 — Orca로 발주 시 태스크 명세에 해당 원칙을 포함시킨다.
 
 ---
@@ -94,7 +79,7 @@ Main Claude (Hub) — 계획·분해·위임·검증. Orca CLI로 워크트리/�
 
 | 항목 | 값 |
 |------|-----|
-| SSH 호스트 | `bastion` (LAN `10.10.0.1` / Tailscale `100.111.118.109`, `~/.ssh/config`) |
+| SSH 호스트 | `bastion` (`~/.ssh/config`. **메인 주소 = LAN `192.168.0.11`**. WireGuard `10.10.0.1` / Tailscale `100.111.118.109`는 LAN 밖에서 들어올 때만 쓰는 대체 경로, 모두 같은 호스트) |
 | 앱 경로 | `/home/hwandam/services/rails/urlfavorites_2.0/` |
 | 서비스 | `rails-puma@urlfavorites_2.0.service` (Solid Queue는 `SOLID_QUEUE_IN_PUMA=1` 내장 단일 supervisor — 2026-07-24 `solid-queue@` 별도 서비스 stop+disable로 단일화. 이중 supervisor는 "배포 후 옛 코드 잡" 사고 클래스의 원인) |
 | 포트 | `3003` (Puma loopback `127.0.0.1:3003`) |
@@ -145,7 +130,6 @@ bin/deploy --quick urlfavorites_2.0
    - 서버의 미커밋 변경 중 필요한 것과 버릴 것을 분리한다.
    - 필요한 것은 Mac 로컬 브랜치에 반영한 뒤 커밋한다.
    - 다음 배포 전 서버는 clean worktree로 되돌린다.
-   - `storage/*.sqlite3*`, `db/*.sqlite3*`는 삭제하거나 덮어쓰지 않는다.
 2. 배포는 커밋 단위로만
    - `bin/deploy urlfavorites_2.0` 또는 `bin/deploy --quick urlfavorites_2.0`는 특정 커밋 상태를 서버에 반영해야 한다.
    - 서버에서 애플리케이션 소스 파일을 직접 수정하지 않는다.
