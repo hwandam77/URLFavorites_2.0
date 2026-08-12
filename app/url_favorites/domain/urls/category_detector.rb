@@ -2,140 +2,165 @@ module UrlFavorites
   module Domain
     module Urls
       class CategoryDetector
-        # URL/도메인 기반 카테고리 분류
-        # 대분류: content_type (webpage/youtube/github/twitter)
-        # 소분류: category (AI에이전트/AI코딩/튜토리얼/AI모델/개발도구/뉴스/커뮤니티/기타)
+        # 플랫 12개 카테고리 체계
+        CATEGORIES = %w[
+          AI에이전트 AI코딩 AI모델 프론트엔드 백엔드 DevOps
+          데이터베이스 보안 디자인 뉴스 튜토리얼 기타
+        ].freeze
 
         CATEGORY_PATTERNS = {
           "AI에이전트" => [
-            # 도메인 우선 매칭
             /langchain\.ai|llamaindex\.ai|crewai\.com|autogen\.ai/i,
-            /claude\.ai|openai\.com\.agent|gemini\.google\.com|vertex\.ai/i,
             /mcp\.run|mcp\.iit|modelcontextprotocol\.github/i,
-            /pinecone\.io|weaviate\.io|chroma\.dev|qdrant\.tech|milvus\.ai/i,
-            /crewai\.co|multiagent\.ai|agentica\.ai/i,
-            # 경로 매칭
-            /langchain|llamaindex|crewai|autogen|multiagent|agent.?framework/i,
-            /claude.?api|openai.?agent|gemini.?agent|mcp.?server/i,
-            /agent.?loop|reasoning.?engine|autonomous.?agent/i,
-            /pinecone|weaviate|chroma.?db|vector.?db|rag.?retrieval/i
+            /multiagent|agent.?framework|agent.?loop|agent.?orchestrat/i,
+            /crewai|autogen|autonomous.?agent|reasoning.?engine/i,
+            /pinecone|weaviate|chroma.?db|vector.?db|rag.?retrieval/i,
           ],
           "AI코딩" => [
-            # 도메인
-            /cursor\.sh|windsurf\.ai|claude\.dev|nextjs\.ai|v0\.dev/i,
-            /bolt\.diagrams\.net|replit\.com|lovable\.dev|devin\.ai/i,
-            /github\.com\/.*copilot/i,
-            # 경로
-            /github\.copilot|cursor|windsurf|claude.?dev|nextjs.?ai/i,
-            /v0\.dev|bolt\.new|replit|lovable|devin| SWE.?bench/i,
+            /cursor\.sh|windsurf\.ai|claude\.dev|v0\.dev/i,
+            /bolt\.new|replit\.com|lovable\.dev|devin\.ai/i,
+            /github\.copilot|cursor|windsurf|claude.?code/i,
+            /codex|copilot|coding.?agent|vibe.?coding/i,
             /code.?generation|ai.?code.?review|automated.?refactor/i,
-            /codex|claude.?code|copilot|coding.?agent|vibe.?coding/i
-          ],
-          "튜토리얼" => [
-            # 도메인
-            /tutorial\.example|scrimba\.com|egghead\.io|coursera\.org/i,
-            /udemy\.com|udacity\.com|khanacademy\.org|freecodecamp\.org/i,
-            /docs\.readme\.io|guides\.github|iHerb\.com/i,
-            /blog\.post|cheatsheet|quickstart/i,
-            # 경로
-            /tutorial|course|guide|how.?to|learn|getting.?started/i,
-            /docs\.readme|blog\.post|cheatsheet|quickstart/i,
-            /example|demo|sandbox|playground/i
           ],
           "AI모델" => [
-            # 도메인
-            /huggingface\.co|ollama\.ai|vllm\.github|anthropic\.com/i,
-            /openai\.com|gptstore\.openai|chatgpt\.com|cohere\.ai/i,
+            /huggingface\.co|ollama\.ai|vllm\.github/i,
+            /anthropic\.com|openai\.com|chatgpt\.com|cohere\.ai/i,
             /mistral\.ai|qwen\.tongyi|deepseek\.ai|groq\.com/i,
-            /lepton\.ai|replicate\.com|sAMBAmultiLLM/i,
-            # 경로
-            /hugging.?face|transformers|llama|gemini|claude|gpt|ollama/i,
+            /lepton\.ai|replicate\.com/i,
+            /transformers|llama|gemini|claude|gpt|ollama/i,
             /model.?hub|pretrained|fine.?tuning|rlhf|llm.?benchmark/i,
-            /mistral|qwen|deepseek|command[_-]?r|Yi.?34B|Starling/i
+            /mistral|qwen|deepseek|command[_-]?r|yi.?34b/i,
           ],
-          "개발도구" => [
-            # 도메인
-            /github\.com|gitlab\.com|bitbucket\.org/i,
-            /docker\.com|traefik\.io|kubernetes\.io|terraform\.io/i,
-            /jetbrains\.com|neovim\.io|vim\.org|reddit\.com\/r\/vim/i,
-            /postman\.com|insomnia\.rest|swagger\.io|openapi-generator/i,
-            %r{argoproj|argocd|github/actions|github/pages}i,
-            # 경로
-            /github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]*\.git|gitlab|bitbucket/i,
-            /docker|kubernetes|terraform|ansible|ci\/cd|pipeline/i,
-            /vscode|jetbrains|vim|neovim|terminal|cli/i,
-            /postman|insomnia|swagger|openapi|api.?design/i
+          "프론트엔드" => [
+            /react|vue\.js|svelte|next\.js|nuxt|remix/i,
+            /tailwind|bootstrap|material.?ui|chakra.?ui/i,
+            /figma\.com|dribbble\.com|codepen\.io/i,
+            /css|html|javascript|typescript|webpack|vite/i,
+            /ui.?component|design.?system|front.?end/i,
           ],
-          "뉴스/커뮤니티" => [
-            # 도메인
-            /medium\.com|dev\.to|hashnode\.com|newsletter\.producthunt/i,
+          "백엔드" => [
+            /rails|django|flask|spring|express|fastapi/i,
+            /graphql|rest.?api|grpc|microservice/i,
+            /redis|memcached|rabbitmq|kafka/i,
+            /authentication|oauth|jwt|api.?gateway/i,
+          ],
+          "DevOps" => [
+            /docker\.com|kubernetes\.io|terraform\.io|ansible\.com/i,
+            /github\.com\/.*actions|circleci|jenkins|gitlab-ci/i,
+            /docker|kubernetes|k8s|helm|docker.?compose/i,
+            /ci\/cd|pipeline|deploy|monitoring|observabilit/i,
+            /prometheus|grafana|datadog|sentry/i,
+          ],
+          "데이터베이스" => [
+            /postgresql|mysql|mariadb|sqlite/i,
+            /mongodb|couchdb|neo4j|arangodb/i,
+            /elastic.?search|opensearch|meilisearch/i,
+            /database|sql|nosql|data.?pipeline|etl/i,
+          ],
+          "보안" => [
+            /owasp|CVE|vulnerabilit|exploit|pentest/i,
+            /encryption|cipher|tls|ssl|certificate/i,
+            /firewall|ids|ips|siem|security.?audit/i,
+            /auth.?security|2fa|mfa|zero.?trust/i,
+          ],
+          "디자인" => [
+            /figma\.com|sketch\.com|canva\.com|dribbble\.com/i,
+            /icon|font|typograph|color.?palette|illustration/i,
+            /ui.?design|ux.?design|motion.?design|graphic/i,
+          ],
+          "뉴스" => [
+            /medium\.com|dev\.to|hashnode\.com|producthunt\.com/i,
             /reddit\.com|hackernews\.ycombinator|lobste\.rs/i,
-            /twitter\.com|x\.com|linkedin\.com|discord\.gg/i,
-            /arxiv\.org|papers\.withcode|research\.google|deepmind\.com/i,
-            /feedly\.com|inoreader\.com|bloglovin|rss\./i,
-            # 경로
-            /newsletter|blog|rss|medium|dev\.to|hashnode/i,
-            /reddit|hacker.?news|lobsters|product.?hunt/i,
-            /twitter\.com|x\.com|linkedin|discord|slack\.com/i,
-            /arxiv\.org|papers\.withcode|research\.google/i
-          ]
+            /twitter\.com|x\.com|linkedin\.com/i,
+            /newsletter|blog|rss|tech.?crunch|venturebeat/i,
+          ],
+          "튜토리얼" => [
+            /scrimba\.com|egghead\.io|coursera\.org|udemy\.com/i,
+            /tutorial|course|guide|how.?to|learn|getting.?started/i,
+            /cheatsheet|quickstart|example|demo|sandbox|playground/i,
+          ],
         }.freeze
 
-        # text: 분석 완료 후 제목·태그 등 내용 신호. URL에 키워드가 없는
-        # 블로그 글(tistory 등)이 전부 "기타"로 떨어지는 것을 보완한다.
+        TAG_CATEGORIES = {
+          "AI에이전트" => %w[mcp agent multiagent crewai langchain llamaindex orchestrator rag vector],
+          "AI코딩" => %w[cursor windsurf copilot codex claude-code coding-agent vibe-coding],
+          "AI모델" => %w[llm qwen llama kimi mistral ollama vllm embedding fine-tuning benchmark model],
+          "프론트엔드" => %w[react vue svelte nextjs tailwind css ui component design-system],
+          "백엔드" => %w[rails django api graphql microservice redis cache],
+          "DevOps" => %w[docker kubernetes terraform ci-cd deploy monitoring prometheus grafana],
+          "데이터베이스" => %w[postgresql mysql sqlite mongodb elasticsearch database sql nosql],
+          "보안" => %w[security owasp encryption authentication vulnerability exploit],
+          "디자인" => %w[ui-design ux icon font illustration motion],
+          "뉴스" => %w[news blog newsletter community hackathon],
+          "튜토리얼" => %w[tutorial guide howto course cheatsheet],
+        }.freeze
+
         def self.call(url, content_type = nil, text: nil)
           return "기타" unless url.is_a?(String) && url.present?
-          return "뉴스/커뮤니티" if content_type == "twitter"
 
-          # YouTube는 튜토리얼 카테고리 우선
-          if content_type == "youtube" || url.match?(/\Ahttps?:\/\/(www\.)?youtube\.com\/(watch|shorts|embed)/i)
-            return detect_youtube_category(url)
+          # YouTube는 튜토리얼 우선
+          if content_type == "youtube" || url.match?(/\Ahttps?:\/\/(www\.)?youtube\.com\//i)
+            return detect_youtube_category(url, text: text)
           end
+
+          # Twitter/X는 뉴스
+          return "뉴스" if content_type == "twitter"
 
           # GitHub
           if content_type == "github" || url.match?(/\Ahttps?:\/\/(www\.)?github\.com\//i)
-            return detect_github_category(url)
+            return detect_github_category(url, text: text)
           end
 
-          # 일반 웹페이지
-          detect_web_category("#{url} #{text}")
+          # 일반 웹페이지 — URL + 텍스트 모두 검색
+          combined = "#{url} #{text}".to_s
+          detect_from_text(combined)
         end
 
-        private_class_method def self.detect_youtube_category(url)
-          # YouTube 채널/크리에이터 기반 분류
-          channel_patterns = {
-            "AI모델" => [ /sentdex|statquest|coreyms/i, /two?minute.?papers/i ],
-            "튜토리얼" => [ /traversymedia|freeswitutorials|netninjas/i ],
-            "뉴스/커뮤니티" => [ /linus.?tech.?tips|mrwho|Benjamin.?Keys/i ]
-          }
-
-          channel_patterns.each do |category, patterns|
-            patterns.each do |pattern|
-              return category if url.match?(pattern)
-            end
-          end
-
+        private_class_method def self.detect_youtube_category(url, text:)
+          # 텍스트 기반 분류 시도 (태그/요약)
+          return "AI에이전트" if text&.match?(/agent|multiagent|mcp|orchestrat/i)
+          return "AI코딩" if text&.match?(/cursor|windsurf|copilot|codex|claude.?code/i)
+          return "AI모델" if text&.match?(/llm|qwen|llama|kimi|model|hugging.?face/i)
+          return "DevOps" if text&.match?(/docker|kubernetes|terraform|deploy|ci.?cd/i)
+          return "프론트엔드" if text&.match?(/react|vue|svelte|tailwind|css|ui/i)
+          return "데이터베이스" if text&.match?(/postgres|mysql|sqlite|redis|database/i)
+          return "보안" if text&.match?(/security|owasp|vulnerabilit|exploit/i)
+          return "디자인" if text&.match?(/figma|ui.?design|ux|illustration/i)
+          return "뉴스" if text&.match?(/news|trending| roundup|review|comparison/i)
           "튜토리얼" # YouTube 기본값
         end
 
-        private_class_method def self.detect_github_category(url)
+        private_class_method def self.detect_github_category(url, text:)
           path = url.downcase
 
-          # AI/ML 프레임워크
-          return "AI에이전트" if path.match?(/langchain|llamaindex|crewai|autogen/i)
-          return "AI모델" if path.match?(/transformers|hugging.?face|ollama|vllm/i)
-          return "개발도구" if path.match?(/vscode|neovim|neovim|docker|kubernetes/i)
+          # AI/ML
+          return "AI에이전트" if path.match?(/langchain|llamaindex|crewai|autogen|multiagent|mcp/i)
+          return "AI코딩" if path.match?(/cursor|copilot|codex|claude.?code|coding.?agent|vibe.?coding/i)
+          return "AI모델" if path.match?(/transformers|ollama|vllm|hugging.?face|llama|qwen|kimi/i)
+          return "프론트엔드" if path.match?(/react|vue|svelte|tailwind|ui.?kit|design.?system/i)
+          return "DevOps" if path.match?(/docker|kubernetes|terraform|ansible|ci\/cd|argocd/i)
+          return "데이터베이스" if path.match?(/postgres|mysql|sqlite|redis|elastic|meili/i)
+          return "보안" if path.match?(/security|auth|encrypt|firewall|pentest/i)
+
+          # 텍스트 기반 추가 분류
+          return "AI에이전트" if text&.match?(/agent|multiagent|orchestrat/i)
+          return "AI코딩" if text&.match?(/coding.?agent|code.?generation|ai.?assistant/i)
+          return "AI모델" if text&.match?(/llm|model.?weight|inference|embedding/i)
 
           "기타"
         end
 
-        private_class_method def self.detect_web_category(url)
-          lowered_url = url.downcase
-
+        private_class_method def self.detect_from_text(combined)
           CATEGORY_PATTERNS.each do |category, patterns|
             patterns.each do |pattern|
-              return category if lowered_url.match?(pattern)
+              return category if combined.match?(pattern)
             end
+          end
+
+          # 태그 기반 추가 분류
+          TAG_CATEGORIES.each do |category, tags|
+            return category if tags.any? { |tag| combined.match?(/\b#{Regexp.escape(tag)}/i) }
           end
 
           "기타"

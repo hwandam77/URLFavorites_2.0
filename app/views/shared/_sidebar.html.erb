@@ -68,6 +68,38 @@
     </div>
   <% end %>
 
+  <%# 카테고리 필터 %>
+  <% if @category_counts && @category_counts.any? %>
+    <div class="px-3 pt-6 pb-1">
+      <p style="font-size:var(--text-xs);font-weight:700;letter-spacing:0;color:var(--color-text-tertiary);text-transform:uppercase;padding:0 12px 8px;">분야</p>
+    </div>
+    <div class="px-3 space-y-0.5 pb-3">
+      <% current_cat = params[:category] %>
+      <% category_icons = {
+        "AI에이전트" => "🤖", "AI코딩" => "💻", "AI모델" => "🧠",
+        "프론트엔드" => "🎨", "백엔드" => "⚙️", "DevOps" => "🚀",
+        "데이터베이스" => "🗄️", "보안" => "🔒", "디자인" => "✏️",
+        "뉴스" => "📰", "튜토리얼" => "📚", "기타" => "📦"
+      } %>
+      <% @category_counts.each do |cat, count| %>
+        <% is_active = current_cat == cat %>
+        <% link_style = is_active ? "background:var(--color-surface);color:var(--color-accent-text);font-weight:650;" : "color:var(--color-text-secondary);" %>
+        <%= link_to favorites_path(category: cat, content_type: params[:content_type]),
+              class: "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all justify-between",
+              style: link_style,
+              onmouseover: "this.style.background='#{is_active ? "var(--color-surface)" : "var(--color-accent-muted)'}'",
+              onmouseout: "this.style.background='#{is_active ? "var(--color-surface)" : "transparent"}'" do
+        %>
+          <span class="flex items-center gap-1.5">
+            <span class="text-xs"><%= category_icons[cat] || "📌" %></span>
+            <span class="truncate"><%= cat %></span>
+          </span>
+          <span style="font-size:11px;color:var(--color-text-tertiary);font-weight:600;"><%= count %></span>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
   <%# 스페이서 %>
   <div class="flex-1"></div>
 

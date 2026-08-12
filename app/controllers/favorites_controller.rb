@@ -12,6 +12,13 @@ class FavoritesController < ApplicationController
       category: params[:category]
     )
     @view_mode = params[:view_mode] == "list" ? "list" : "card"
+    @category_counts = category_counts_for_sidebar
+  end
+
+  def category_counts_for_sidebar
+    counts = Favorite.where(status: "done").group(:category).count
+    # 0개 카테고리 제외, 알파벳 순
+    counts.select { |_k, v| v > 0 }.sort.to_h
   end
 
   def show
