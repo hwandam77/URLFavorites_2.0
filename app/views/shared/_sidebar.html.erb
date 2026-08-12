@@ -83,12 +83,13 @@
       } %>
       <% @category_counts.each do |cat, count| %>
         <% is_active = current_cat == cat %>
+        <% hover_bg = is_active ? "var(--color-surface)" : "var(--color-accent-muted)" %>
         <% link_style = is_active ? "background:var(--color-surface);color:var(--color-accent-text);font-weight:650;" : "color:var(--color-text-secondary);" %>
         <%= link_to favorites_path(category: cat, content_type: params[:content_type]),
               class: "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all justify-between",
               style: link_style,
-              onmouseover: "this.style.background='#{is_active ? "var(--color-surface)" : "var(--color-accent-muted)'}'",
-              onmouseout: "this.style.background='#{is_active ? "var(--color-surface)" : "transparent"}'" do
+              onmouseover: "this.style.background='#{hover_bg}'",
+              onmouseout: "this.style.background='transparent'" do
         %>
           <span class="flex items-center gap-1.5">
             <span class="text-xs"><%= category_icons[cat] || "📌" %></span>
