@@ -1,6 +1,6 @@
 require "test_helper"
 
-class UrlFavorites::Domain::Tags::LearningTest < ActiveSupport::TestCase
+class UrlFavorites::UseCases::Tags::LearningTest < ActiveSupport::TestCase
   def setup
     @favorite = Favorite.create!(url: "https://example.com/article", content_type: "webpage", status: "done")
     @favorite.create_analysis!(tags: [ "tech", "news" ], summary: "Test")
@@ -16,7 +16,7 @@ class UrlFavorites::Domain::Tags::LearningTest < ActiveSupport::TestCase
       corrected_tags: [ "technology", "programming" ]
     )
 
-    suggestions = UrlFavorites::Domain::Tags::Learning.suggest_tags(favorite_id: @favorite.id)
+    suggestions = UrlFavorites::UseCases::Tags::Learning.suggest_tags(favorite_id: @favorite.id)
 
     assert_includes suggestions, "technology"
     assert_includes suggestions, "programming"
@@ -24,7 +24,7 @@ class UrlFavorites::Domain::Tags::LearningTest < ActiveSupport::TestCase
   end
 
   test "suggest_tags returns empty for no corrections" do
-    suggestions = UrlFavorites::Domain::Tags::Learning.suggest_tags(favorite_id: @favorite.id)
+    suggestions = UrlFavorites::UseCases::Tags::Learning.suggest_tags(favorite_id: @favorite.id)
     assert_equal [], suggestions
   end
 
@@ -38,7 +38,7 @@ class UrlFavorites::Domain::Tags::LearningTest < ActiveSupport::TestCase
       corrected_tags: [ "tech", "programming" ]
     )
 
-    suggestions = UrlFavorites::Domain::Tags::Learning.suggest_tags(favorite_id: @favorite.id)
+    suggestions = UrlFavorites::UseCases::Tags::Learning.suggest_tags(favorite_id: @favorite.id)
     refute_includes suggestions, "tech"
     assert_includes suggestions, "programming"
   end
@@ -50,7 +50,7 @@ class UrlFavorites::Domain::Tags::LearningTest < ActiveSupport::TestCase
       corrected_tags: [ "technology", "programming" ]
     )
 
-    stats = UrlFavorites::Domain::Tags::Learning.call
+    stats = UrlFavorites::UseCases::Tags::Learning.call
 
     assert_equal 1, stats[:total_corrections]
     assert_equal 1, stats[:unique_favorites]

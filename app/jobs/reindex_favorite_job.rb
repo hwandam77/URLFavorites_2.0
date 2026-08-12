@@ -8,11 +8,9 @@ class ReindexFavoriteJob < ApplicationJob
 
   def perform(favorite_id = nil)
     if favorite_id.present?
-      favorite = Favorite.find_by(id: favorite_id)
-      return unless favorite
-      UrlFavorites::Integrations::Search::Indexer.index(favorite)
+      UrlFavorites::UseCases::Search::ReindexFavorite.call(favorite_id: favorite_id)
     else
-      UrlFavorites::Integrations::Search::Indexer.reindex_all
+      UrlFavorites::UseCases::Search::ReindexFavorite.call_all
     end
   end
 end

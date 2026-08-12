@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 module UrlFavorites
-  module Domain
+  module UseCases
     module Tags
       class Learning
         def self.call
