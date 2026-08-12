@@ -94,9 +94,14 @@ module UrlFavorites
             "topics" => Array(data["topics"]),
             "license" => data["license"]&.dig("spdx_id"),
             "pushed_at" => data["pushed_at"],
+            "created_at" => data["created_at"],
             "archived" => data["archived"],
             "fork" => data["fork"],
             "open_issues" => data["open_issues_count"],
+            "size" => data["size"],
+            "watchers" => data["watchers_count"],
+            "homepage" => data["homepage"],
+            "owner" => data["owner"]&.dig("login"),
             "fetched_at" => Time.current.iso8601
           }
         end

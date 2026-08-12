@@ -179,6 +179,8 @@
   <% repo = nil unless repo.is_a?(Hash) && repo["full_name"].present? %>
   <% if repo %>
     <%= render "favorites/repo_card", repo: repo %>
+    <% health = UrlFavorites::Domain::Github::HealthScore.calculate(repo) %>
+    <%= render "favorites/repo_health", health: health, repo: repo %>
   <% end %>
 
   <p class="lead"><%= @analysis.summary %></p>

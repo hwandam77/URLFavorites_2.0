@@ -1,0 +1,105 @@
+<%# GitHub 프로젝트 건강도 리포트 %>
+<% health = local_assigns[:health] %>
+<% repo = local_assigns[:repo] %>
+<% return unless health && health.is_a?(Struct) %>
+
+<style>
+  .health { margin: 24px 0 0; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); overflow: hidden; }
+  .health-header { display: flex; align-items: center; gap: 20px; padding: 20px 24px; flex-wrap: wrap; }
+  .health-gauge { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
+  .health-gauge svg { width: 72px; height: 72px; transform: rotate(-90deg); }
+  .health-gauge .track { fill: none; stroke: var(--color-border); stroke-width: 6; }
+  .health-gauge .fill { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+  .health-grade { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .health-title-area { flex: 1; min-width: 180px; }
+  .health-title { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: var(--color-text); }
+  .health-label { margin: 0; font-size: 13px; color: var(--color-text-tertiary); line-height: 1.5; }
+  .health-score-num { font-size: 13px; font-weight: 700; color: var(--color-text-secondary); letter-spacing: 0.3px; }
+
+  .health-bars { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px 24px; padding: 0 24px 20px; }
+  .health-bar-item { display: grid; gap: 5px; }
+  .health-bar-label { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--color-text-tertiary); }
+  .health-bar-label .bv { color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+  .health-bar-track { height: 5px; background: var(--color-border); border-radius: 99px; overflow: hidden; }
+  .health-bar-fill { height: 100%; border-radius: 99px; width: <%= health.score %>%; }
+
+  .health-detail { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px 20px; padding: 16px 24px; border-top: 1px solid var(--color-border); font-size: 12px; background: var(--color-surface-raised); }
+  .health-detail dt { color: var(--color-text-tertiary); letter-spacing: 0.4px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+  .health-detail dd { margin: 0; color: var(--color-text-secondary); font-weight: 600; }
+
+  /* Grade colors */
+  .grade-S .fill { stroke: #16a34a; } .grade-S .health-grade { color: #16a34a; }
+  .grade-A .fill { stroke: #2563eb; } .grade-A .health-grade { color: #2563eb; }
+  .grade-B .fill { stroke: #d97706; } .grade-B .health-grade { color: #d97706; }
+  .grade-C .fill { stroke: #ea580c; } .grade-C .health-grade { color: #ea580c; }
+  .grade-D .fill { stroke: #dc2626; } .grade-D .health-grade { color: #dc2626; }
+  .grade-S .health-bar-fill { background: #16a34a; }
+  .grade-A .health-bar-fill { background: #2563eb; }
+  .grade-B .health-bar-fill { background: #d97706; }
+  .grade-C .health-bar-fill { background: #ea580c; }
+  .grade-D .health-bar-fill { background: #dc2626; }
+
+  @media (max-width: 560px) {
+    .health-header { padding: 16px 18px; gap: 14px; }
+    .health-bars { padding: 0 18px 16px; gap: 10px; grid-template-columns: 1fr 1fr; }
+    .health-detail { padding: 12px 18px; grid-template-columns: 1fr 1fr; }
+  }
+</style>
+
+<section class="health grade-<%= health.grade %>">
+  <div class="health-header">
+    <div class="health-gauge">
+      <svg viewBox="0 0 72 72" aria-hidden="true">
+        <circle class="track" cx="36" cy="36" r="30"/>
+        <circle class="fill" cx="36" cy="36" r="30"
+          stroke-dasharray="<%= 2 * Math::PI * 30 %>"
+          stroke-dashoffset="<%= format('%.1f', 2 * Math::PI * 30 * (1 - health.score / 100.0)) %>"/>
+      </svg>
+      <div class="health-grade"><%= health.grade %></div>
+    </div>
+    <div class="health-title-area">
+      <h3 class="health-title">프로젝트 건강도</h3>
+      <p class="health-label"><%= health.label %></p>
+    </div>
+    <div class="health-score-num mono"><%= health.score %><span style="color:var(--color-text-tertiary);font-weight:400;"> / 100</span></div>
+  </div>
+
+  <div class="health-bars">
+    <% bn = { activity: "활동성", popularity: "인기", maturity: "성숙도", community: "커뮤니티", size: "크기" } %>
+    <% bn.each do |k, label| %>
+      <div class="health-bar-item">
+        <div class="health-bar-label">
+          <span><%= label %></span>
+          <span class="bv mono"><%= health.breakdown[k] %>/<%= [30,25,15,15,15][bn.keys.index(k)] %></span>
+        </div>
+        <div class="health-bar-track">
+          <% max = [30,25,15,15,15][bn.keys.index(k)] %>
+          <div class="health-bar-fill" style="width:<%= health.breakdown[k].to_f / max * 100 %>%;"></div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <% if repo && (repo["created_at"].present? || repo["homepage"].present? || repo["owner"].present?) %>
+    <dl class="health-detail">
+      <% if repo["owner"].present? %>
+        <div><dt>제작자</dt><dd class="mono">@<%= repo["owner"] %></dd></div>
+      <% end %>
+      <% if repo["created_at"].present? %>
+        <% created = Time.parse(repo["created_at"]).strftime("%Y.%m") rescue nil %>
+        <% if created %>
+          <div><dt>시작</dt><dd class="mono"><%= created %></dd></div>
+        <% end %>
+      <% end %>
+      <% if repo["size"] && repo["size"].to_i > 0 %>
+        <div><dt>크기</dt><dd class="mono"><%= number_with_delimiter(repo["size"]) %> KB</dd></div>
+      <% end %>
+      <% if repo["watchers"] && repo["watchers"].to_i > 0 %>
+        <div><dt>워처</dt><dd class="mono"><%= number_with_delimiter(repo["watchers"]) %></dd></div>
+      <% end %>
+      <% if repo["homepage"].present? %>
+        <div><dt>홈페이지</dt><dd><a href="<%= repo["homepage"] %>" target="_blank" rel="noopener noreferrer" style="color:var(--color-accent-text);text-decoration:underline;"><%= URI.parse(repo["homepage"]).host&.sub(/^www\./, '') rescue repo["homepage"].truncate(24) %></a></dd></div>
+      <% end %>
+    </dl>
+  <% end %>
+</section>
