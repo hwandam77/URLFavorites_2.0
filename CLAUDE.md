@@ -103,14 +103,16 @@ Environment=SOLID_QUEUE_IN_PUMA=1
 Environment=EMBEDDING_URL=http://127.0.0.1:8900
 # ⚠️ EMBEDDING_URL은 bastion 로컬 embedding-service(:8900). LLM 서버(8282)는 /v1/embeddings 미지원(501)
 #    — 2026-07-24 이전 오설정이 큐 미소비 버그에 가려져 있었음
-# LLM_BACKENDS: heavy(40B, 느림 ~13tok/s) + fast(35B-A3B, 빠름 ~62tok/s), 둘 다 timeout 240
+# LLM_BACKENDS: Nexus vllm qwen3.6-27B (10.10.0.3:8000), single backend, timeout 240
 # ⚠️ systemd Environment= 는 큰따옴표를 quoting 으로 해석해 벗겨낸다 → JSON 은 반드시 \" 로 이스케이프
-Environment=LLM_BACKENDS=[{\"url\":\"http://10.10.0.5:8282\",\"model\":\"...heavy.gguf\",\"role\":\"heavy\",\"timeout\":240},{\"url\":\"http://10.10.0.4:8282\",\"model\":\"...fast.gguf\",\"role\":\"fast\",\"timeout\":240}]
+Environment=LLM_BACKENDS=[{\"url\":\"http://10.10.0.3:8000\",\"model\":\"qwen3.6-27B\",\"role\":\"default\",\"timeout\":240}]
 ```
+
+**LLM 백엔드 (2026-08-12 변경):** Nexus 서버 `10.10.0.3:8000` — vllm 기반 qwen3.6-27B, single backend. `max-num-seqs 4`로 동시성 처리. heavy/fast 분리 불필요(같은 GPU/프로세스).
 
 **LLM_BACKENDS 이스케이프 함정 (2026-07-13 장애 원인):** `\"` 없이 평범한 `"` 로 넣으면 systemd 가 따옴표를 제거해 무효 JSON 이 되고, `resolve_backends` 가 `ParseError` 를 던져 **모든 분석이 실패**한다. 편집 후 `/proc/$(systemctl show ... -p MainPID --value)/environ` 로 실제 프로세스가 받는 값이 유효 JSON 인지 검증할 것. (드롭인 편집이 restart 전까지 dormant 라, 다음 restart 때 터진다.)
 
-**timeout 240 인 이유:** youtube 등 긴 콘텐츠 분석은 heavy 백엔드에서 정상 생성만으로 ~110–150초가 걸려 기존 120초로는 경계에서 간헐 `Net::ReadTimeout` 실패가 났다.
+**timeout 240:** vllm qwen3.6-27B에서는 256K 컨텍스트 prefill + 512 토큰 생성이 ~10초 내외로 처리되지만, 긴 유튜브 트랜스크립트 등을 여유 있게 처리하기 위해 240초 유지.
 
 변경 시: `sudo systemctl daemon-reload && sudo systemctl restart rails-puma@urlfavorites_2.0`
 
@@ -169,7 +171,7 @@ journalctl -u rails-puma@urlfavorites_2.0 -n 30 --no-pager
 | DB 파일 누락 | 운영 DB 삭제/동기화 사고 가능성 | 배포 중단 후 `storage/production.sqlite3` 백업/복구 확인 |
 | 500 ERB syntax error | 뷰 파일 `link_to` 옵션 쉼표 누락 | 해당 파일 수정 후 quick deploy |
 | youtube 분석만 `failed` (`yt-dlp failed` / `ExtractionError`) | **`yt-dlp` 바이너리 미설치 또는 구버전** (vps→bastion 이관 시 누락, 2026-07-24 장애). `extractor.rb`가 `Open3`로 yt-dlp를 외부 명령 호출 | `/usr/local/bin/yt-dlp --version` 확인 → 미설치 시 standalone 바이너리 설치 (systemd PATH에 `/usr/local/bin` 포함돼 Puma 재기동 불필요, ffmpeg 불필요). 재발 방지: 이관 체크리스트에 `Open3`/`system` 외부 바이너리 의존성 점검 추가 |
-| youtube 분석만 `failed` (`Net::ReadTimeout`) | 긴 트랜스크립트 LLM 생성이 timeout 근접/초과 (heavy 40B 느림) | `LLM_BACKENDS` timeout 상향(240) / heavy·fast 라우팅 점검 |
+| youtube 분석만 `failed` (`Net::ReadTimeout`) | 긴 트랜스크립트 LLM 생성이 timeout 근접/초과 | `LLM_BACKENDS` timeout 확인 (현재 240초) |
 | reddit 분석만 `failed` (`ExtractionError`) | **`rdt` CLI 미설치 또는 쿠키 만료(기본 7일)** — Reddit은 익명 API 전면 차단이라 로그인 쿠키 필수. yt-dlp와 같은 `Open3` 외부 바이너리 의존 클래스 | `rdt status --json` 으로 `authenticated` 확인 → 만료 시 Mac에서 `rdt login` 후 `~/.config/rdt-cli/credential.json` 재배치. 상세: `docs/runbooks/reddit-extraction.md` |
 | reddit만 403/`authenticated: false` (쿠키·IP 정상인데) | **rdt가 Python 3.14로 구동** — 쿠키를 요청에 싣지 못함 (2026-07-24 실측: 같은 쿠키가 3.12에선 성공, 3.14에선 403) | `uv tool install --python 3.12 'git+…rdt-cli…@고정커밋'` 으로 3.12 고정 재설치 (bastion은 apt에 3.12 없어 uv 사용) + `/usr/local/bin/rdt` 심링크 |
 | 모든 분석 `failed` (`ParseError: Invalid LLM_BACKENDS JSON`) | env.conf 의 `"` 미이스케이프 → systemd 가 따옴표 제거 | `\"` 로 이스케이프 후 `/proc/PID/environ` 로 유효 JSON 검증 |
