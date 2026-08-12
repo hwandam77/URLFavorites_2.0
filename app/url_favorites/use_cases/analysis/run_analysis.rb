@@ -60,6 +60,9 @@ module UrlFavorites
           # 분석 결과(제목·요약·태그)를 검색 인덱스에 반영 — 이것이 없으면 FTS 검색이 비어 있음
           ReindexFavoriteJob.perform_later(favorite.id)
 
+          # detail_content 내 GitHub 링크 자동 추가+분석
+          enqueue_github_links_from_analysis(favorite.id, analysis_result[:detail_content].to_s)
+
           # heavy 폴백 성공 시 이미 정밀본 → 후속 발주 생략
           if tier == "fast"
             if normalized_style == "onboarding_manual"
@@ -86,6 +89,35 @@ module UrlFavorites
             raw_content.to_s.length >= UrlFavorites::Domain::Analysis::BackendRouter::LONG_CONTENT_THRESHOLD
         end
         private_class_method :refine_candidate?
+
+        def self.enqueue_github_links_from_analysis(favorite_id, detail_content)
+          github_urls = detail_content.scan(%r{https?://github\.com/[^/\s"']+/[^/\s"']+(?::[^\s"']*)?/?}).map { |u| u.chomp('/') }.uniq
+          return if github_urls.empty?
+
+          # 부모 URL 제외 (이 분석 페이지 자체)
+          parent_url = favorite_id ? Favorite.find_by(id: favorite_id)&.url : nil
+          github_urls.reject! { |u| u == parent_url.chomp('/') }
+          return if github_urls.empty?
+
+          # 이미 존재하는 URL 제외
+          existing = Favorite.where("url LIKE ?", "%github.com/").pluck(:url).map { |u| u.chomp('/') }
+          github_urls -= existing
+
+          # 없는 링크만 자동 추가+분석
+          github_urls.first(20).each do |url|
+            fav, created = Favorite.find_or_create_by(url: url) do |f|
+              f.content_type = "github"
+              f.status = "pending"
+            end
+            if created && fav.status == "pending"
+              case fav.content_type
+              when "github"
+                AnalyzeWebpageAnalysisJob.set(wait: 5.seconds).perform_later(fav.id, "execution_brief")
+              end
+            end
+          end
+        end
+        private_class_method :enqueue_github_links_from_analysis
 
         def self.extract_content(favorite)
           if favorite.content_type == "youtube"
