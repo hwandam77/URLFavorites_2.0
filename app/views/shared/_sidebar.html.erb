@@ -86,7 +86,7 @@
         <% is_active = current_cat == cat %>
         <% hover_bg = is_active ? "var(--color-surface)" : "var(--color-accent-muted)" %>
         <% link_style = is_active ? "background:var(--color-surface);color:var(--color-accent-text);font-weight:650;" : "color:var(--color-text-secondary);" %>
-        <%= link_to favorites_path(category: cat, content_type: params[:content_type], q: params[:q], status: params[:status], sort: params[:sort], view_mode: @view_mode),
+        <%= link_to favorites_path(category: cat, sort: params[:sort], view_mode: @view_mode),
               class: "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all justify-between",
               style: link_style,
               data: { turbo_frame: "favorites", turbo_action: "replace" },
