@@ -103,16 +103,16 @@ Environment=SOLID_QUEUE_IN_PUMA=1
 Environment=EMBEDDING_URL=http://127.0.0.1:8900
 # ⚠️ EMBEDDING_URL은 bastion 로컬 embedding-service(:8900). LLM 서버(8282)는 /v1/embeddings 미지원(501)
 #    — 2026-07-24 이전 오설정이 큐 미소비 버그에 가려져 있었음
-# LLM_BACKENDS: Nexus vllm qwen3.6-27B (10.10.0.3:8000), single backend, timeout 240
+# LLM_BACKENDS: Nexus vllm Qwen3.6-27B (10.10.0.3:8000), single backend, timeout 240
 # ⚠️ systemd Environment= 는 큰따옴표를 quoting 으로 해석해 벗겨낸다 → JSON 은 반드시 \" 로 이스케이프
-Environment=LLM_BACKENDS=[{\"url\":\"http://10.10.0.3:8000\",\"model\":\"qwen3.6-27B\",\"role\":\"default\",\"timeout\":240}]
+Environment=LLM_BACKENDS=[{\"url\":\"http://10.10.0.3:8000\",\"model\":\"Qwen3.6-27B\",\"role\":\"default\",\"timeout\":240}]
 ```
 
-**LLM 백엔드 (2026-08-12 변경):** Nexus 서버 `10.10.0.3:8000` — vllm 기반 qwen3.6-27B, single backend. `max-num-seqs 4`로 동시성 처리. heavy/fast 분리 불필요(같은 GPU/프로세스).
+**LLM 백엔드 (2026-08-12 변경):** Nexus 서버 `10.10.0.3:8000` — vllm 기반 `Qwen3.6-27B`(대소문자 구분), single backend. `max-num-seqs 4`로 동시성 처리. heavy/fast 분리 불필요(같은 GPU/프로세스).
 
 **LLM_BACKENDS 이스케이프 함정 (2026-07-13 장애 원인):** `\"` 없이 평범한 `"` 로 넣으면 systemd 가 따옴표를 제거해 무효 JSON 이 되고, `resolve_backends` 가 `ParseError` 를 던져 **모든 분석이 실패**한다. 편집 후 `/proc/$(systemctl show ... -p MainPID --value)/environ` 로 실제 프로세스가 받는 값이 유효 JSON 인지 검증할 것. (드롭인 편집이 restart 전까지 dormant 라, 다음 restart 때 터진다.)
 
-**timeout 240:** vllm qwen3.6-27B에서는 256K 컨텍스트 prefill + 512 토큰 생성이 ~10초 내외로 처리되지만, 긴 유튜브 트랜스크립트 등을 여유 있게 처리하기 위해 240초 유지.
+**timeout 240:** vllm Qwen3.6-27B에서는 256K 컨텍스트 prefill + 512 토큰 생성이 ~10초 내외로 처리되지만, 긴 유튜브 트랜스크립트 등을 여유 있게 처리하기 위해 240초 유지.
 
 변경 시: `sudo systemctl daemon-reload && sudo systemctl restart rails-puma@urlfavorites_2.0`
 
