@@ -36,9 +36,10 @@
     <% type_nav.each do |item| %>
       <% is_active = (item[:ct].nil? && current_ct.blank?) || current_ct == item[:ct] %>
       <% link_style = is_active ? "background:var(--color-surface);color:var(--color-accent-text);font-weight:650;border:1px solid var(--color-border);" : "color:var(--color-text-secondary);border:1px solid transparent;" %>
-      <%= link_to favorites_path(content_type: item[:ct]),
+      <%= link_to favorites_path(content_type: item[:ct], q: params[:q], category: params[:category], status: params[:status], sort: params[:sort], view_mode: @view_mode),
             class: "flex items-center gap-2.5 px-3 py-2 rounded-md transition-all",
             style: link_style,
+            data: { turbo_frame: "favorites", turbo_action: "replace" },
             onmouseover: "this.style.background='var(--color-accent-muted)'",
             onmouseout: "this.style.background='#{is_active ? "var(--color-surface)" : "transparent"}'" do
       %>
@@ -85,9 +86,10 @@
         <% is_active = current_cat == cat %>
         <% hover_bg = is_active ? "var(--color-surface)" : "var(--color-accent-muted)" %>
         <% link_style = is_active ? "background:var(--color-surface);color:var(--color-accent-text);font-weight:650;" : "color:var(--color-text-secondary);" %>
-        <%= link_to favorites_path(category: cat, content_type: params[:content_type]),
+        <%= link_to favorites_path(category: cat, content_type: params[:content_type], q: params[:q], status: params[:status], sort: params[:sort], view_mode: @view_mode),
               class: "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all justify-between",
               style: link_style,
+              data: { turbo_frame: "favorites", turbo_action: "replace" },
               onmouseover: "this.style.background='#{hover_bg}'",
               onmouseout: "this.style.background='transparent'" do
         %>
