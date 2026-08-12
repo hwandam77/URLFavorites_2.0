@@ -40,14 +40,14 @@ module MarkdownHelper
 
     # Redcarpet autolink가 이미 <a href="URL">URL</a> 형태로 변환한 상태
     # 이 <a> 태그의 href를 favorites와 매핑하여 내부 링크로 변환
-    text.gsub(%r{(<a\s+(?:href=["'])(https?://github\.com/[^/"']+)>)((?:[^<]*)?)(</a>)}i) do |match|
-      github_url = $2
-      link_text = $3
-      favorite = Favorite.find_by("url LIKE ?", "#{github_url.chomp('/')}%")
+    text.gsub(%r{<a\s+href=["']([^"']*github\.com[^"']*)["'](>[^<]*)</a>}i) do |match|
+      github_url = $1.chomp("/")
+      link_text = $2
+      favorite = Favorite.find_by("url LIKE ?", "#{github_url}%")
       if favorite&.status == "done"
-        "<a href=\"/favorites/#{favorite.id}\">#{link_text || github_url}</a>"
+        "<a href=\"/favorites/#{favorite.id}\">#{link_text}</a>"
       else
-        match # 그대로 유지
+        match # 그대로 유지 (외부 링크)
       end
     end
   end
