@@ -308,6 +308,7 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to favorite_url(fav)
     assert_equal "analyzing", fav.reload.status
-    assert_equal "cached raw content", fav.raw_content
+    # 재분석은 raw_content를 nil로 초기화하여 새로 추출함
+    assert_nil fav.raw_content
   end
 end

@@ -12,6 +12,8 @@ class ApplicationController < ActionController::Base
   private
 
   def set_sidebar_data
-    @collections = Collection.order(:name)
+    @collections = Rails.cache.fetch('sidebar_collections', expires_in: 10.minutes) do
+      Collection.order(:name).to_a
+    end
   end
 end

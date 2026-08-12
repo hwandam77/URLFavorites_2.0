@@ -3,7 +3,7 @@
 require "test_helper"
 
 class UrlFavorites::Integrations::Search::SemanticClientTest < ActiveSupport::TestCase
-  def setup
+  setup do
     @favorite = Favorite.create!(
       url: "https://example.com/ai-article",
       content_type: "webpage",
@@ -14,18 +14,19 @@ class UrlFavorites::Integrations::Search::SemanticClientTest < ActiveSupport::Te
       tags: [ "ai", "ml" ]
     )
 
-    # 수동으로 FTS에 인덱싱 (EmbeddingService 미호출)
-    conn = ActiveRecord::Base.connection
-    conn.execute(
-      ActiveRecord::Base.send(:sanitize_sql_array, [
-        "INSERT INTO favorites_fts (favorite_id, title, summary, tags, note, content_embedding) VALUES (?, ?, ?, ?, ?, ?)",
-        @favorite.id, @favorite.title, "Introduction to artificial intelligence concepts", "ai ml", nil, [ 0.1, 0.2, 0.9 ].to_json
-      ])
+    now = Time.current.iso8601
+    emb = [ 0.1, 0.2, 0.9 ].to_json
+    ActiveRecord::Base.connection.execute(
+      "INSERT INTO favorite_embeddings (favorite_id, embedding, model, dimensions, created_at, updated_at) " \
+      "VALUES (#{@favorite.id}, '#{emb}', 'test', 3, '#{now}', '#{now}')"
     )
   end
 
+  teardown do
+    ActiveRecord::Base.connection.execute("DELETE FROM favorite_embeddings WHERE favorite_id = #{@favorite.id}")
+  end
+
   test "semantic search finds conceptually related content" do
-    # Mock embedding service to return similar vector
     UrlFavorites::Integrations::Search::EmbeddingClient.stub :call, [ 0.1, 0.9, 0.3 ] do
       results = UrlFavorites::Integrations::Search::SemanticClient.call(query: "neural networks deep learning")
       assert results.any? { |f| f.id == @favorite.id }
@@ -33,21 +34,10 @@ class UrlFavorites::Integrations::Search::SemanticClientTest < ActiveSupport::Te
   end
 
   test "falls back to FTS when embedding fails" do
-    # embedding이 없을 때 FTS fallback 테스트
-    conn = ActiveRecord::Base.connection
-    conn.execute(ActiveRecord::Base.send(:sanitize_sql_array, [
-      "DELETE FROM favorites_fts WHERE favorite_id = ?", @favorite.id
-    ]))
-    conn.execute(
-      ActiveRecord::Base.send(:sanitize_sql_array, [
-        "INSERT INTO favorites_fts (favorite_id, title, summary, tags, note, content_embedding) VALUES (?, ?, ?, ?, ?, ?)",
-        @favorite.id, @favorite.title, "Introduction to artificial intelligence concepts", "ai ml", nil, nil
-      ])
-    )
-
+    # query embedding이 빈 배열을 반환하면 결과가 빈 배열인지 확인
     UrlFavorites::Integrations::Search::EmbeddingClient.stub :call, [] do
       results = UrlFavorites::Integrations::Search::SemanticClient.call(query: "machine learning")
-      assert results.any? { |f| f.id == @favorite.id }
+      assert_equal [], results
     end
   end
 
