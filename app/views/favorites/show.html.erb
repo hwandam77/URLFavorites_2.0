@@ -244,8 +244,21 @@
       <section class="mb-10">
         <h2 style="font-size:var(--text-xl);font-weight:700;color:var(--color-text);margin-bottom:20px;letter-spacing:-0.3px;"
         >상세 내용</h2>
-        <div style="color:var(--color-text-secondary);line-height:1.8;font-size:var(--text-base);white-space:pre-wrap;"
-        ><%= @favorite.analysis.detail_content %></div>
+        <div class="markdown-body" style="color:var(--color-text-secondary);line-height:1.8;font-size:var(--text-base);">
+          <%= markdown(@favorite.analysis.detail_content) %>
+        </div>
+        <style>
+          .markdown-body h2 { font-size:var(--text-lg);font-weight:700;color:var(--color-text);margin:28px 0 12px;letter-spacing:-0.3px; }
+          .markdown-body p { margin:0 0 1em; }
+          .markdown-body ul, .markdown-body ol { margin:0 0 1em; padding-left:1.4em; }
+          .markdown-body li { margin-bottom:0.35em; }
+          .markdown-body strong { color:var(--color-text);font-weight:700; }
+          .markdown-body a { color:var(--color-accent-text);text-decoration:none;border-bottom:1px solid var(--color-ai-accent); }
+          .markdown-body a:hover { color:var(--color-accent);border-bottom-color:var(--color-accent); }
+          .markdown-body code { font-family:ui-monospace,'IBM Plex Mono',Menlo,monospace;font-size:14px;background:var(--color-surface-raised);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:1px 5px; }
+          .markdown-body pre { overflow-x:auto;margin:0 0 1em;padding:14px 16px;background:var(--color-surface-raised);border:1px solid var(--color-border);border-radius:var(--radius-md);font-size:13.5px;line-height:1.6; }
+          .markdown-body pre code { background:none;border:none;padding:0; }
+        </style>
       </section>
     <% end %>
 
