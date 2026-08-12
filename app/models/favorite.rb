@@ -1,6 +1,6 @@
 class Favorite < ApplicationRecord
   CONTENT_TYPES = %w[webpage youtube github twitter reddit].freeze
-  CATEGORIES = %w[전체 핀 AI에이전트 AI코딩 튜토리얼 AI모델 개발도구 뉴스/커뮤니티 기타].freeze
+  CATEGORIES = %w[전체 핀 AI에이전트 AI코딩 AI모델 프론트엔드 백엔드 DevOps 데이터베이스 보안 디자인 뉴스 튜토리얼 기타].freeze
   SELECTABLE_CATEGORIES = CATEGORIES - %w[전체 핀]
   STATUSES = %w[pending analyzing done failed].freeze
 

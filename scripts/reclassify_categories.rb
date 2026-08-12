@@ -23,11 +23,10 @@ CATEGORY_DESCRIPTIONS = {
 }.freeze
 
 def build_prompt(favorites)
-  items = favorites.map.with_index(1) do |f|
-    tags = Array(f.parsed_tags).join(", ")
-    tags = tags.split(",").map(&:strip).reject(&:empty?).join(", ")
+  items = favorites.map.with_index(1) do |f, idx|
+    tags = (f.analysis&.parsed_tags || []).join(", ")
     <<~ITEM
-      #{items.index(f) + 1}. URL: #{f.url}
+      #{idx}. URL: #{f.url}
          타입: #{f.content_type}
          제목: #{f.title || "(없음)"}
          요약: #{f.analysis&.summary || "(없음)"}
@@ -39,7 +38,7 @@ def build_prompt(favorites)
     당신은 기술 북마크 분류 전문가입니다.
     다음 #{favorites.size}개의 북마크를 분야별로 분류해주세요.
 
-    사용 가능한 카테고리 (한 줄에 하나씩, 번호만 답하세요):
+    사용 가능한 카테고리 (번호만 답하세요):
     #{CATEGORIES.each_with_index.map { |c, i| "#{i + 1}. #{c} — #{CATEGORY_DESCRIPTIONS[c]}" }.join("\n")}
 
     분류 대상:
@@ -56,33 +55,44 @@ def run
   done = 0
   failed = 0
 
-  Favorite.where(status: "done").where.not(analysis: { id: nil }).find_each do |fav|
-    # 이미 새 카테고리로 분류된건 스킵
-    next if CATEGORIES.include?(fav.category)
+  # 재분류 대상: 분석 완료되지만 기존 카테고리인 것들
+  old_categories = %w[기타 튜토리얼 개발도구 AI모델 AI에이전트 AI코딩 뉴스/커뮤니티]
+  targets = Favorite.joins(:analysis)
+                     .where(favorites: { status: "done" })
+                     .where(favorites: { category: old_categories })
+                     .order(:id)
+                     .to_a
 
-    # 배치 수집
-    batch = [fav] + Favorite.where(status: "done").where.not(analysis: { id: nil })
-                               .where.not(id: fav.id)
-                               .where("id > ?", fav.id)
-                               .limit(batch_size - 1)
-                               .to_a
+  puts "Total to reclassify: #{targets.size}"
 
-    prompt = build_prompt(batch)
-    puts "\n[Batch #{done/batch_size + 1}] #{batch.size} items (id #{batch.first.id} ~ #{batch.last.id})"
+  # 이미 새 카테고리로 분류된건 제외
+  targets.reject! { |f| CATEGORIES.include?(f.category) && f.category != "기타" }
+
+  # 배치로 처리
+  targets.each_slice(batch_size) do |batch|
+    puts "\n[Batch] #{batch.size} items (id #{batch.first.id} ~ #{batch.last.id})"
 
     begin
       result = UrlFavorites::Integrations::LlamaServer::Client.complete(
         system: "You are a technical bookmark classifier. Respond with valid JSON only.",
-        user: prompt,
+        user: build_prompt(batch),
         backend_role: nil,
         timeout: 120
       )
       text, _model = result
 
-      # JSON 파싱
       json_str = text.strip
       json_str = json_str.sub(/\A```(?:json)?\s*/i, "").sub(/\s*```\z/, "")
-      indices = JSON.parse(json_str)
+      parsed = JSON.parse(json_str)
+
+      # LLM이 [1,2,3] 또는 {"classifications":[...]} 또는 {"categories":[...]} 형식 모두 허용
+      indices = if parsed.is_a?(Array)
+        parsed
+      elsif parsed.is_a?(Hash)
+        parsed.values.first
+      else
+        nil
+      end
 
       if indices.is_a?(Array) && indices.size == batch.size
         batch.each_with_index do |f, i|
@@ -91,7 +101,7 @@ def run
             f.update!(category: new_category)
             puts "  #{f.id}: #{f.category} → #{new_category}"
           else
-            puts "  #{f.id}: invalid index #{indices[i]}, skipping"
+            puts "  #{f.id}: invalid index #{indices[i]}, keeping #{f.category}"
           end
         end
         done += batch.size
@@ -104,10 +114,8 @@ def run
       failed += batch.size
     end
 
-    # 같은 배치의 ID는 다시 처리하지 않도록 스킵
-    batch[1..]&.each do |f|
-      # 다음 find_each iteration에서 자동으로 넘어감
-    end
+    # 배치 사이에 잠시 대기
+    sleep 1
   end
 
   puts "\n=== Done ==="
