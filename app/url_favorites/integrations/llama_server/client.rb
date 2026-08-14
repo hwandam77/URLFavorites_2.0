@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require Rails.root.join("app/url_favorites/domain/analysis").to_s
-require Rails.root.join("app/url_favorites/domain/analysis/backend_router").to_s
 require Rails.root.join("app/url_favorites/domain/analysis/prompt_style").to_s
 
 module UrlFavorites
@@ -26,15 +25,9 @@ module UrlFavorites
         @@connection_cache = {}
         cattr_accessor :connection_cache, instance_reader: false, instance_writer: false
 
-        def self.call(content, type:, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT, content_length: nil, backend_role: nil)
+        def self.call(content, type:, analysis_style: UrlFavorites::Domain::Analysis::PromptStyle::DEFAULT, content_length: nil)
           normalized_style = UrlFavorites::Domain::Analysis::PromptStyle.normalize(analysis_style)
-          backends = prioritize_backends(
-            resolve_backends,
-            content_type: type,
-            content_length: content_length || content.to_s.length,
-            analysis_style: analysis_style,
-            backend_role: backend_role
-          )
+          backends = resolve_backends
 
           last_error = nil
           backends.each do |backend|
@@ -51,14 +44,8 @@ module UrlFavorites
         # Raw-text completion for multi-pass generation (e.g. manual sections).
         # Returns [text, backend_model]. No response_format (no JSON enforcement),
         # no required-key validation. messages = exactly one system + one user.
-        def self.complete(system:, user:, backend_role: nil, timeout: nil)
-          backends = prioritize_backends(
-            resolve_backends,
-            content_type: "webpage",
-            content_length: user.to_s.length,
-            analysis_style: nil,
-            backend_role: backend_role
-          )
+        def self.complete(system:, user:, timeout: nil)
+          backends = resolve_backends
 
           last_error = nil
           backends.each do |backend|
@@ -139,7 +126,7 @@ module UrlFavorites
 
           result = inner.slice(:summary, :key_points, :tags, :sentiment)
           result[:detail_content] = inner[:detail_content] if inner.key?(:detail_content)
-          result[:used_backend_role] = backend[:role].to_s
+          result[:used_backend_role] = "default"
           result[:used_backend_model] = model
           result
         rescue Faraday::ServerError => e
@@ -175,26 +162,6 @@ module UrlFavorites
           raise ParseError, "Invalid LLM_BACKENDS JSON: #{e.message}"
         end
 
-        def self.prioritize_backends(backends, content_type:, content_length:, analysis_style:, backend_role: nil)
-          priorities = if backend_role.present?
-            role = backend_role.to_s
-            [ role ] + (%w[fast heavy] - [ role ])
-          else
-            UrlFavorites::Domain::Analysis::BackendRouter.call(
-              content_type: content_type,
-              content_length: content_length,
-              analysis_style: analysis_style
-            )
-          end
-          prioritized = priorities.flat_map do |role|
-            backends.select { |backend| backend[:role].to_s == role }
-          end
-
-          prioritized.empty? ? backends : prioritized + (backends - prioritized)
-        rescue StandardError => e
-          Rails.logger.warn "[LlamaServer::Client] Backend routing failed: #{e.message}"
-          backends
-        end
 
         def self.extract_result_from(parsed)
           if parsed.is_a?(Hash) && parsed.key?(:choices)
@@ -400,7 +367,6 @@ module UrlFavorites
           :attempt_completion,
           :attempt_backend,
           :resolve_backends,
-          :prioritize_backends,
           :extract_result_from,
           :parse_json_object,
           :escape_control_chars_in_strings,

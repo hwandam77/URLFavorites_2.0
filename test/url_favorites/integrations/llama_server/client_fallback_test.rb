@@ -96,15 +96,12 @@ class UrlFavorites::Integrations::LlamaServer::ClientFallbackTest < ActiveSuppor
     assert_equal "Test summary", result[:summary]
   end
 
-  test "long youtube uses fast-first (BackendRouter v3 policy)" do
+  test "single backend returns default role" do
     ENV["LLM_BACKENDS"] = [
-      { "url" => "http://localhost:9997", "model" => "fast-model", "role" => "fast", "timeout" => 5 },
-      { "url" => "http://localhost:9996", "model" => "heavy-model", "role" => "heavy", "timeout" => 5 }
+      { "url" => "http://localhost:9997", "model" => "Qwen3.6-27B", "timeout" => 5 }
     ].to_json
 
-    fast_request = stub_request(:post, "http://localhost:9997/v1/chat/completions")
-      .to_return(status: 200, body: valid_response.to_json)
-    heavy_request = stub_request(:post, "http://localhost:9996/v1/chat/completions")
+    stub_request(:post, "http://localhost:9997/v1/chat/completions")
       .to_return(status: 200, body: valid_response.to_json)
 
     result = UrlFavorites::Integrations::LlamaServer::Client.call(
@@ -113,79 +110,8 @@ class UrlFavorites::Integrations::LlamaServer::ClientFallbackTest < ActiveSuppor
       content_length: 8_000
     )
 
-    assert_requested fast_request
-    assert_not_requested heavy_request
-    assert_equal "fast", result[:used_backend_role]
-    assert_equal "fast-model", result[:used_backend_model]
-  end
-
-  test "backend_role heavy prefers heavy then falls back to fast" do
-    ENV["LLM_BACKENDS"] = [
-      { "url" => "http://localhost:9995", "model" => "fast-model", "role" => "fast", "timeout" => 5 },
-      { "url" => "http://localhost:9994", "model" => "heavy-model", "role" => "heavy", "timeout" => 5 }
-    ].to_json
-
-    heavy_request = stub_request(:post, "http://localhost:9994/v1/chat/completions")
-      .to_raise(Faraday::ConnectionFailed.new("Connection refused"))
-    fast_request = stub_request(:post, "http://localhost:9995/v1/chat/completions")
-      .to_return(status: 200, body: valid_response.to_json)
-
-    result = UrlFavorites::Integrations::LlamaServer::Client.call(
-      "video content",
-      type: "youtube",
-      content_length: 8_000,
-      backend_role: "heavy"
-    )
-
-    assert_equal "Test summary", result[:summary]
-    assert_requested heavy_request
-    assert_requested fast_request
-    assert_equal "fast", result[:used_backend_role]
-    assert_equal "fast-model", result[:used_backend_model]
-  end
-
-  test "backend_role fast prefers fast and reports used backend" do
-    ENV["LLM_BACKENDS"] = [
-      { "url" => "http://localhost:9993", "model" => "fast-model", "role" => "fast", "timeout" => 5 },
-      { "url" => "http://localhost:9992", "model" => "heavy-model", "role" => "heavy", "timeout" => 5 }
-    ].to_json
-
-    fast_request = stub_request(:post, "http://localhost:9993/v1/chat/completions")
-      .to_return(status: 200, body: valid_response.to_json)
-    heavy_request = stub_request(:post, "http://localhost:9992/v1/chat/completions")
-      .to_return(status: 200, body: valid_response.to_json)
-
-    result = UrlFavorites::Integrations::LlamaServer::Client.call(
-      "content",
-      type: "webpage",
-      backend_role: "fast"
-    )
-
-    assert_requested fast_request
-    assert_not_requested heavy_request
-    assert_equal "fast", result[:used_backend_role]
-    assert_equal "fast-model", result[:used_backend_model]
-  end
-
-  test "backend_role fast falls back to heavy when fast fails" do
-    ENV["LLM_BACKENDS"] = [
-      { "url" => "http://localhost:9991", "model" => "fast-model", "role" => "fast", "timeout" => 5 },
-      { "url" => "http://localhost:9990", "model" => "heavy-model", "role" => "heavy", "timeout" => 5 }
-    ].to_json
-
-    stub_request(:post, "http://localhost:9991/v1/chat/completions")
-      .to_raise(Faraday::ConnectionFailed.new("Connection refused"))
-    stub_request(:post, "http://localhost:9990/v1/chat/completions")
-      .to_return(status: 200, body: valid_response.to_json)
-
-    result = UrlFavorites::Integrations::LlamaServer::Client.call(
-      "content",
-      type: "webpage",
-      backend_role: "fast"
-    )
-
-    assert_equal "heavy", result[:used_backend_role]
-    assert_equal "heavy-model", result[:used_backend_model]
+    assert_equal "default", result[:used_backend_role]
+    assert_equal "Qwen3.6-27B", result[:used_backend_model]
   end
 
   private

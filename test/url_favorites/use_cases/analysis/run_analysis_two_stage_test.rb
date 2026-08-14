@@ -17,42 +17,19 @@ class RunAnalysisTwoStageTest < ActiveSupport::TestCase
       key_points: [ "k1" ],
       tags: [ "rails" ],
       sentiment: "neutral",
-      used_backend_role: "fast",
-      used_backend_model: "fast-gguf"
+      used_backend_role: "default",
+      used_backend_model: "Qwen3.6-27B"
     }
   end
 
-  test "fast 고정 호출 및 tier·model_used 저장" do
-    captured = nil
-    stub = ->(*_args, **kwargs) {
-      captured = kwargs
-      @base_result
-    }
-
-    UrlFavorites::Integrations::LlamaServer::Client.stub(:call, stub) do
+  test "분석 후 model_used 저장" do
+    UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @base_result) do
       UrlFavorites::UseCases::Analysis::RunAnalysis.call(favorite_id: @favorite.id)
     end
 
-    assert_equal "fast", captured[:backend_role]
     @favorite.reload
     assert_equal "done", @favorite.status
-    assert_equal "fast", @favorite.analysis.analysis_tier
-    assert_equal "fast-gguf", @favorite.analysis.model_used
-  end
-
-  test "heavy 폴백 시 refine 미발주" do
-    result = @base_result.merge(used_backend_role: "heavy", used_backend_model: "heavy-gguf")
-
-    UrlFavorites::Integrations::LlamaServer::Client.stub(:call, result) do
-      assert_no_enqueued_jobs(only: RefineAnalysisJob) do
-        UrlFavorites::UseCases::Analysis::RunAnalysis.call(
-          favorite_id: @favorite.id,
-          analysis_style: "tutorial"
-        )
-      end
-    end
-
-    assert_equal "heavy", @favorite.reload.analysis.analysis_tier
+    assert_equal "Qwen3.6-27B", @favorite.analysis.model_used
   end
 
   test "DETAILED_STYLES 이면 refine 발주" do

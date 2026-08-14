@@ -1,5 +1,4 @@
 require Rails.root.join("app/url_favorites/domain/analysis").to_s
-require Rails.root.join("app/url_favorites/domain/analysis/backend_router").to_s
 require Rails.root.join("app/url_favorites/domain/analysis/prompt_style").to_s
 
 module UrlFavorites
@@ -29,20 +28,16 @@ module UrlFavorites
             raw_content,
             type: favorite.content_type,
             analysis_style: normalized_style,
-            content_length: raw_content.length,
-            backend_role: "fast"
+            content_length: raw_content.length
           )
 
-          used_role = analysis_result[:used_backend_role].to_s
           used_model = analysis_result[:used_backend_model]
-          tier = used_role == "heavy" ? "heavy" : "fast"
 
           # done 처리 후 reload 금지 — upsert 직후 snapshot (동시 세대 결합 방지)
           analysis = upsert_analysis!(
             favorite, raw_content, analysis_result,
             extraction: extraction,
             analysis_style: normalized_style,
-            analysis_tier: tier,
             model_used: used_model
           )
           snapshot = analysis.updated_at.to_f
@@ -63,15 +58,13 @@ module UrlFavorites
           # detail_content 내 GitHub 링크 자동 추가+분석
           enqueue_github_links_from_analysis(favorite.id, analysis_result[:detail_content].to_s)
 
-          # heavy 폴백 성공 시 이미 정밀본 → 후속 발주 생략
-          if tier == "fast"
-            if normalized_style == "onboarding_manual"
-              PlanManualOutlineJob.perform_later(favorite.id, snapshot)
-            elsif normalized_style == "link_roundup"
-              PlanLinkRoundupJob.perform_later(favorite.id, snapshot)
-            elsif refine_candidate?(normalized_style, raw_content)
-              RefineAnalysisJob.perform_later(favorite.id, normalized_style, snapshot)
-            end
+          # 후속 분석 발주
+          if normalized_style == "onboarding_manual"
+            PlanManualOutlineJob.perform_later(favorite.id, snapshot)
+          elsif normalized_style == "link_roundup"
+            PlanLinkRoundupJob.perform_later(favorite.id, snapshot)
+          elsif refine_candidate?(normalized_style, raw_content)
+            RefineAnalysisJob.perform_later(favorite.id, normalized_style, snapshot)
           end
         rescue => e
           raise e unless favorite
@@ -202,7 +195,7 @@ module UrlFavorites
           normalized_links.map { |link| "- #{link}" }.join("\n")
         end
 
-        def self.upsert_analysis!(favorite, raw_content, analysis_result, extraction: nil, analysis_style: DEFAULT_ANALYSIS_STYLE, analysis_tier: "fast", model_used: nil)
+        def self.upsert_analysis!(favorite, raw_content, analysis_result, extraction: nil, analysis_style: DEFAULT_ANALYSIS_STYLE, model_used: nil)
           attrs = {
             raw_content: raw_content,
             summary: analysis_result[:summary],
@@ -211,7 +204,6 @@ module UrlFavorites
             sentiment: analysis_result[:sentiment],
             detail_content: analysis_result[:detail_content],
             analysis_style: analysis_style,
-            analysis_tier: analysis_tier,
             model_used: model_used
           }
           if extraction

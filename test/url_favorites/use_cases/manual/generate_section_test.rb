@@ -17,8 +17,6 @@ class GenerateSectionTest < ActiveSupport::TestCase
       tags: [ "manual" ],
       sentiment: "neutral",
       raw_content: @favorite.raw_content,
-      analysis_tier: "fast",
-      model_used: "fast-gguf",
       analysis_style: "onboarding_manual"
     )
     @section = @analysis.analysis_sections.create!(position: 1, heading: "핵심 기능", focus: "기능 설명")
@@ -27,7 +25,7 @@ class GenerateSectionTest < ActiveSupport::TestCase
   end
 
   test "정상 저장 — body 와 backend_model 기록" do
-    complete = ->(**_kwargs) { [ "## 핵심 기능\n본문", "fast-gguf" ] }
+    complete = ->(**_kwargs) { [ "## 핵심 기능\n본문", "Qwen3.6-27B" ] }
 
     UrlFavorites::Integrations::LlamaServer::Client.stub(:complete, complete) do
       UrlFavorites::UseCases::Manual::GenerateSection.call(
@@ -39,7 +37,7 @@ class GenerateSectionTest < ActiveSupport::TestCase
 
     @section.reload
     assert_equal "## 핵심 기능\n본문", @section.body
-    assert_equal "fast-gguf", @section.backend_model
+    assert_equal "Qwen3.6-27B", @section.backend_model
   end
 
   test "body 가 이미 있으면 재생성하지 않는다 (멱등)" do
@@ -105,7 +103,7 @@ class GenerateSectionTest < ActiveSupport::TestCase
     captured = nil
     complete = ->(**kwargs) {
       captured = kwargs
-      [ "본문", "fast-gguf" ]
+      [ "본문", "Qwen3.6-27B" ]
     }
 
     UrlFavorites::Integrations::LlamaServer::Client.stub(:complete, complete) do
@@ -116,7 +114,6 @@ class GenerateSectionTest < ActiveSupport::TestCase
       )
     end
 
-    assert_equal "fast", captured[:backend_role]
     assert_includes captured[:user], "핵심 기능"
     assert_includes captured[:user], "기능 설명"
     assert_includes captured[:user], "활용 사례"

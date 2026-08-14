@@ -70,8 +70,7 @@ module UrlFavorites
           system_prompt = SYSTEM_PROMPTS[analysis.analysis_style] || SYSTEM_PROMPTS["onboarding_manual"]
           text, backend_model = UrlFavorites::Integrations::LlamaServer::Client.complete(
             system: system_prompt,
-            user: user,
-            backend_role: "fast"
+            user: user
           )
 
           section.update!(body: text, backend_model: backend_model)

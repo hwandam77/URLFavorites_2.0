@@ -14,23 +14,22 @@ class RefineAnalysisTest < ActiveSupport::TestCase
       title: "Refine Target"
     )
     @analysis = @favorite.create_analysis!(
-      summary: "fast summary",
+      summary: "initial summary",
       key_points: [ "a" ],
-      tags: [ "fast" ],
+      tags: [ "initial" ],
       sentiment: "neutral",
       raw_content: @favorite.raw_content,
-      analysis_tier: "fast",
-      model_used: "fast-gguf",
+      model_used: "Qwen3.6-27B",
       analysis_style: "tutorial"
     )
     @snapshot = @analysis.updated_at.to_f
-    @heavy_result = {
-      summary: "heavy summary",
-      key_points: [ "h1" ],
-      tags: [ "heavy", "rails" ],
+    @result = {
+      summary: "refined summary",
+      key_points: [ "r1" ],
+      tags: [ "refined", "rails" ],
       sentiment: "positive",
-      used_backend_role: "heavy",
-      used_backend_model: "heavy-gguf"
+      used_backend_role: "default",
+      used_backend_model: "Qwen3.6-27B"
     }
   end
 
@@ -53,7 +52,7 @@ class RefineAnalysisTest < ActiveSupport::TestCase
         analysis_snapshot: @snapshot
       )
     end
-    assert_equal "fast", @analysis.reload.analysis_tier
+    assert_equal "initial summary", @analysis.reload.summary
   end
 
   test "snapshot 불일치 시 폐기" do
@@ -64,51 +63,13 @@ class RefineAnalysisTest < ActiveSupport::TestCase
         analysis_snapshot: @snapshot - 1.0
       )
     end
-    assert_equal "fast summary", @analysis.reload.summary
-  end
-
-  test "tier heavy 시 멱등 후처리 재실행" do
-    @analysis.update!(analysis_tier: "heavy")
-    UrlFavorites::Integrations::LlamaServer::Client.stub(:call, ->(*) { flunk "should not call" }) do
-      assert_enqueued_with(job: ReindexFavoriteJob, args: [ @favorite.id ]) do
-        UrlFavorites::UseCases::Analysis::RefineAnalysis.call(
-          favorite_id: @favorite.id,
-          analysis_style: "tutorial",
-          analysis_snapshot: @analysis.updated_at.to_f
-        )
-      end
-    end
-  end
-
-  test "used_backend_role 이 heavy 가 아니면 raise 하고 favorite 불변" do
-    bad = @heavy_result.merge(used_backend_role: "fast")
-    before_status = @favorite.status
-    before_error = @favorite.error_message
-
-    assert_raises(UrlFavorites::Integrations::LlamaServer::Client::ServerError) do
-      UrlFavorites::Integrations::LlamaServer::Client.stub(:call, bad) do
-        UrlFavorites::UseCases::Analysis::RefineAnalysis.call(
-          favorite_id: @favorite.id,
-          analysis_style: "tutorial",
-          analysis_snapshot: @snapshot
-        )
-      end
-    end
-
-    @favorite.reload
-    assert_equal before_status, @favorite.status
-    assert_nil @favorite.error_message
-    assert_nil before_error
-    assert_equal "fast", @analysis.reload.analysis_tier
+    assert_equal "initial summary", @analysis.reload.summary
   end
 
   test "CAS 재검사 실패 시 조용히 폐기" do
-    call_count = 0
     stub = ->(*_a, **_k) {
-      call_count += 1
-      # LLM 호출 중 다른 세대가 갱신한 것처럼 snapshot 불일치 유도
       @analysis.update!(summary: "newer generation")
-      @heavy_result
+      @result
     }
 
     UrlFavorites::Integrations::LlamaServer::Client.stub(:call, stub) do
@@ -119,14 +80,12 @@ class RefineAnalysisTest < ActiveSupport::TestCase
       )
     end
 
-    assert_equal 1, call_count
     @analysis.reload
-    assert_equal "fast", @analysis.analysis_tier
     assert_equal "newer generation", @analysis.summary
   end
 
-  test "성공 시 tier·model·summary 갱신 및 reindex 발주" do
-    UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @heavy_result) do
+  test "성공 시 summary·model 갱신 및 reindex 발주" do
+    UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @result) do
       assert_enqueued_with(job: ReindexFavoriteJob, args: [ @favorite.id ]) do
         UrlFavorites::UseCases::Analysis::RefineAnalysis.call(
           favorite_id: @favorite.id,
@@ -137,9 +96,8 @@ class RefineAnalysisTest < ActiveSupport::TestCase
     end
 
     @analysis.reload
-    assert_equal "heavy", @analysis.analysis_tier
-    assert_equal "heavy-gguf", @analysis.model_used
-    assert_equal "heavy summary", @analysis.summary
+    assert_equal "Qwen3.6-27B", @analysis.model_used
+    assert_equal "refined summary", @analysis.summary
     assert_equal "done", @favorite.reload.status
   end
 
@@ -161,14 +119,14 @@ class RefineAnalysisTest < ActiveSupport::TestCase
     assert_nil(@favorite.error_message)
   end
 
-  test "긴 raw_content 는 REFINE_INPUT_LIMIT(8,000자)로 절단해 heavy 에 전달" do
+  test "긴 raw_content 는 REFINE_INPUT_LIMIT(8,000자)로 절단" do
     long_content = "x" * 20_000
     @favorite.update!(raw_content: long_content)
     @analysis.update!(raw_content: long_content)
     captured = nil
     stub = ->(content, **_kwargs) {
       captured = content
-      @heavy_result
+      @result
     }
 
     UrlFavorites::Integrations::LlamaServer::Client.stub(:call, stub) do

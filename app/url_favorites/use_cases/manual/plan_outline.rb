@@ -74,8 +74,7 @@ module UrlFavorites
 
           text, _model = UrlFavorites::Integrations::LlamaServer::Client.complete(
             system: system,
-            user: user,
-            backend_role: "fast"
+            user: user
           )
           parse_outline(text)
         end
