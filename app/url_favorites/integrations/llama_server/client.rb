@@ -161,6 +161,10 @@ module UrlFavorites
           raise ParseError, "Invalid LLM_BACKENDS JSON: #{e.message}"
         end
 
+        # 공개 접근용 — HealthCheck 등 파이프라인 구성요소가 같은 백엔드 목록을 본다
+        def self.backends
+          resolve_backends
+        end
 
         def self.extract_result_from(parsed)
           if parsed.is_a?(Hash) && parsed.key?(:choices)
