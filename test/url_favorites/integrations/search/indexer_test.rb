@@ -9,8 +9,8 @@ class UrlFavorites::Integrations::Search::IndexerTest < ActiveSupport::TestCase
     ENV["EMBEDDING_URL"] = EMBEDDING_TEST_URL
     WebMock.enable!
     WebMock.disable_net_connect!
-    # EmbeddingService stub - nomic-embed-text 모델의 더미 임베딩 응답
-    @embedding_response = { embedding: [ 0.1, 0.2, 0.3 ] * 384 }.to_json
+    # EmbeddingService stub - OpenAI 호환 응답 형식 (data[0].embedding)
+    @embedding_response = { data: [ { embedding: [ 0.1, 0.2, 0.3 ] * 384 } ] }.to_json
     stub_request(:post, EMBEDDING_TEST_URL + "/v1/embeddings")
       .to_return(status: 200, body: @embedding_response, headers: { "Content-Type" => "application/json" })
   end
@@ -108,5 +108,23 @@ class UrlFavorites::Integrations::Search::IndexerTest < ActiveSupport::TestCase
     ).first["c"]
 
     assert count >= 2
+  end
+
+  test "backfill_missing_embeddings 은 벡터 없는 favorite만 보강하고 기존 벡터는 유지한다" do
+    with_embedding = Favorite.create!(title: "Has Vector", url: "https://c.com", content_type: "webpage", status: "done")
+    missing = Favorite.create!(title: "No Vector", url: "https://d.com", content_type: "webpage", status: "done")
+    UrlFavorites::Integrations::Search::Indexer.store_embedding(with_embedding)
+    original = ActiveRecord::Base.connection.select_value(
+      "SELECT embedding FROM favorite_embeddings WHERE favorite_id = #{with_embedding.id}"
+    )
+
+    UrlFavorites::Integrations::Search::Indexer.backfill_missing_embeddings
+
+    stored_ids = ActiveRecord::Base.connection.select_values("SELECT favorite_id FROM favorite_embeddings").map(&:to_i)
+    assert_includes stored_ids, missing.id
+    assert_includes stored_ids, with_embedding.id
+    assert_equal original, ActiveRecord::Base.connection.select_value(
+      "SELECT embedding FROM favorite_embeddings WHERE favorite_id = #{with_embedding.id}"
+    )
   end
 end

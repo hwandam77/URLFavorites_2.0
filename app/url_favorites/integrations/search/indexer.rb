@@ -49,6 +49,14 @@ module UrlFavorites
           Favorite.includes(:analysis).find_each { |f| store_embedding(f) }
         end
 
+        # 임베딩이 없는 favorite만 보강 — 임베딩 서버 장애로 유실된 벡터 복구용.
+        # 기존 벡터를 건드리지 않으므로 모델이 바뀌지 않는 한 backfill_embeddings보다 안전하다.
+        def self.backfill_missing_embeddings
+          existing_ids = ActiveRecord::Base.connection.select_values("SELECT favorite_id FROM favorite_embeddings")
+          scope = Favorite.includes(:analysis).where.not(id: existing_ids)
+          scope.find_each { |f| store_embedding(f) }
+        end
+
         def self.remove(favorite_id)
           ActiveRecord::Base.connection.execute(
             "DELETE FROM favorites_fts WHERE favorite_id = #{favorite_id.to_i}"
