@@ -48,3 +48,6 @@ errors.log
 .omx/
 .claude/orchestration.installed
 .playwright-mcp/
+
+# graphify code-graph artifacts
+graphify-out/

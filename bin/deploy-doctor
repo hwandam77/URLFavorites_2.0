@@ -14,8 +14,9 @@ USAGE = <<~TEXT
 
   Environment overrides:
     URLF_REMOTE_HOST   default: bastion
-    URLF_REMOTE_PATH   default: /home/hwandam/services/rails/urlfavorites_2.0
-    URLF_SERVICE       default: rails-puma@urlfavorites_2.0
+    URLF_PCT_VMID      default: 101 (app runs in PVE LXC; commands wrapped with pct exec; unset = plain ssh)
+    URLF_REMOTE_PATH   default: /home/hwandam/services/rails/urlfavorites
+    URLF_SERVICE       default: rails-puma@urlfavorites
     URLF_REMOTE_PORT   default: 3003
     URLF_HEALTH_PATH   default: /favorites
     URLF_PUBLIC_URL    default: https://urlf.hwandam.kr/favorites
@@ -46,8 +47,9 @@ if unknown_args.any?
 end
 
 remote_host = ENV.fetch("URLF_REMOTE_HOST", "bastion")
-remote_path = ENV.fetch("URLF_REMOTE_PATH", "/home/hwandam/services/rails/urlfavorites_2.0")
-service = ENV.fetch("URLF_SERVICE", "rails-puma@urlfavorites_2.0")
+pct_vmid = ENV["URLF_PCT_VMID"]
+remote_path = ENV.fetch("URLF_REMOTE_PATH", "/home/hwandam/services/rails/urlfavorites")
+service = ENV.fetch("URLF_SERVICE", "rails-puma@urlfavorites")
 remote_port = ENV.fetch("URLF_REMOTE_PORT", "3003")
 health_path = ENV.fetch("URLF_HEALTH_PATH", "/favorites")
 public_url = ENV.fetch("URLF_PUBLIC_URL", "https://urlf.hwandam.kr/favorites")
@@ -67,7 +69,12 @@ def local_git(*args)
 end
 
 def remote_capture(remote_host, command)
-  capture("ssh", remote_host, command)
+  # App lives in PVE LXC on bastion — wrap with pct exec unless URLF_PCT_VMID is unset.
+  if pct_vmid
+    capture("ssh", remote_host, "sudo pct exec #{pct_vmid} -- bash -c #{Shellwords.escape(command)}")
+  else
+    capture("ssh", remote_host, command)
+  end
 end
 
 def remote_git(remote_host, remote_path, *args)

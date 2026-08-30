@@ -20,10 +20,11 @@ Personal URL bookmark manager with automatic AI analysis. Rails 8 + SQLite + Sol
 - Database: SQLite3 main app database + Solid Queue database
 - Background jobs: Solid Queue
 - Frontend: Hotwire, Turbo Frames, Turbo Streams, Stimulus, ActionCable, Tailwind
-- AI model: Qwen3.6-35B-A3B-Kimi-K2.6-Reasoning-Distilled.Q5_K_M through llama-server on `beacon`
-- AI transport: HTTP over WireGuard VPN, configured by `LLAMA_SERVER_URL`
+- AI model: Qwen3.6-27B (alias of Qwen3.8-27B-FP8) on Nexus vllm — PVE LXC `300 (vllm)`, `10.10.0.3:8000`, single backend
+- AI transport: HTTP over WireGuard VPN, configured by `LLM_BACKENDS` JSON (falls back to `LLAMA_SERVER_URL`); single-stage analysis (two-stage refine removed 2026-08-30)
+- Embeddings: bge-m3 (1024-dim) via llama-cpp-python server on the rails LXC at `EMBEDDING_URL=http://127.0.0.1:8900` (service `embeddings.service`)
 - Web scraping: Nokogiri for webpages, `yt-dlp` for YouTube subtitles and metadata
-- Deployment: `bin/deploy urlfavorites_2.0`
+- Deployment: `bin/deploy urlfavorites`
 
 ## Mandatory DDD Architecture
 
@@ -90,12 +91,9 @@ pending -> analyzing -> done
 
 ## API Conventions
 
-Base path: `/api/v1/`.
+**`/api/v1/` is not implemented.** The JSON API in the original design doc was never built; the app is HTML/Turbo-only with session auth. Revisit this section only when an API is actually planned.
 
-- Phase 1 auth: none, VPN-only access.
-- Phase 2 auth: Bearer token.
-- Main endpoints: favorites list/show/create/destroy, search, and recent.
-- Responses should include favorite fields plus nested `analysis` when available.
+Auth for the web app: session-token authentication is already implemented (`Authentication` concern, `Session`/`User` models, `/session` routes) — not "Phase 1 VPN-only" as older docs claimed.
 
 ## PWA / Mobile
 
@@ -191,45 +189,55 @@ Avoid:
 3. Run `bin/rails assets:precompile`.
 4. Commit and push before deploy. Git is the source of truth.
 5. Run `bin/deploy-doctor pre`.
-6. Deploy with `bin/deploy --quick urlfavorites_2.0`.
+6. Deploy with `bin/deploy --quick urlfavorites`.
 7. Run `bin/deploy-doctor post`.
 8. Visually verify `https://urlf.hwandam.kr/favorites`.
 
 ## Deployment
 
-Server details:
+Infrastructure (rebuilt 2026-08-20~21, PVE + LXC):
 
-- SSH host: `bastion` (main address = LAN `192.168.0.11`; WireGuard `10.10.0.1` and Tailscale `100.111.118.109` are alternate paths to the same host)
-- App path: `/home/hwandam/services/rails/urlfavorites_2.0/`
-- Service: `rails-puma@urlfavorites_2.0.service`
-- Port: `3003`; port 3000 is occupied by the older URLFavorites app
+- PVE host: `bastion` (LAN `192.168.0.11`; WireGuard `10.10.0.1`, Tailscale `100.111.118.109` are alternates)
+- App container: PVE LXC `101 (rails)` on bastion, IP `192.168.0.14` — access with `ssh bastion "sudo pct exec 101 -- bash -c '...'"` (runs as root inside)
+- LLM container: PVE LXC `300 (vllm)` on nexus (`10.10.0.3:8000`)
+- App path (inside LXC 101): `/home/hwandam/services/rails/urlfavorites/`
+- Service: `rails-puma@urlfavorites.service` (active)
+- Port: `3003`
 - URL: `https://urlf.hwandam.kr/favorites`
-- Legacy URL: `https://urlf.hwandam.kr/ver2.0/favorites` redirects to `/favorites`
-- nginx config: `/etc/nginx/sites-enabled/URLF.hwandam.kr`
-- Server source policy: do not edit source files on the server. Deploy committed Mac changes only.
-- Production DB policy: never delete or overwrite `/home/hwandam/services/rails/urlfavorites_2.0/storage/*.sqlite3*`.
-- Current primary DB: `storage/production.sqlite3`; current queue DB: `storage/production_queue.sqlite3`.
+- nginx runs on the bastion host (config: `/etc/nginx/sites-enabled/URLF.hwandam.kr`)
+- Server source policy: do not edit source files on the server. Deploy committed changes only.
+- Production DB policy: never delete or overwrite `storage/*.sqlite3*` inside the container.
+- Current primary DB: `storage/production.sqlite3`; queue DB: `storage/production_queue.sqlite3`.
 
-Systemd drop-in:
+Systemd drop-in (inside LXC 101):
 
 ```ini
 [Service]
-Environment=LLAMA_SERVER_URL=http://10.10.0.5:8282
+Environment=LLAMA_SERVER_URL=http://10.10.0.4:8282
 Environment=PORT=3003
 Environment=SOLID_QUEUE_IN_PUMA=1
+Environment=LLM_BACKENDS=[{"url":"http://10.10.0.3:8000","model":"Qwen3.6-27B","role":"default","timeout":240}]
+Environment=EMBEDDING_URL=http://127.0.0.1:8900
+Environment=GITHUB_TOKEN=<fine-grained PAT>
 ```
 
-Drop-in path:
+Drop-in path (inside LXC 101):
 
 ```text
-/etc/systemd/system/rails-puma@urlfavorites_2.0.service.d/env.conf
+/etc/systemd/system/rails-puma@urlfavorites.service.d/env.conf
 ```
+
+Notes:
+
+- `LLM_BACKENDS` (Nexus vllm) is the effective analysis backend; the legacy `LLAMA_SERVER_URL` (beacon 8282) is dead since the infra migration but kept because production.rb requires the variable to be set.
+- Embeddings run on the same container: `embeddings.service` (llama-cpp-python, bge-m3 Q8_0 GGUF, `127.0.0.1:8900`, model dir `/home/hwandam/services/embeddings/`).
+- The container git checkout fetches from GitHub over https using a stored credential (`/root/.git-credentials`, token same as `GITHUB_TOKEN`); remote name must stay `github` (bin/deploy expects it).
 
 Deploy commands:
 
 - Pre-deploy check: `bin/deploy-doctor pre`
-- Full deploy: `bin/deploy urlfavorites_2.0`
-- Quick deploy: `bin/deploy --quick urlfavorites_2.0`
+- Full deploy: `bin/deploy urlfavorites`
+- Quick deploy: `bin/deploy --quick urlfavorites`
 - Post-deploy check: `bin/deploy-doctor post`
 
 Deployment operating policy:
@@ -240,7 +248,7 @@ Deployment operating policy:
    - Return the server checkout to a clean worktree before the next deploy.
    - Never clean by deleting or overwriting `storage/*.sqlite3*` or `db/*.sqlite3*`.
 2. Commit-based deployment only
-   - `bin/deploy urlfavorites_2.0` and `bin/deploy --quick urlfavorites_2.0` must deploy a specific committed Git state.
+   - `bin/deploy urlfavorites` and `bin/deploy --quick urlfavorites` must deploy a specific committed Git state.
    - Do not edit application source files directly on the server.
    - Emergency server edits must be copied back to the local branch, committed, and redeployed through the normal path.
 3. Separate staging and production
@@ -248,26 +256,27 @@ Deployment operating policy:
    - Target split: one environment on port `3003`, the other on port `3001`; document which is production before switching traffic.
    - Separate nginx routes with `/staging` or a staging subdomain.
    - Current state: `3003` is the live production Puma port until a separate staging/prod split is completed.
-   - `bin/deploy --environment staging urlfavorites_2.0` must not be used until `URLF_STAGING_*` target variables and nginx routing are configured.
+   - `bin/deploy --environment staging urlfavorites` must not be used until `URLF_STAGING_*` target variables and nginx routing are configured.
 4. Longer-term deployment direction
    - For the current Rails + SQLite app, improving the existing Git-based deploy script is the lightest, highest-value path.
    - GitHub Actions or Kamal can be revisited later.
    - Docker/Kamal improves environment reproducibility but adds SQLite, Solid Queue DB, and persistent storage management overhead.
 
-Post-deploy verification:
+Post-deploy verification (inside LXC 101):
 
-- Service status: `systemctl status rails-puma@urlfavorites_2.0`
-- Health check: `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3003/favorites`
-- Recent logs: `journalctl -u rails-puma@urlfavorites_2.0 -n 30 --no-pager`
+- Service status: `ssh bastion "sudo pct exec 101 -- systemctl status rails-puma@urlfavorites"`
+- Health check: `curl -s -o /dev/null -w "%{http_code}" http://192.168.0.14:3003/favorites`
+- Recent logs: `ssh bastion "sudo pct exec 101 -- journalctl -u rails-puma@urlfavorites -n 30 --no-pager"`
 
 Common production issues:
 
 - `EADDRINUSE port 3000`: `PORT=3003` missing from drop-in.
 - `LLAMA_SERVER_URL is required`: env drop-in missing or daemon reload omitted.
-- 404 on `/ver2.0/favorites`: nginx redirect/proxy rules changed; current Rails route is `/favorites`.
 - Dirty server worktree: stop and reconcile the server diff back into Git before deploying.
 - Missing production DB: stop deploy; inspect `storage/production.sqlite3` backup/restore before any restart.
 - ERB syntax errors: usually missing commas in `link_to` options.
+- Embeddings silently missing (vectors stop growing): `embeddings.service` down inside LXC 101 — check `systemctl status embeddings` and backfill with `bin/rails urlf:backfill_embeddings`.
+- Semantic search quality collapse after model change: re-measure the threshold (see `SemanticClient::SIMILARITY_THRESHOLD` comment) and re-embed everything.
 
 ## Harness / GSD Notes
 
@@ -280,13 +289,16 @@ The project has GSD planning files under `.planning/` and Claude role playbooks 
 ## Environment Variables
 
 ```bash
-LLAMA_SERVER_URL=http://<beacon-wg-ip>:<port>
+LLAMA_SERVER_URL=http://10.10.0.4:8282        # legacy, required to boot; analysis uses LLM_BACKENDS
+LLM_BACKENDS=[{"url":"http://10.10.0.3:8000","model":"Qwen3.6-27B","role":"default","timeout":240}]
+EMBEDDING_URL=http://127.0.0.1:8900           # bge-m3 via llama-cpp-python (embeddings.service)
+GITHUB_TOKEN=<fine-grained PAT>
 RAILS_ENV=production
 SECRET_KEY_BASE=<generated>
 RAILS_MASTER_KEY=<generated>
 ```
 
-System dependency: `yt-dlp` must be installed on the production server.
+System dependencies on the production container: `yt-dlp` (YouTube) and `rdt-cli` (executable `rdt`, Reddit) are installed via `uv tool` under `/home/hwandam/.local/bin` (added to the service PATH via drop-in). Reddit cookie credentials were lost in the 2026-08 LXC migration and must be re-provisioned before Reddit extraction works (see `docs/runbooks/reddit-extraction.md`). `sqlite3` CLI is installed (deploy backups depend on it).
 
 ## Change History
 

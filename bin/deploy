@@ -6,11 +6,13 @@ require "optparse"
 require "shellwords"
 require "time"
 
-APP_NAME = "urlfavorites_2.0"
+APP_NAME = "urlfavorites"
 DEFAULT_PRODUCTION = {
   host: "bastion",
-  path: "/home/hwandam/services/rails/urlfavorites_2.0",
-  service: "rails-puma@urlfavorites_2.0",
+  # App runs inside PVE LXC on bastion (2026-08 infra migration) — commands are wrapped with `pct exec`.
+  pct_vmid: "101",
+  path: "/home/hwandam/services/rails/urlfavorites",
+  service: "rails-puma@urlfavorites",
   port: "3003",
   health_path: "/favorites",
   public_url: "https://urlf.hwandam.kr/favorites",
@@ -31,7 +33,7 @@ PROTECTED_CLEAN_EXCLUDES = [
 
 USAGE = <<~TEXT
   Usage:
-    bin/deploy [--quick] [--commit SHA] [--environment production] [--dry-run] urlfavorites_2.0
+    bin/deploy [--quick] [--commit SHA] [--environment production] [--dry-run] urlfavorites
 
   Defaults deploy the committed Git state of local HEAD to the current production target.
   Staging is supported only when URLF_STAGING_* environment variables are configured.
@@ -124,7 +126,13 @@ def shell_env(vars)
 end
 
 def remote_command(target, command)
-  [ "ssh", target[:host], command ]
+  # App lives in PVE LXC on the bastion host; pct exec runs as root inside the
+  # container (systemctl needs no sudo; rbenv lives under /home/hwandam inside it).
+  if target[:pct_vmid]
+    [ "ssh", target[:host], "sudo pct exec #{target[:pct_vmid]} -- bash -c #{Shellwords.escape(command)}" ]
+  else
+    [ "ssh", target[:host], command ]
+  end
 end
 
 def run_local(label, cmd, dry_run: false, env: {})
@@ -221,7 +229,7 @@ unless options[:quick]
   run_remote(target, "precompile assets", "#{cd_app} #{ruby_env_prefix} #{remote_rails_env(target)} bin/rails assets:precompile", dry_run: options[:dry_run])
 end
 
-run_remote(target, "restart service", "sudo systemctl restart #{Shellwords.escape(target[:service])}", dry_run: options[:dry_run])
+run_remote(target, "restart service", "systemctl restart #{Shellwords.escape(target[:service])}", dry_run: options[:dry_run])
 
 post_args = [ doctor_path, "post" ]
 post_args << "--report" if options[:dry_run]
