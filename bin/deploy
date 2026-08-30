@@ -169,7 +169,9 @@ end
 # Prepend the shims explicitly. ponytail: rbenv-specific; revisit only if the host
 # switches Ruby managers (asdf/rvm/system).
 def ruby_env_prefix
-  'PATH="$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"'
+  # pct exec runs as root, so $HOME would resolve to /root — the app's rbenv
+  # lives in the hwandam home inside the container. Use the absolute path.
+  'PATH="/home/hwandam/.rbenv/shims:/home/hwandam/.rbenv/bin:$PATH"'
 end
 
 def sqlite_backup_command(target, backup_root, db_relative_path)
