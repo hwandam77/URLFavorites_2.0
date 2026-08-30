@@ -27,11 +27,14 @@ class UserTest < ActiveSupport::TestCase
   test "requires a secure password length" do
     user = User.new(
       email_address: "short@example.com",
-      password: "short",
-      password_confirmation: "short"
+      password: "abc12",
+      password_confirmation: "abc12"
     )
 
     assert_not user.valid?
-    assert_includes user.errors[:password], "is too short (minimum is 8 characters)"
+    assert_includes user.errors[:password], "is too short (minimum is 6 characters)"
+
+    user.password = user.password_confirmation = "doking"
+    assert user.valid?, "6자 암호는 유효해야 한다"
   end
 end

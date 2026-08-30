@@ -9,5 +9,6 @@ class User < ApplicationRecord
     presence: true,
     uniqueness: true,
     format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :password, length: { minimum: 8 }, allow_nil: true
+  # 개인 앱 — 사용자 요청으로 최소 길이 8 → 6 (2026-08-31)
+  validates :password, length: { minimum: 6 }, allow_nil: true
 end
