@@ -46,7 +46,7 @@ class AnalyzeTwitterJobTest < ActiveSupport::TestCase
     assert_equal "done", @favorite.status
     assert_equal "Alice on X", @favorite.title
     assert_equal "https://pbs.twimg.com/thumb.jpg", @favorite.thumbnail_url
-    assert_equal "뉴스/커뮤니티", @favorite.category
+    assert_equal "뉴스", @favorite.category
     assert_equal "X 스레드 요약", @favorite.analysis.summary
     assert_equal "영상 자막", @favorite.analysis.transcript
   end

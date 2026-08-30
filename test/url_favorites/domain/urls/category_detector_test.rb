@@ -10,8 +10,8 @@ class UrlFavoritesDomainUrlsCategoryDetectorTest < ActiveSupport::TestCase
     assert_equal "튜토리얼", UrlFavorites::Domain::Urls::CategoryDetector.call("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
   end
 
-  test "twitter content type은 뉴스 커뮤니티" do
-    assert_equal "뉴스/커뮤니티", UrlFavorites::Domain::Urls::CategoryDetector.call("https://x.com/example", "twitter")
+  test "twitter content type은 뉴스" do
+    assert_equal "뉴스", UrlFavorites::Domain::Urls::CategoryDetector.call("https://x.com/example", "twitter")
   end
 
   test "키워드 없는 블로그 URL은 text 없이는 기타" do

@@ -7,8 +7,8 @@ class UrlFavorites::Integrations::LlamaServer::ClientCompleteTest < ActiveSuppor
   def setup
     @original_backends = ENV["LLM_BACKENDS"]
     ENV["LLM_BACKENDS"] = [
-      { "url" => "http://localhost:9993", "model" => "fast-model", "role" => "fast", "timeout" => 5 },
-      { "url" => "http://localhost:9992", "model" => "heavy-model", "role" => "heavy", "timeout" => 5 }
+      { "url" => "http://localhost:9993", "model" => "first-model", "timeout" => 5 },
+      { "url" => "http://localhost:9992", "model" => "second-model", "timeout" => 5 }
     ].to_json
     WebMock.enable!
     WebMock.disable_net_connect!
@@ -34,8 +34,7 @@ class UrlFavorites::Integrations::LlamaServer::ClientCompleteTest < ActiveSuppor
 
     text, _model = UrlFavorites::Integrations::LlamaServer::Client.complete(
       system: "sys prompt",
-      user: "usr prompt",
-      backend_role: "fast"
+      user: "usr prompt"
     )
 
     assert_equal "섹션 본문", text
@@ -47,12 +46,11 @@ class UrlFavorites::Integrations::LlamaServer::ClientCompleteTest < ActiveSuppor
 
     text, model = UrlFavorites::Integrations::LlamaServer::Client.complete(
       system: "s",
-      user: "u",
-      backend_role: "fast"
+      user: "u"
     )
 
     assert_equal "## 제목\n본문 markdown", text
-    assert_equal "fast-model", model
+    assert_equal "first-model", model
   end
 
   test "blank content 이면 ServerError" do
@@ -62,41 +60,39 @@ class UrlFavorites::Integrations::LlamaServer::ClientCompleteTest < ActiveSuppor
       .to_return(status: 200, body: completion_response("").to_json)
 
     assert_raises(UrlFavorites::Integrations::LlamaServer::Client::ServerError) do
-      UrlFavorites::Integrations::LlamaServer::Client.complete(system: "s", user: "u", backend_role: "fast")
+      UrlFavorites::Integrations::LlamaServer::Client.complete(system: "s", user: "u")
     end
   end
 
-  test "backend_role fast 우선 정렬 — fast 가 살아 있으면 heavy 는 호출하지 않는다" do
-    fast_request = stub_request(:post, "http://localhost:9993/v1/chat/completions")
+  test "첫 번째 백엔드가 성공하면 나머지 백엔드는 호출하지 않는다" do
+    first_request = stub_request(:post, "http://localhost:9993/v1/chat/completions")
       .to_return(status: 200, body: completion_response("ok").to_json)
-    heavy_request = stub_request(:post, "http://localhost:9992/v1/chat/completions")
+    second_request = stub_request(:post, "http://localhost:9992/v1/chat/completions")
       .to_return(status: 200, body: completion_response("ok").to_json)
 
     _text, model = UrlFavorites::Integrations::LlamaServer::Client.complete(
       system: "s",
-      user: "u",
-      backend_role: "fast"
+      user: "u"
     )
 
-    assert_requested fast_request
-    assert_not_requested heavy_request
-    assert_equal "fast-model", model
+    assert_requested first_request
+    assert_not_requested second_request
+    assert_equal "first-model", model
   end
 
-  test "fast 실패 시 heavy 로 폴백한다" do
+  test "첫 번째 백엔드 실패 시 다음 백엔드로 폴백한다" do
     stub_request(:post, "http://localhost:9993/v1/chat/completions")
       .to_raise(Faraday::ConnectionFailed.new("Connection refused"))
     stub_request(:post, "http://localhost:9992/v1/chat/completions")
-      .to_return(status: 200, body: completion_response("heavy text").to_json)
+      .to_return(status: 200, body: completion_response("second text").to_json)
 
     text, model = UrlFavorites::Integrations::LlamaServer::Client.complete(
       system: "s",
-      user: "u",
-      backend_role: "fast"
+      user: "u"
     )
 
-    assert_equal "heavy text", text
-    assert_equal "heavy-model", model
+    assert_equal "second text", text
+    assert_equal "second-model", model
   end
 
   private
