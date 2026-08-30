@@ -14,6 +14,9 @@ module UrlFavorites
       # - updated_at 이 STALE_ANALYZING 이상 지난 analyzing 상태도 회복 — 잡이 프로세스
       #   재시작 등으로 사라지면 analyzing 이 영원히 남는다. LLM 타임아웃(240s)보다 훨씬
       #   길어서 실행 중인 잡과 겹치지 않는다.
+      # - STALE_PENDING 이상 묵은 pending 도 회복 — pending 의 정상 수명은 생성 후 수 초
+      #   (EnqueueAnalysis 가 즉시 analyzing 로 전환)이므로 오래 남았다는 건 enqueue 유실.
+      #   실측 사례(2026-08-30 22:27): GitHub 링크 자동 추가 8건이 enqueue 없이 방치.
       #
       # raw_content 는 유지한다(AGENTS.md: 재시도 시 캐시된 본문 재사용) — LLM 장애로
       # 실패한 것이지 추출이 잘못된 게 아니다.
@@ -31,6 +34,7 @@ module UrlFavorites
 
         RECOVERY_BACKOFF = 5.minutes
         STALE_ANALYZING = 30.minutes
+        STALE_PENDING = 5.minutes
 
         def self.call(now: Time.current)
           recovered_failed = Favorite
@@ -42,12 +46,17 @@ module UrlFavorites
             .where(status: "analyzing")
             .where("updated_at < ?", now - STALE_ANALYZING)
 
-          targets = (recovered_failed + stale_analyzing).uniq
+          stale_pending = Favorite
+            .where(status: "pending")
+            .where("updated_at < ?", now - STALE_PENDING)
+
+          targets = (recovered_failed + stale_analyzing + stale_pending).uniq
           return Result.ok(value: { recovered: 0 }) if targets.empty?
 
           Rails.logger.info(
             "[RecoverStalledAnalyses] re-enqueueing #{targets.size} favorite(s): " \
-            "failed=#{recovered_failed.size} stale_analyzing=#{stale_analyzing.size}"
+            "failed=#{recovered_failed.size} stale_analyzing=#{stale_analyzing.size} " \
+            "stale_pending=#{stale_pending.size}"
           )
 
           targets.each do |favorite|

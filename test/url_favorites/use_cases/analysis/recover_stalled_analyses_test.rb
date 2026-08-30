@@ -59,6 +59,24 @@ class UrlFavorites::UseCases::Analysis::RecoverStalledAnalysesTest < ActiveSuppo
     end
   end
 
+  test "5분 이상 묵은 pending (enqueue 유실) 도 회복한다" do
+    @llm_failed.update!(status: "pending", error_message: nil, updated_at: 20.minutes.ago)
+
+    assert_enqueued_jobs(1, only: AnalyzeWebpageAnalysisJob) do
+      result = UrlFavorites::UseCases::Analysis::RecoverStalledAnalyses.call
+      assert_equal 1, result.value[:recovered]
+    end
+  end
+
+  test "방금 생성된 pending (정상 흐름 진행 중) 은 건드리지 않는다" do
+    @llm_failed.update!(status: "pending", error_message: nil, updated_at: 30.seconds.ago)
+
+    assert_no_enqueued_jobs(only: AnalyzeWebpageAnalysisJob) do
+      result = UrlFavorites::UseCases::Analysis::RecoverStalledAnalyses.call
+      assert_equal 0, result.value[:recovered]
+    end
+  end
+
   test "content_type 에 맞는 잡으로 발주한다 (youtube)" do
     @llm_failed.update!(content_type: "youtube", error_message: "Net::ReadTimeout", updated_at: 30.minutes.ago)
 
