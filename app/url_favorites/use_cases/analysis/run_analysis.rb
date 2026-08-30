@@ -76,7 +76,12 @@ module UrlFavorites
         end
 
         def self.enqueue_github_links_from_analysis(favorite_id, detail_content)
-          github_urls = detail_content.scan(%r{https?://github\.com/[^/\s"']+/[^/\s"']+(?::[^\s"']*)?/?}).map { |u| u.chomp('/') }.uniq
+          # 후행 문장부호 제거 — detail_content 는 마크다운이라 "boop]" 처럼
+          # 닫는 괄호가 URL에 붙어 추출되는 경우가 있다 (실측: id 482 URI::InvalidURIError)
+          github_urls = detail_content.scan(%r{https?://github\.com/[^/\s"']+/[^/\s"']+(?::[^\s"']*)?/?})
+            .map { |u| u.chomp('/').sub(%r|[)\]},.;:!?'"]+\z|, "") }
+            .reject(&:blank?)
+            .uniq
           return if github_urls.empty?
 
           # 부모 URL 제외 (이 분석 페이지 자체)
