@@ -47,7 +47,8 @@ if unknown_args.any?
 end
 
 remote_host = ENV.fetch("URLF_REMOTE_HOST", "bastion")
-pct_vmid = ENV["URLF_PCT_VMID"]
+# top-level local variables are invisible inside method bodies — use a global
+$pct_vmid = ENV.fetch("URLF_PCT_VMID", "101")
 remote_path = ENV.fetch("URLF_REMOTE_PATH", "/home/hwandam/services/rails/urlfavorites")
 service = ENV.fetch("URLF_SERVICE", "rails-puma@urlfavorites")
 remote_port = ENV.fetch("URLF_REMOTE_PORT", "3003")
@@ -70,8 +71,8 @@ end
 
 def remote_capture(remote_host, command)
   # App lives in PVE LXC on bastion — wrap with pct exec unless URLF_PCT_VMID is unset.
-  if pct_vmid
-    capture("ssh", remote_host, "sudo pct exec #{pct_vmid} -- bash -c #{Shellwords.escape(command)}")
+  if $pct_vmid
+    capture("ssh", remote_host, "sudo pct exec #{$pct_vmid} -- bash -c #{Shellwords.escape(command)}")
   else
     capture("ssh", remote_host, command)
   end
