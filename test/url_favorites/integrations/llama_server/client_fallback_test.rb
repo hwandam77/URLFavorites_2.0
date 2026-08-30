@@ -110,7 +110,6 @@ class UrlFavorites::Integrations::LlamaServer::ClientFallbackTest < ActiveSuppor
       content_length: 8_000
     )
 
-    assert_equal "default", result[:used_backend_role]
     assert_equal "Qwen3.6-27B", result[:used_backend_model]
   end
 

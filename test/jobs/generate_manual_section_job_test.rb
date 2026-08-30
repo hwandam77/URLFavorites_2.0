@@ -3,14 +3,14 @@
 require "test_helper"
 
 class GenerateManualSectionJobTest < ActiveSupport::TestCase
-  test "queue is ai_refine" do
-    assert_equal "ai_refine", GenerateManualSectionJob.queue_name
+  test "queue is ai_followup" do
+    assert_equal "ai_followup", GenerateManualSectionJob.queue_name
   end
 
-  test "limits_concurrency is declared with shared refine_analysis key" do
+  test "limits_concurrency is declared with shared llm_serialization key" do
     assert_equal 1, GenerateManualSectionJob.concurrency_limit
     assert_equal 30.minutes, GenerateManualSectionJob.concurrency_duration
-    assert_equal "refine_analysis", GenerateManualSectionJob.concurrency_key
+    assert_equal "llm_serialization", GenerateManualSectionJob.concurrency_key
   end
 
   test "perform delegates to GenerateSection use case" do

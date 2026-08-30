@@ -8,9 +8,9 @@ default: &default
       threads: 3
       processes: <%= ENV.fetch("JOB_CONCURRENCY", 1) %>
       polling_interval: 0.1
-    # 배열이면 앞 큐 엄격 우선 → ai 우선, ai_refine 은 유휴 시
-    # 새 worker 추가 금지(총 AI threads 2 유지). refine 동시 1은 limits_concurrency 정본
-    - queues: [ai, ai_refine]
+    # 배열이면 앞 큐 엄격 우선 → ai(1차 분석) 우선, ai_followup(매뉴얼·링크모음) 은 유휴 시
+    # 새 worker 추가 금지(총 AI threads 2 유지). followup 동시 1은 limits_concurrency 정본
+    - queues: [ai, ai_followup]
       threads: 2
       processes: 1
       polling_interval: 1

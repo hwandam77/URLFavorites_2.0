@@ -4,7 +4,10 @@ module UrlFavorites
   module Integrations
     module Search
       class EmbeddingClient
-        EMBEDDING_MODEL = "nomic-embed-text".freeze
+        # 2026-08-30 인프라 이전으로 임베딩 서버 소실 후 재구축하며 bge-m3로 교체.
+        # 1024차원은 교체 전(nomic 계열 아닌 1024차원 모델)과 동일.
+        # nomic-embed-text는 영어 중심이라 한국어 무의미 질의 분리가 불가했음 (유효/무의미 최고 유사도 0.75 부근 겹침).
+        EMBEDDING_MODEL = "bge-m3".freeze
         EMBEDDING_URL = ENV["EMBEDDING_URL"] || ENV["LLAMA_SERVER_URL"] || "http://localhost:8080"
 
         def self.call(text)

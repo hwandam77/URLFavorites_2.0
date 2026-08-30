@@ -126,7 +126,6 @@ module UrlFavorites
 
           result = inner.slice(:summary, :key_points, :tags, :sentiment)
           result[:detail_content] = inner[:detail_content] if inner.key?(:detail_content)
-          result[:used_backend_role] = "default"
           result[:used_backend_model] = model
           result
         rescue Faraday::ServerError => e

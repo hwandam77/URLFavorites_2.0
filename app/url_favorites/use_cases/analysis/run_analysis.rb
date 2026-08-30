@@ -63,8 +63,6 @@ module UrlFavorites
             PlanManualOutlineJob.perform_later(favorite.id, snapshot)
           elsif normalized_style == "link_roundup"
             PlanLinkRoundupJob.perform_later(favorite.id, snapshot)
-          elsif refine_candidate?(normalized_style, raw_content)
-            RefineAnalysisJob.perform_later(favorite.id, normalized_style, snapshot)
           end
         rescue => e
           raise e unless favorite
@@ -76,12 +74,6 @@ module UrlFavorites
           )
           raise e if favorite.retry_count < MAX_RETRIES
         end
-
-        def self.refine_candidate?(style, raw_content)
-          UrlFavorites::Domain::Analysis::BackendRouter::DETAILED_STYLES.include?(style.to_s) ||
-            raw_content.to_s.length >= UrlFavorites::Domain::Analysis::BackendRouter::LONG_CONTENT_THRESHOLD
-        end
-        private_class_method :refine_candidate?
 
         def self.enqueue_github_links_from_analysis(favorite_id, detail_content)
           github_urls = detail_content.scan(%r{https?://github\.com/[^/\s"']+/[^/\s"']+(?::[^\s"']*)?/?}).map { |u| u.chomp('/') }.uniq

@@ -3,14 +3,14 @@
 require "test_helper"
 
 class PlanManualOutlineJobTest < ActiveSupport::TestCase
-  test "queue is ai_refine" do
-    assert_equal "ai_refine", PlanManualOutlineJob.queue_name
+  test "queue is ai_followup" do
+    assert_equal "ai_followup", PlanManualOutlineJob.queue_name
   end
 
-  test "limits_concurrency is declared with shared refine_analysis key" do
+  test "limits_concurrency is declared with shared llm_serialization key" do
     assert_equal 1, PlanManualOutlineJob.concurrency_limit
     assert_equal 30.minutes, PlanManualOutlineJob.concurrency_duration
-    assert_equal "refine_analysis", PlanManualOutlineJob.concurrency_key
+    assert_equal "llm_serialization", PlanManualOutlineJob.concurrency_key
   end
 
   test "perform delegates to PlanOutline use case" do

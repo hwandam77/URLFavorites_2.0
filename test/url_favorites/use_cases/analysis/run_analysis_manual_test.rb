@@ -17,20 +17,17 @@ class RunAnalysisManualTest < ActiveSupport::TestCase
       key_points: [ "k1" ],
       tags: [ "rails" ],
       sentiment: "neutral",
-      used_backend_role: "fast",
       used_backend_model: "fast-gguf"
     }
   end
 
-  test "onboarding_manual 이면 PlanManualOutlineJob 발주하고 RefineAnalysisJob 미발주" do
+  test "onboarding_manual 이면 PlanManualOutlineJob 발주" do
     UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @base_result) do
-      assert_no_enqueued_jobs(only: RefineAnalysisJob) do
-        assert_enqueued_jobs(1, only: PlanManualOutlineJob) do
-          UrlFavorites::UseCases::Analysis::RunAnalysis.call(
-            favorite_id: @favorite.id,
-            analysis_style: "onboarding_manual"
-          )
-        end
+      assert_enqueued_jobs(1, only: PlanManualOutlineJob) do
+        UrlFavorites::UseCases::Analysis::RunAnalysis.call(
+          favorite_id: @favorite.id,
+          analysis_style: "onboarding_manual"
+        )
       end
     end
 
@@ -39,15 +36,24 @@ class RunAnalysisManualTest < ActiveSupport::TestCase
     assert_in_delta @favorite.reload.analysis.updated_at.to_f, job[:args].last, 0.001
   end
 
-  test "다른 스타일은 기존대로 RefineAnalysisJob" do
+  test "link_roundup 이면 PlanLinkRoundupJob 발주" do
     UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @base_result) do
-      assert_no_enqueued_jobs(only: PlanManualOutlineJob) do
-        assert_enqueued_with(job: RefineAnalysisJob) do
-          UrlFavorites::UseCases::Analysis::RunAnalysis.call(
-            favorite_id: @favorite.id,
-            analysis_style: "tutorial"
-          )
-        end
+      assert_enqueued_jobs(1, only: PlanLinkRoundupJob) do
+        UrlFavorites::UseCases::Analysis::RunAnalysis.call(
+          favorite_id: @favorite.id,
+          analysis_style: "link_roundup"
+        )
+      end
+    end
+  end
+
+  test "일반 스타일은 후속 잡을 발주하지 않는다" do
+    UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @base_result) do
+      assert_no_enqueued_jobs(only: [ PlanManualOutlineJob, PlanLinkRoundupJob ]) do
+        UrlFavorites::UseCases::Analysis::RunAnalysis.call(
+          favorite_id: @favorite.id,
+          analysis_style: "tutorial"
+        )
       end
     end
   end

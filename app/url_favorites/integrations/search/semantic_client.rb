@@ -5,9 +5,10 @@ module UrlFavorites
     module Search
       class SemanticClient
         # 코사인 유사도 하한. 아래는 무관한 결과로 간주해 버린다.
-        # 2026-08-03 운영 293건 실측: 무의미 질의 최고 0.376~0.414, 유효 질의 최고 0.487~0.668.
+        # 2026-08-03 운영 293건 실측(nomic→1024차원 모델): 무의미 질의 최고 0.376~0.414, 유효 질의 최고 0.487~0.668 → 0.45 채택.
+        # 2026-08-30 bge-m3 재구축 후 재측정(377건): 무의미 최고 0.454, 유효 최저 0.492 → 0.47로 상향.
         # 임베딩 모델이나 코퍼스가 바뀌면 재측정해서 조정할 것.
-        SIMILARITY_THRESHOLD = 0.45
+        SIMILARITY_THRESHOLD = 0.47
 
         def self.call(query:, content_type: nil, status: nil, collection_id: nil, sort: "recent", limit: 50)
           new(query: query, content_type: content_type, status: status,

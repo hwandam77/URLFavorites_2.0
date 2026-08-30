@@ -13,6 +13,6 @@ class QueueYmlTest < ActiveSupport::TestCase
     end
 
     assert_equal %w[default search mailers reindex], workers[0][:queues]
-    assert_equal %w[ai ai_refine], workers[1][:queues]
+    assert_equal %w[ai ai_followup], workers[1][:queues]
   end
 end

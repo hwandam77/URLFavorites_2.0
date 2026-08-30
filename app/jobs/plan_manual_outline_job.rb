@@ -6,11 +6,11 @@ class PlanManualOutlineJob < ApplicationJob
   MAX_RETRIES = 3
   BACKOFF_SECONDS = [ 30, 60, 120 ].freeze
 
-  queue_as :ai_refine
+  queue_as :ai_followup
 
   # duration 은 semaphore lock 획득 시점부터 계산된다 (절대 보장 아님).
-  # RefineAnalysisJob 과 같은 전역 키를 공유해 LLM 레인 전체를 직렬화한다.
-  limits_concurrency key: "refine_analysis", to: 1, duration: 30.minutes
+  # 같은 전역 키로 LLM 레인 전체를 직렬화한다 (과거 refine_analysis 키에서 개명).
+  limits_concurrency key: "llm_serialization", to: 1, duration: 30.minutes
 
   rescue_from(StandardError) do |e|
     executions_index = (executions - 1)
