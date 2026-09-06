@@ -205,6 +205,8 @@ Infrastructure (rebuilt 2026-08-20~21, PVE + LXC):
 - Port: `3003`
 - URL: `https://urlf.hwandam.kr/favorites`
 - nginx runs on the bastion host (config: `/etc/nginx/sites-enabled/URLF.hwandam.kr`)
+- 이력: 2026-07-22 `vps-server`(192.168.0.31, Tailscale `100.97.46.29`) → `bastion` 이관(vps-server 해체 — Tailscale에 offline 잔재가 남아 2026-07-24 장애 진단 초기 혼선 원인). 2026-08-20~21 PVE + LXC 재구축. 이관 As-Built: `wiki/서버관리/VPS_server/리포트/서버-이전-완료-보고서-2026-07-22.md`.
+- Solid Queue는 `SOLID_QUEUE_IN_PUMA=1` 내장 단일 supervisor. 2026-07-24 `solid-queue@` 별도 서비스 stop+disable로 단일화 — 이중 supervisor는 "배포 후 옛 코드 잡" 사고 클래스의 원인.
 - Server source policy: do not edit source files on the server. Deploy committed changes only.
 - Production DB policy: never delete or overwrite `storage/*.sqlite3*` inside the container.
 - Current primary DB: `storage/production.sqlite3`; queue DB: `storage/production_queue.sqlite3`.
@@ -230,6 +232,9 @@ Drop-in path (inside LXC 101):
 Notes:
 
 - `LLM_BACKENDS` (Nexus vllm) is the effective analysis backend; the legacy `LLAMA_SERVER_URL` (beacon 8282) is dead since the infra migration but kept because production.rb requires the variable to be set.
+- **`LLM_BACKENDS` 이스케이프 함정 (2026-07-13 장애 원인)**: systemd `Environment=`는 큰따옴표를 quoting으로 해석해 벗겨낸다. JSON은 반드시 `\"`로 이스케이프한다 — 평범한 `"`로 넣으면 무효 JSON이 되어 `resolve_backends`가 `ParseError`를 던지고 **모든 분석이 실패**한다. 편집 후 `/proc/$(systemctl show <svc> -p MainPID --value)/environ`으로 실제 프로세스가 받는 값이 유효 JSON인지 검증할 것 (드롭인 편집은 restart 전까지 dormant라 다음 restart 때 터진다). 위 예시 블록은 가독성용이며 실제 파일에는 이스케이프가 들어간다.
+- timeout 240: vllm Qwen3.6-27B는 256K prefill + 512 토큰 생성이 ~10초지만 긴 유튜브 트랜스크립트 여유분으로 240초 유지.
+- 드롭인 변경 후: `sudo systemctl daemon-reload && sudo systemctl restart rails-puma@urlfavorites`
 - Embeddings run on the same container: `embeddings.service` (llama-cpp-python, bge-m3 Q8_0 GGUF, `127.0.0.1:8900`, model dir `/home/hwandam/services/embeddings/`).
 - The container git checkout fetches from GitHub over https using a stored credential (`/root/.git-credentials`, token same as `GITHUB_TOKEN`); remote name must stay `github` (bin/deploy expects it).
 
@@ -277,13 +282,70 @@ Common production issues:
 - ERB syntax errors: usually missing commas in `link_to` options.
 - Embeddings silently missing (vectors stop growing): `embeddings.service` down inside LXC 101 — check `systemctl status embeddings` and backfill with `bin/rails urlf:backfill_embeddings`.
 - Semantic search quality collapse after model change: re-measure the threshold (see `SemanticClient::SIMILARITY_THRESHOLD` comment) and re-embed everything.
+- youtube 분석만 `failed` (`yt-dlp failed` / `ExtractionError`): `yt-dlp` 바이너리 미설치 또는 구버전 (2026-07-24 이관 누락 사례). `extractor.rb`가 `Open3`로 외부 명령 호출 → 서비스 PATH 기준 `yt-dlp --version` 확인 후 재설치 (ffmpeg 불필요). 이관 체크리스트에 `Open3`/`system` 외부 바이너리 의존성 점검 포함.
+- youtube 분석만 `failed` (`Net::ReadTimeout`): 긴 트랜스크립트 LLM 생성이 timeout 근접/초과 → `LLM_BACKENDS` timeout 확인 (현재 240초).
+- reddit 분석만 `failed` (`ExtractionError`): `rdt` CLI 미설치 또는 쿠키 만료(기본 7일) — Reddit은 익명 API 전면 차단이라 로그인 쿠키 필수. `rdt status --json`으로 `authenticated` 확인 → 만료 시 Mac에서 `rdt login` 후 `~/.config/rdt-cli/credential.json` 재배치. 상세: `docs/runbooks/reddit-extraction.md`.
+- reddit만 403 / `authenticated: false` (쿠키·IP 정상인데): rdt가 Python 3.14로 구동되면 쿠키를 요청에 싣지 못한다 (2026-07-24 실측: 같은 쿠키가 3.12에선 성공). `uv tool install --python 3.12 'git+…rdt-cli…@고정커밋'`으로 3.12 고정 재설치.
+- 모든 분석 `failed` (`ParseError: Invalid LLM_BACKENDS JSON`): env.conf의 `"` 미이스케이프 → `\"`로 이스케이프 후 `/proc/PID/environ`으로 유효 JSON 검증.
+- 배포했는데 잡이 옛 코드로 동작 (2026-07-13 발견): 이전 재시작 때 죽지 않은 **고아 solid-queue 트리(PPID=1)**가 같은 큐 DB에서 잡을 선점 → `lsof storage/production_queue.sqlite3`로 워커 트리 확인 → puma 기동 시각과 다른 supervisor `kill <PID>`.
+
+## 모델 라우팅
+- **Opus**: 분석/계획/아키텍처/사용자 대화
+- **Sonnet**: 코드 구현/리팩토링/테스트
+- **Haiku**: 파일 탐색/간단 조회
+
+Opus는 설계/검증에 집중, 코드는 Sonnet에 위임.
+
+---
+
+## Multi-Agent Orchestration (Orca)
+
+Hub & Spoke 원칙(Hub 직접 구현 금지, 탐색은 Hub·작성은 Spoke, 검토자≠구현자)과 Spoke 모델 라우팅(codex/grok/kimi/minimax)은 **workspace AGENTS.md + `rules/15-hub-and-spoke.md`가 정본**. 여기엔 이 프로젝트의 델타만 적는다.
+
+- 실행 기반: [Orca](https://github.com/stablyai/orca) ADE. 기존 claude-peers/tmux 기반 실행 구조는 이 프로젝트에서 폐기.
+- Spoke 추가: `mimo (V2.5-Pro)` — 코드 구현 보조, 병렬 발주 시 추가 워커.
+- 동급 코딩 태스크는 2개 에이전트 병렬 발주 → diff 비교 후 채택 (Orca 워크트리 격리가 이를 전제로 설계됨).
+- 추가 금지: `Agent` 도구로 Claude 자체 서브에이전트 직접 스폰 (사용자 명시 요청 제외).
+
+**핵심 플로우:**
+1. `orca worktree create` — 에이전트별 격리 git 워크트리 생성
+2. `orca terminal create` / `terminal send` — 워크트리에서 에이전트 CLI 기동·오더
+3. `orca orchestration task-create` → `dispatch` — 태스크 발주
+4. `orca orchestration check` / `inbox` — 결과 수신, `terminal wait` — 완료 대기
+5. diff 리뷰(주석 → 에이전트 재발주) → 병합, `orca worktree rm` — 정리
+
+명령 스키마 정본: `orca agent-context` (기계가독 스키마 출력)
+
+---
+
+## 하네스: Orca 기반 (GSD/tmux 대체)
+
+기존 GSD phase lifecycle + tmux 2계층 구조는 폐기. 하네스 기능은 Orca 프리미티브로 대체한다.
+
+| 하네스 요구 | Orca 대체 | 명령 |
+|------------|-----------|------|
+| 병렬 워커 실행 (구 tmux pane) | 워크트리별 에이전트 격리 실행 | `worktree create/ps`, `terminal create/send/read/wait` |
+| Phase/태스크 관리 (구 GSD) | 태스크 생성·발주·상태 추적 + 코디네이터 루프 | `orchestration task-create/task-list/task-update/dispatch/run` |
+| 검증 게이트 (구 verify-work) | 결정 게이트 — 승인 전 태스크 차단 | `orchestration gate-create/gate-resolve/gate-list` |
+| 에이전트 간 보고/에스컬레이션 | 인터에이전트 메시지 (ask/reply 블로킹 지원) | `orchestration send/check/reply/inbox` |
+| 정기 검증 (nightly E2E, 배포 후 체크) | 스케줄 자동화 | `automations create/run/runs` |
+| UI/E2E 스모크 검증 | 내장 브라우저 자동화 + Design Mode | `tab create`, `goto`, `snapshot`, `click`, `fill` |
+| 리뷰 루프 | diff 인라인 주석 → 에이전트 재발주 | Orca 앱 UI (diff annotate) |
+| 관측성 (run 상태 요약) | 워크트리 오케스트레이션 대시보드 | `worktree ps`, `orchestration inbox` |
+
+**운영 원칙:**
+- 태스크 단위 = 워크트리 단위. 완료·병합 후 `worktree rm`으로 정리.
+- Orca 게이트는 판정 결과를 승인하는 관문이지 판정 주체가 아니다. pass/fail 실행 위치는 workspace AGENTS.md "검증 evidence 위치"를 따른다.
+- 커스텀 에이전트 플레이북(`.claude/agents/rails-{core,ui,test,qa}.md`)은 역할 참고 문서로 유지 — Orca로 발주 시 태스크 명세에 해당 원칙을 포함시킨다.
+
+---
 
 ## Harness / GSD Notes
 
-The project has GSD planning files under `.planning/` and Claude role playbooks under `.claude/agents/`.
+GSD phase lifecycle + tmux 2계층 구조는 **폐기** — 위 "하네스: Orca 기반" 표로 대체됐다.
 
-- Default lifecycle: plan phase, execute phase, verify work.
-- Role playbooks: `rails-core`, `rails-ui`, `rails-test`, `rails-qa`.
+- `.planning/` 아래 GSD 산출물은 컨텍스트 참고용으로만 남긴다.
+- Role playbooks (`.claude/agents/rails-{core,ui,test,qa}.md`)는 역할 참고 문서로 유지 — Orca로 발주 시 태스크 명세에 해당 원칙을 포함시킨다.
 - For Codex work, follow the architecture and verification rules in this file even when using GSD artifacts for context.
 
 ## Environment Variables
