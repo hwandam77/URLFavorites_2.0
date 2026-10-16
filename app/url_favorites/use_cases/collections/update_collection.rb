@@ -9,8 +9,12 @@ module UrlFavorites
           attrs = {}
           attrs[:name] = name if name
           attrs[:description] = description if description
-          collection.update!(**attrs)
-          UrlFavorites::UseCases::Result.new(ok: true, value: { collection: collection })
+          if collection.update(**attrs)
+            Rails.cache.delete("sidebar_collections")
+            UrlFavorites::UseCases::Result.new(ok: true, value: { collection: collection })
+          else
+            UrlFavorites::UseCases::Result.new(ok: false, value: { collection: collection }, error: collection.errors)
+          end
         end
       end
     end

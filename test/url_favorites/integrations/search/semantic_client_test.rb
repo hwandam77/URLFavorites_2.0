@@ -45,4 +45,17 @@ class UrlFavorites::Integrations::Search::SemanticClientTest < ActiveSupport::Te
     results = UrlFavorites::Integrations::Search::SemanticClient.call(query: "")
     assert_equal [], results
   end
+
+  test "filters semantic search results by string collection_id" do
+    collection = Collection.create!(name: "AI Collection")
+    CollectionMembership.create!(favorite: @favorite, collection: collection)
+
+    UrlFavorites::Integrations::Search::EmbeddingClient.stub :call, [ 0.1, 0.2, 0.9 ] do
+      results = UrlFavorites::Integrations::Search::SemanticClient.call(query: "ai", collection_id: collection.id.to_s)
+      assert results.any? { |f| f.id == @favorite.id }
+
+      empty_results = UrlFavorites::Integrations::Search::SemanticClient.call(query: "ai", collection_id: "999999")
+      assert_equal [], empty_results
+    end
+  end
 end

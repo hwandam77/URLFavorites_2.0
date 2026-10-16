@@ -56,4 +56,13 @@ class FavoriteTest < ActiveSupport::TestCase
     fav = Favorite.new(url: "https://example.com", content_type: "webpage", note: "x" * 5_000)
     assert fav.valid?
   end
+
+  test "detect_content_type은 도메인 TypeDetector에 위임하여 5종 타입을 판별한다" do
+    assert_equal "youtube", Favorite.new(url: "https://www.youtube.com/watch?v=123", content_type: nil).detect_content_type
+    assert_equal "github", Favorite.new(url: "https://github.com/rails/rails", content_type: nil).detect_content_type
+    assert_equal "twitter", Favorite.new(url: "https://x.com/user/status/1", content_type: nil).detect_content_type
+    assert_equal "reddit", Favorite.new(url: "https://www.reddit.com/r/ruby/comments/1/a", content_type: nil).detect_content_type
+    assert_equal "webpage", Favorite.new(url: "https://example.com/article", content_type: nil).detect_content_type
+  end
 end
+

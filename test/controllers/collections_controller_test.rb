@@ -58,4 +58,26 @@ class CollectionsControllerTest < ActionDispatch::IntegrationTest
       delete collection_url(col)
     end
   end
+
+  test "PATCH /collections/:id with blank name returns unprocessable_entity" do
+    col = Collection.create!(name: "Original Name")
+    patch collection_url(col), params: { collection: { name: "" } }
+    assert_response :unprocessable_entity
+    assert_equal "Original Name", col.reload.name
+  end
+
+  test "collection create, update, and destroy invalidate sidebar_collections cache" do
+    Rails.cache.write("sidebar_collections", [:cached])
+    UrlFavorites::UseCases::Collections::CreateCollection.call(name: "Cache Test Col")
+    assert_nil Rails.cache.read("sidebar_collections")
+
+    col = Collection.create!(name: "Cache Target")
+    Rails.cache.write("sidebar_collections", [:cached])
+    UrlFavorites::UseCases::Collections::UpdateCollection.call(id: col.id, name: "Cache Target Updated")
+    assert_nil Rails.cache.read("sidebar_collections")
+
+    Rails.cache.write("sidebar_collections", [:cached])
+    UrlFavorites::UseCases::Collections::DeleteCollection.call(id: col.id)
+    assert_nil Rails.cache.read("sidebar_collections")
+  end
 end

@@ -62,8 +62,9 @@ module UrlFavorites
         def apply_filters(scope)
           scope = scope.where(content_type: @content_type) if @content_type.present?
           scope = scope.where(status: @status) if @status.present?
-          scope = scope.where(category: @category) if @category.present? && @category != "전체"
+          scope = scope.joins(:collection_memberships).where(collection_memberships: { collection_id: @collection_id }) if @collection_id.present?
           scope = scope.where(pinned: true) if @category == "핀"
+          scope = scope.where(category: @category) if @category.present? && @category != "전체" && @category != "핀"
           scope
         end
 

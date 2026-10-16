@@ -34,12 +34,6 @@ class Favorite < ApplicationRecord
   def detect_content_type
     return content_type if content_type.present?
 
-    if url.to_s.match?(/\Ahttps?:\/\/(www\.)?(youtube\.com|youtu\.be)/i)
-      "youtube"
-    elsif url.to_s.match?(/\Ahttps?:\/\/(www\.)?github\.com/i)
-      "github"
-    else
-      "webpage"
-    end
+    UrlFavorites::Domain::Urls::TypeDetector.call(url.to_s)
   end
 end

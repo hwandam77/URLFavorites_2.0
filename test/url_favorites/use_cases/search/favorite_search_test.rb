@@ -96,4 +96,22 @@ class UrlFavorites::UseCases::Search::FavoriteSearchTest < ActiveSupport::TestCa
     results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "nonexistent_xyz_999")
     assert_empty results
   end
+
+  def test_filters_by_pinned_when_category_is_pin
+    @fav1.update!(category: "AI에이전트", pinned: true)
+    @fav2.update!(category: "백엔드", pinned: false)
+
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: nil, category: "핀")
+    assert_includes results.map(&:id), @fav1.id
+    refute_includes results.map(&:id), @fav2.id
+  end
+
+  def test_filters_by_collection_id
+    collection = Collection.create!(name: "Test Collection")
+    CollectionMembership.create!(favorite: @fav1, collection: collection)
+
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: nil, collection_id: collection.id.to_s)
+    assert_includes results.map(&:id), @fav1.id
+    refute_includes results.map(&:id), @fav2.id
+  end
 end

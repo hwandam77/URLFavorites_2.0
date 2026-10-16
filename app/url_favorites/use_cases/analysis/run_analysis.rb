@@ -1,5 +1,6 @@
 require Rails.root.join("app/url_favorites/domain/analysis").to_s
 require Rails.root.join("app/url_favorites/domain/analysis/prompt_style").to_s
+require Rails.root.join("app/url_favorites/domain/content/github_link_extractor").to_s
 
 module UrlFavorites
   module UseCases
@@ -78,15 +79,17 @@ module UrlFavorites
         def self.enqueue_github_links_from_analysis(favorite_id, detail_content)
           # 후행 문장부호 제거 — detail_content 는 마크다운이라 "boop]" 처럼
           # 닫는 괄호가 URL에 붙어 추출되는 경우가 있다 (실측: id 482 URI::InvalidURIError)
-          github_urls = detail_content.scan(%r{https?://github\.com/[^/\s"']+/[^/\s"']+(?::[^\s"']*)?/?})
+          github_urls = UrlFavorites::Domain::Content::GithubLinkExtractor.call(detail_content)
             .map { |u| u.chomp('/').sub(%r|[)\]},.;:!?'"]+\z|, "") }
+            .select { |u| u.match?(%r{\Ahttps?://github\.com/[^/\s"']+/[^/\s"']+(?::[^\s"']*)?/?\z}) }
+            .map { |u| u.chomp('/') }
             .reject(&:blank?)
             .uniq
           return if github_urls.empty?
 
           # 부모 URL 제외 (이 분석 페이지 자체)
           parent_url = favorite_id ? Favorite.find_by(id: favorite_id)&.url : nil
-          github_urls.reject! { |u| u == parent_url.chomp('/') }
+          github_urls.reject! { |u| u == parent_url&.chomp('/') }
           return if github_urls.empty?
 
           # 이미 존재하는 URL 제외
@@ -95,11 +98,15 @@ module UrlFavorites
 
           # 없는 링크만 자동 추가+분석
           github_urls.first(20).each do |url|
-            fav, created = Favorite.find_or_create_by(url: url) do |f|
+            created = false
+            fav = Favorite.find_or_create_by(url: url) do |f|
+              created = true
+              f.title = url if f.title.blank?
+              f.category = UrlFavorites::Domain::Urls::CategoryDetector.call(url, "github") if f.category.blank?
               f.content_type = "github"
               f.status = "pending"
             end
-            if created && fav.status == "pending"
+            if (created || fav.previously_new_record?) && fav.status == "pending"
               case fav.content_type
               when "github"
                 AnalyzeWebpageAnalysisJob.set(wait: 5.seconds).perform_later(fav.id, "execution_brief")

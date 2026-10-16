@@ -45,7 +45,7 @@ module UrlFavorites
           return [] if scored.empty?
 
           favorite_ids = scored.map { |c| c[:favorite_id] }
-          favorites_map = Favorite.where(id: favorite_ids).index_by(&:id)
+          favorites_map = Favorite.includes(:analysis, :collection_memberships).where(id: favorite_ids).index_by(&:id)
 
           results = scored.map { |c| favorites_map[c[:favorite_id]] }.compact
 
@@ -92,7 +92,8 @@ module UrlFavorites
 
         def filter_by_collection_id(favorites)
           return favorites unless @collection_id.present?
-          favorites.select { |f| f.collection_memberships.any? { |m| m.collection_id == @collection_id } }
+          target_id = @collection_id.to_i
+          favorites.select { |f| f.collection_memberships.any? { |m| m.collection_id == target_id } }
         end
       end
     end

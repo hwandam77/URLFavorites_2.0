@@ -311,4 +311,12 @@ class FavoritesControllerTest < ActionDispatch::IntegrationTest
     # 재분석은 raw_content를 nil로 초기화하여 새로 추출함
     assert_nil fav.raw_content
   end
+
+  test "GET /favorites 표시 시 v3.5 버전 라벨과 Reddit 필터 링크를 포함합니다" do
+    get favorites_url
+
+    assert_response :success
+    assert_includes response.body, "v3.5"
+    assert_select "a[href*='content_type=reddit']"
+  end
 end

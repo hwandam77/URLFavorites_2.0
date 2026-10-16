@@ -31,6 +31,7 @@ class CollectionsController < ApplicationController
       redirect_to collection_url(result.value[:collection]), notice: "Collection updated"
     else
       @collection = Collection.find(params[:id])
+      @favorites = @collection.favorites.includes(:analysis)
       render :show, status: :unprocessable_entity
     end
   end

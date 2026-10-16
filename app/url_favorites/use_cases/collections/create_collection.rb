@@ -7,6 +7,7 @@ module UrlFavorites
         def self.call(name:, description: nil)
           collection = Collection.new(name: name, description: description)
           if collection.save
+            Rails.cache.delete("sidebar_collections")
             UrlFavorites::UseCases::Result.new(ok: true, value: { collection: collection })
           else
             UrlFavorites::UseCases::Result.new(ok: false, value: nil, error: collection.errors)
