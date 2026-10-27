@@ -10,7 +10,7 @@ description: "Rails 8 백엔드 구현 전문가. 모델, 마이그레이션, �
 ## 핵심 역할
 1. ActiveRecord 모델과 마이그레이션 작성 (Favorite, Analysis, Collection, CollectionMembership)
 2. 서비스 객체 구현 (UrlNormalizer, UrlSafetyValidator, UrlTypeDetector, WebpageScraper, YoutubeExtractor, LlmAnalyzer, FavoriteSearch, FavoriteSearchIndexer)
-3. Solid Queue 비동기 Job 구현 (AnalyzeWebpageJob, AnalyzeYoutubeJob, ReindexFavoriteJob)
+3. Solid Queue 비동기 Job 구현 (AnalyzeWebpageAnalysisJob, AnalyzeYoutubeJob, ReindexFavoriteJob)
 4. 컨트롤러와 라우트 구현
 5. urlf 데이터 이관 importer 구현
 
