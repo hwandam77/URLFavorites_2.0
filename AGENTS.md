@@ -298,54 +298,33 @@ Opus는 설계/검증에 집중, 코드는 Sonnet에 위임.
 
 ---
 
-## Multi-Agent Orchestration (Orca)
+## Multi-Agent Orchestration
 
-Hub & Spoke 원칙(Hub 직접 구현 금지, 탐색은 Hub·작성은 Spoke, 검토자≠구현자)과 Spoke 모델 라우팅(codex/grok/kimi/minimax)은 **workspace AGENTS.md + `rules/15-hub-and-spoke.md`가 정본**. 여기엔 이 프로젝트의 델타만 적는다.
+Hub & Spoke 원칙(Hub 직접 구현 금지, 탐색은 Hub·작성은 Spoke, 검토자≠구현자)과 Spoke 모델 라우팅(codex/grok/kimi/minimax)은 **workspace AGENTS.md + `rules/15-hub-and-spoke.md`가 정본**(실행 계층 pi-subagents §15.8. Orca ADE는 2026-10-27 폐기). 여기엔 이 프로젝트의 델타만 적는다.
 
-- 실행 기반: [Orca](https://github.com/stablyai/orca) ADE. 기존 claude-peers/tmux 기반 실행 구조는 이 프로젝트에서 폐기.
 - Spoke 추가: `mimo (V2.5-Pro)` — 코드 구현 보조, 병렬 발주 시 추가 워커.
-- 동급 코딩 태스크는 2개 에이전트 병렬 발주 → diff 비교 후 채택 (Orca 워크트리 격리가 이를 전제로 설계됨).
-- 추가 금지: `Agent` 도구로 Claude 자체 서브에이전트 직접 스폰 (사용자 명시 요청 제외).
-
-**핵심 플로우:**
-1. `orca worktree create` — 에이전트별 격리 git 워크트리 생성
-2. `orca terminal create` / `terminal send` — 워크트리에서 에이전트 CLI 기동·오더
-3. `orca orchestration task-create` → `dispatch` — 태스크 발주
-4. `orca orchestration check` / `inbox` — 결과 수신, `terminal wait` — 완료 대기
-5. diff 리뷰(주석 → 에이전트 재발주) → 병합, `orca worktree rm` — 정리
-
-명령 스키마 정본: `orca agent-context` (기계가독 스키마 출력)
+- 동급 코딩 태스크는 2개 에이전트 병렬 발주 → diff 비교 후 채택 (워크트리 격리가 전제).
+- 추가 금지: Claude 자체 서브에이전트 직접 스폰 (사용자 명시 요청 제외).
 
 ---
 
-## 하네스: Orca 기반 (GSD/tmux 대체)
+## 하네스 (GSD/tmux 폐기)
 
-기존 GSD phase lifecycle + tmux 2계층 구조는 폐기. 하네스 기능은 Orca 프리미티브로 대체한다.
-
-| 하네스 요구 | Orca 대체 | 명령 |
-|------------|-----------|------|
-| 병렬 워커 실행 (구 tmux pane) | 워크트리별 에이전트 격리 실행 | `worktree create/ps`, `terminal create/send/read/wait` |
-| Phase/태스크 관리 (구 GSD) | 태스크 생성·발주·상태 추적 + 코디네이터 루프 | `orchestration task-create/task-list/task-update/dispatch/run` |
-| 검증 게이트 (구 verify-work) | 결정 게이트 — 승인 전 태스크 차단 | `orchestration gate-create/gate-resolve/gate-list` |
-| 에이전트 간 보고/에스컬레이션 | 인터에이전트 메시지 (ask/reply 블로킹 지원) | `orchestration send/check/reply/inbox` |
-| 정기 검증 (nightly E2E, 배포 후 체크) | 스케줄 자동화 | `automations create/run/runs` |
-| UI/E2E 스모크 검증 | 내장 브라우저 자동화 + Design Mode | `tab create`, `goto`, `snapshot`, `click`, `fill` |
-| 리뷰 루프 | diff 인라인 주석 → 에이전트 재발주 | Orca 앱 UI (diff annotate) |
-| 관측성 (run 상태 요약) | 워크트리 오케스트레이션 대시보드 | `worktree ps`, `orchestration inbox` |
+기존 GSD phase lifecycle + tmux 2계층 구조는 폐기. Orca 기반 하네스(2026-07~10)도 2026-10-27 폐기 — 오케스트레이션 실행 계층은 pi-subagents(`rules/15-hub-and-spoke.md` §15.8)를 쓴다.
 
 **운영 원칙:**
-- 태스크 단위 = 워크트리 단위. 완료·병합 후 `worktree rm`으로 정리.
-- Orca 게이트는 판정 결과를 승인하는 관문이지 판정 주체가 아니다. pass/fail 실행 위치는 workspace AGENTS.md "검증 evidence 위치"를 따른다.
-- 커스텀 에이전트 플레이북(`.claude/agents/rails-{core,ui,test,qa}.md`)은 역할 참고 문서로 유지 — Orca로 발주 시 태스크 명세에 해당 원칙을 포함시킨다.
+- 태스크 단위 = 워크트리 단위. 완료·병합 후 워크트리 정리.
+- pass/fail 실행 위치는 workspace AGENTS.md "검증 evidence 위치"를 따른다.
+- 커스텀 에이전트 플레이북(`.claude/agents/rails-{core,ui,test,qa}.md`)은 역할 참고 문서로 유지 — 발주 시 태스크 명세에 해당 원칙을 포함시킨다.
 
 ---
 
 ## Harness / GSD Notes
 
-GSD phase lifecycle + tmux 2계층 구조는 **폐기** — 위 "하네스: Orca 기반" 표로 대체됐다.
+GSD phase lifecycle + tmux 2계층 구조는 **폐기** — 위 "하네스" 섹션 참조.
 
 - `.planning/` 아래 GSD 산출물은 컨텍스트 참고용으로만 남긴다.
-- Role playbooks (`.claude/agents/rails-{core,ui,test,qa}.md`)는 역할 참고 문서로 유지 — Orca로 발주 시 태스크 명세에 해당 원칙을 포함시킨다.
+- Role playbooks (`.claude/agents/rails-{core,ui,test,qa}.md`)는 역할 참고 문서로 유지 — 발주 시 태스크 명세에 해당 원칙을 포함시킨다.
 - For Codex work, follow the architecture and verification rules in this file even when using GSD artifacts for context.
 
 ## Environment Variables
