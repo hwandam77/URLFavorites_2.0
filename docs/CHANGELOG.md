@@ -67,3 +67,4 @@
 | 2026-10-27 | 시맨틱 검색 후보 코퍼스의 1,000건 LIMIT 캡 제거 | `UrlFavorites::Integrations::Search::SemanticClient` | 1,000건 이상 즐겨찾기가 시맨틱 검색 후보에서 누락되던 문제 해결 |
 | 2026-10-27 | **사용되지 않는 스키마·젠·잡 래퍼 제거 (Lean 정리)** | `db/schema.rb`/`Gemfile`/`AnalyzeWebpageJob` | 미사용 젠 4개(faraday-retry·jbuilder·kamal·image_processing) 제거, `db/schema.rb` 제거(`schema_format=:sql`이라 정본은 `structure.sql`), 미사용 `AnalyzeWebpageJob` 래퍼 제거, 빈 `script/` 제거 |
 | 2026-10-27 | **SSRF: IP 8진·축약 표기 차단** | `SafetyPolicy` | getaddrinfo의 모든 해석 결과를 전체 차단 대역과 대조하고 숫자·점 표기 해석 실패는 fail-closed 처리 |
+| 2026-10-27 | **solid_queue_recurring 큐 워커 폴링 누락 수정** (`5310d10`) | `config/queue.yml`/`queue_yml_test.rb` | command: 기반 recurring 태스크(clear_solid_queue_finished_jobs)가 enqueue되는 SolidQueue::RecurringJob의 큐를 폴링하는 워커가 없어 6개월간 finished 잡 정리 미실행(ready 4,320건·finished 83,908건 적체, 큐 DB 82MB). 첫 워커 queues 맨 끝에 solid_queue_recurring 추가(엄격 우선순위 — 정리 잡 최저). 운영 조치(재시작 전 backlog 수동 삭제 + 최초 clear_finished_in_batches 통제 실행)는 서버에서 별도 수행 |
