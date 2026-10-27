@@ -64,3 +64,4 @@
 | 2026-10-27 | **LLM 분석 전체 실패 복구 — vLLM served-model 변경 대응** | `LlamaServer::HealthCheck`/`Client`/서버 드롭인 `env.conf`/`AGENTS.md` | nexus vLLM이 `Qwen3.6-27B` 별칭을 제거해 `Qwen3.8-27B`만 서빙 → 앱이 옛 모델명을 요청하며 전 분석이 404 실패. 드롭인 `LLM_BACKENDS` model 교정으로 복구 + 헬스체크가 설정 모델의 서빙 여부를 확인하도록 보강(설정 드리프트 조기 탐지) + 에러 메시지에 백엔드 응답 본문 포함 |
 | 2026-10-27 | **FTS5 검색 연산자 회귀 수정** — 대문자 `AND`/`OR`/`NOT`/`NEAR` 제거 및 각 term 인용, 모든 term에 `*` 접미 유지(`rails guide` → `rails* guide*`) | `FavoriteSearch`/FTS5 | 연산자 키워드·특수문자 검색이 500으로 실패하지 않고 공백 구분 implicit AND로 동작하도록 수정 |
 | 2026-10-27 | **리다이렉트 추적 시 SSRF 재검증** | `UrlFavorites::Integrations::Webpage::Scraper`/`SafetyPolicy` | 리다이렉트 추적 시 각 홉 URL을 SSRF 안전 정책(SafetyPolicy)으로 재검증해 사설·링크로컬 IP 리다이렉트를 차단. 302 리다이렉트 대상이 사설 IP(예: 169.254.169.254, 192.168.0.1)면 FetchError |
+| 2026-10-27 | 시맨틱 검색 후보 코퍼스의 1,000건 LIMIT 캡 제거 | `UrlFavorites::Integrations::Search::SemanticClient` | 1,000건 이상 즐겨찾기가 시맨틱 검색 후보에서 누락되던 문제 해결 |
