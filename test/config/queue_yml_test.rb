@@ -12,7 +12,7 @@ class QueueYmlTest < ActiveSupport::TestCase
       assert_kind_of Array, worker[:queues], "queues must be Array, got #{worker[:queues].inspect}"
     end
 
-    assert_equal %w[default search mailers reindex], workers[0][:queues]
+    assert_equal %w[default search mailers reindex solid_queue_recurring], workers[0][:queues]
     assert_equal %w[ai ai_followup], workers[1][:queues]
   end
 end
