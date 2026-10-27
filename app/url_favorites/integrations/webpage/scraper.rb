@@ -1,4 +1,5 @@
 require "nokogiri"
+require Rails.root.join("app/url_favorites/domain/urls/safety_policy").to_s
 
 module UrlFavorites
   module Integrations
@@ -41,6 +42,9 @@ module UrlFavorites
             location = response.headers["location"]
             return [ response, url ] unless response.status.between?(300, 399) && location.present?
             url = URI.join(url, location).to_s
+            unless UrlFavorites::Domain::Urls::SafetyPolicy.allowed?(url)
+              raise FetchError, "Redirect to unsafe URL: #{url}"
+            end
           end
           raise FetchError, "Too many redirects"
         end
