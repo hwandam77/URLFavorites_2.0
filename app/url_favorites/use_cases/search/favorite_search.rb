@@ -41,11 +41,11 @@ module UrlFavorites
         end
 
         def fts_terms
-          @query.split(/[^\p{Word}]+/).reject(&:blank?)
+          @query.split(/[^\p{Word}]+/).reject(&:blank?).reject { |term| %w[AND OR NOT NEAR].include?(term) }
         end
 
         def fts_search(terms)
-          match_expr = terms.map { |term| "#{term}*" }.join(" ")
+          match_expr = terms.map { |term| "\"#{term}\"*" }.join(" ")
 
           sql = "SELECT favorite_id FROM favorites_fts WHERE favorites_fts MATCH ?"
           rows = ActiveRecord::Base.connection.execute(

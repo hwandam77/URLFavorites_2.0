@@ -86,20 +86,58 @@ class UrlFavorites::UseCases::Search::FavoriteSearchTest < ActiveSupport::TestCa
 
   def test_handles_colon_query_as_implicit_and
     favorite = Favorite.create!(
-      title: "foo bar",
-      url: "https://example.com/foo-bar",
+      title: "foo xxx bar",
+      url: "https://example.com/foo-xxx-bar",
       content_type: "webpage",
       status: "done"
     )
     UrlFavorites::Integrations::Search::Indexer.index(favorite)
 
+    foo_only = Favorite.create!(
+      title: "foo only",
+      url: "https://example.com/foo-only",
+      content_type: "webpage",
+      status: "done"
+    )
+    UrlFavorites::Integrations::Search::Indexer.index(foo_only)
+
     results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "foo:bar")
 
     assert_includes results.map(&:id), favorite.id
+    refute_includes results.map(&:id), foo_only.id
+  end
+
+  def test_handles_fts_operator_keyword_query_as_implicit_and
+    favorite = Favorite.create!(
+      title: "foo xxx bar",
+      url: "https://example.com/foo-xxx-bar",
+      content_type: "webpage",
+      status: "done"
+    )
+    UrlFavorites::Integrations::Search::Indexer.index(favorite)
+
+    foo_only = Favorite.create!(
+      title: "foo only",
+      url: "https://example.com/foo-only",
+      content_type: "webpage",
+      status: "done"
+    )
+    UrlFavorites::Integrations::Search::Indexer.index(foo_only)
+
+    results = nil
+    assert_nothing_raised do
+      results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "foo AND bar")
+    end
+
+    assert_includes results.map(&:id), favorite.id
+    refute_includes results.map(&:id), foo_only.id
   end
 
   def test_returns_empty_for_query_with_only_symbols
-    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "+++")
+    results = nil
+    UrlFavorites::Integrations::Search::SemanticClient.stub(:call, ->(*) { flunk "semantic fallback must not run" }) do
+      results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "+++")
+    end
 
     assert_empty results
   end
