@@ -26,6 +26,29 @@ class UrlFavoritesDomainUrlsSafetyPolicyTest < ActiveSupport::TestCase
     assert_not UrlFavorites::Domain::Urls::SafetyPolicy.allowed?("http://[::1]")
   end
 
+  test "비표준 IP 표기 우회 차단" do
+    [
+      "http://0177.0.0.1/x",
+      "http://012.0.0.1/x",
+      "http://0/x",
+      "http://00.0.0.0/x",
+      "http://0300.0250.0001.0001/x",
+      "http://127.0.0.1./x",
+      "http://127.1/x",
+      "http://0x7f000001/x",
+      "http://0x7f.0x0.0x0.0x1/x",
+      "http://2130706433/x",
+      "http://1.2.3.4.5/x",
+      "http://0./x",
+      "http://[::]/x",
+      "http://[::ffff:0.0.0.0]/x",
+      "http://[::10.0.0.1]/x",
+      "http://[::ffff:10.0.0.1]/x"
+    ].each do |url|
+      assert_not UrlFavorites::Domain::Urls::SafetyPolicy.allowed?(url), url
+    end
+  end
+
   test "ftp 스킴 차단" do
     assert_not UrlFavorites::Domain::Urls::SafetyPolicy.allowed?("ftp://example.com")
   end
@@ -35,6 +58,11 @@ class UrlFavoritesDomainUrlsSafetyPolicyTest < ActiveSupport::TestCase
   end
 
   # 허용 케이스
+  test "공개 숫자 IP 허용" do
+    assert UrlFavorites::Domain::Urls::SafetyPolicy.allowed?("http://8.8.8.8/")
+    assert UrlFavorites::Domain::Urls::SafetyPolicy.allowed?("http://[2001:4860:4860::8888]/")
+  end
+
   test "https URL 허용" do
     assert UrlFavorites::Domain::Urls::SafetyPolicy.allowed?("https://example.com")
   end
