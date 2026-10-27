@@ -142,6 +142,13 @@ class UrlFavorites::UseCases::Search::FavoriteSearchTest < ActiveSupport::TestCa
     assert_empty results
   end
 
+  def test_returns_empty_for_query_with_only_fts_operator_keywords
+    UrlFavorites::Integrations::Search::SemanticClient.stub(:call, ->(*) { flunk "semantic fallback must not run" }) do
+      assert_empty UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "AND")
+      assert_empty UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "AND OR NOT NEAR")
+    end
+  end
+
   def test_returns_favorites_matching_summary_keyword
     results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "framework")
     assert_includes results.map(&:id), @fav1.id
