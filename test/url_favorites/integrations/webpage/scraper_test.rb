@@ -7,6 +7,10 @@ class UrlFavorites::Integrations::Webpage::ScraperTest < ActiveSupport::TestCase
     WebMock.disable_net_connect!
   end
 
+  def run
+    Addrinfo.stub(:getaddrinfo, [ Addrinfo.ip("93.184.216.34") ]) { super }
+  end
+
   teardown do
     WebMock.reset!
   end
@@ -141,6 +145,35 @@ class UrlFavorites::Integrations::Webpage::ScraperTest < ActiveSupport::TestCase
 
     assert_equal "OG 제목", result[:title]
     assert_includes result[:body_text], "본문 내용 첫 번째 단락"
+  end
+
+  test "사설 IP로 리다이렉트하면 FetchError" do
+    stub_request(:get, "https://redirect.example/private")
+      .to_return(status: 302, headers: { "Location" => "http://169.254.169.254/latest/meta-data" })
+
+    assert_raises(UrlFavorites::Integrations::Webpage::Scraper::FetchError) do
+      UrlFavorites::Integrations::Webpage::Scraper.call("https://redirect.example/private")
+    end
+  end
+
+  test "내부 IP로 리다이렉트하면 FetchError" do
+    stub_request(:get, "https://redirect.example/internal")
+      .to_return(status: 302, headers: { "Location" => "http://192.168.0.1/admin" })
+
+    assert_raises(UrlFavorites::Integrations::Webpage::Scraper::FetchError) do
+      UrlFavorites::Integrations::Webpage::Scraper.call("https://redirect.example/internal")
+    end
+  end
+
+  test "공개 URL로 리다이렉트하면 최종 페이지를 스크랩한다" do
+    stub_request(:get, "https://redirect.example/public")
+      .to_return(status: 302, headers: { "Location" => "https://example.com/final" })
+    stub_request(:get, "https://example.com/final")
+      .to_return(status: 200, body: HTML_WITH_OG, headers: { "Content-Type" => "text/html" })
+
+    result = UrlFavorites::Integrations::Webpage::Scraper.call("https://redirect.example/public")
+
+    assert_equal "OG 제목", result[:title]
   end
 
   test "리다이렉트 루프는 FetchError" do
