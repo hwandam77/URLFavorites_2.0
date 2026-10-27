@@ -31,7 +31,7 @@ The core logic resides in `app/url_favorites/`, organized into three layers:
 #### 🧬 Domain (`app/url_favorites/domain/`)
 - `Analysis`: Retry policies, prompt styles, and **`BackendRouter`** (multi-LLM 라우팅: content_type/length → `heavy`/`fast` role 우선순위).
 - `Tags`: Logic for tag learning and management.
-- `Urls`: URL normalization, **type detection (webpage / youtube / github / twitter)**, category detection, and safety policies.
+- `Urls`: URL normalization, **type detection (webpage / youtube / github / twitter)**, category detection, and **SSRF safety policy (`SafetyPolicy`: HTTP/HTTPS only, private/loopback/link-local IP 차단 — 8진·축약·IPv4-mapped 표기까지 resolve 후 대조)**.
 
 #### 🚀 Use Cases (`app/url_favorites/use_cases/`)
 - `Analysis`: Enqueueing and running webpage/YouTube analysis.
