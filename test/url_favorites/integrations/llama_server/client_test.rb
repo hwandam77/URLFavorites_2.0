@@ -81,6 +81,18 @@ class UrlFavorites::Integrations::LlamaServer::ClientTest < ActiveSupport::TestC
     end
   end
 
+  def test_call_raises_server_error_on_http_404_including_response_body
+    body = { error: { message: "The model `missing-model` does not exist." } }.to_json
+    stub_request(:post, LLAMA_TEST_URL + "/v1/chat/completions")
+      .to_return(status: 404, body: body, headers: { "Content-Type" => "application/json" })
+
+    error = assert_raises UrlFavorites::Integrations::LlamaServer::Client::ServerError do
+      UrlFavorites::Integrations::LlamaServer::Client.call("test content", type: "webpage")
+    end
+
+    assert_includes error.message, "The model `missing-model` does not exist."
+  end
+
   def test_call_uses_120s_timeout
     stub_request(:post, ENV.fetch("LLAMA_SERVER_URL", "http://localhost:8080") + "/v1/chat/completions")
       .to_return(status: 200, body: @valid_response, headers: { "Content-Type" => "application/json" })
