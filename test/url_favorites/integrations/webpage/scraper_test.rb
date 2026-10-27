@@ -7,6 +7,10 @@ class UrlFavorites::Integrations::Webpage::ScraperTest < ActiveSupport::TestCase
     WebMock.disable_net_connect!
   end
 
+  def run
+    Addrinfo.stub(:getaddrinfo, [ Addrinfo.ip("93.184.216.34") ]) { super }
+  end
+
   teardown do
     WebMock.reset!
   end
