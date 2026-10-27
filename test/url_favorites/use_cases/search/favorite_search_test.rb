@@ -64,6 +64,84 @@ class UrlFavorites::UseCases::Search::FavoriteSearchTest < ActiveSupport::TestCa
     refute_includes results.map(&:id), @fav2.id
   end
 
+  def test_handles_c_plus_plus_query
+    favorite = Favorite.create!(
+      title: "C++ 메모리 관리",
+      url: "https://example.com/cpp-memory",
+      content_type: "webpage",
+      status: "done"
+    )
+    UrlFavorites::Integrations::Search::Indexer.index(favorite)
+
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "C++")
+
+    assert_includes results.map(&:id), favorite.id
+  end
+
+  def test_handles_c_sharp_query
+    assert_nothing_raised do
+      UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "C#")
+    end
+  end
+
+  def test_handles_colon_query_as_implicit_and
+    favorite = Favorite.create!(
+      title: "foo xxx bar",
+      url: "https://example.com/foo-xxx-bar",
+      content_type: "webpage",
+      status: "done"
+    )
+    UrlFavorites::Integrations::Search::Indexer.index(favorite)
+
+    foo_only = Favorite.create!(
+      title: "foo only",
+      url: "https://example.com/foo-only",
+      content_type: "webpage",
+      status: "done"
+    )
+    UrlFavorites::Integrations::Search::Indexer.index(foo_only)
+
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "foo:bar")
+
+    assert_includes results.map(&:id), favorite.id
+    refute_includes results.map(&:id), foo_only.id
+  end
+
+  def test_handles_fts_operator_keyword_query_as_implicit_and
+    favorite = Favorite.create!(
+      title: "foo xxx bar",
+      url: "https://example.com/foo-xxx-bar",
+      content_type: "webpage",
+      status: "done"
+    )
+    UrlFavorites::Integrations::Search::Indexer.index(favorite)
+
+    foo_only = Favorite.create!(
+      title: "foo only",
+      url: "https://example.com/foo-only",
+      content_type: "webpage",
+      status: "done"
+    )
+    UrlFavorites::Integrations::Search::Indexer.index(foo_only)
+
+    results = nil
+    assert_nothing_raised do
+      results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "foo AND bar")
+    end
+
+    assert_includes results.map(&:id), favorite.id
+    refute_includes results.map(&:id), foo_only.id
+  end
+
+  def test_returns_empty_for_query_with_only_symbols
+    results = nil
+    UrlFavorites::Integrations::Search::SemanticClient.stub(:call, ->(*) { flunk "semantic fallback must not run" }) do
+      results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "+++")
+    end
+
+    assert_empty results
+  end
+
   def test_returns_favorites_matching_summary_keyword
     results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "framework")
     assert_includes results.map(&:id), @fav1.id

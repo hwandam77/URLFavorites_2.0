@@ -18,7 +18,10 @@ module UrlFavorites
         def call
           return filtered_favorites if @query.blank?
 
-          results = fts_search
+          terms = fts_terms
+          return [] if terms.empty?
+
+          results = fts_search(terms)
           return results if results.present?
 
           semantic_search
@@ -37,13 +40,16 @@ module UrlFavorites
           end
         end
 
-        def fts_search
-          sanitized = @query.gsub(/['"]/, "''").strip
-          return [] if sanitized.blank?
+        def fts_terms
+          @query.split(/[^\p{Word}]+/).reject(&:blank?).reject { |term| %w[AND OR NOT NEAR].include?(term) }
+        end
+
+        def fts_search(terms)
+          match_expr = terms.map { |term| "\"#{term}\"*" }.join(" ")
 
           sql = "SELECT favorite_id FROM favorites_fts WHERE favorites_fts MATCH ?"
           rows = ActiveRecord::Base.connection.execute(
-            ActiveRecord::Base.send(:sanitize_sql_array, [ sql, sanitized + "*" ])
+            ActiveRecord::Base.send(:sanitize_sql_array, [ sql, match_expr ])
           )
           ids = rows.map { |r| r["favorite_id"] }.compact
           return [] if ids.empty?
