@@ -10,7 +10,7 @@ class LlmHealthMonitorJob < ApplicationJob
 
   def perform
     unless UrlFavorites::Integrations::LlamaServer::HealthCheck.call
-      Rails.logger.info "[LlmHealthMonitorJob] LLM backend down — waiting for recovery"
+      Rails.logger.info "[LlmHealthMonitorJob] LLM backend unhealthy (down or model mismatch) — waiting for recovery"
       return
     end
 

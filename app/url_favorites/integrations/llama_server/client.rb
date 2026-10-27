@@ -88,7 +88,7 @@ module UrlFavorites
 
           [ content, model ]
         rescue Faraday::ServerError => e
-          raise ServerError, "HTTP server error: #{e.message}"
+          raise ServerError, "HTTP server error: #{e.message}: #{e.response&.dig(:body).to_s[0, 500]}"
         rescue JSON::ParserError => e
           raise ServerError, "Invalid response envelope: #{e.message}"
         rescue Faraday::Error => e
@@ -129,7 +129,7 @@ module UrlFavorites
           result[:used_backend_model] = model
           result
         rescue Faraday::ServerError => e
-          raise ServerError, "HTTP server error: #{e.message}"
+          raise ServerError, "HTTP server error: #{e.message}: #{e.response&.dig(:body).to_s[0, 500]}"
         rescue JSON::ParserError => e
           raise ParseError, "Invalid JSON: #{e.message}"
         rescue Faraday::Error => e

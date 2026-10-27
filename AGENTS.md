@@ -20,7 +20,8 @@ Personal URL bookmark manager with automatic AI analysis. Rails 8 + SQLite + Sol
 - Database: SQLite3 main app database + Solid Queue database
 - Background jobs: Solid Queue
 - Frontend: Hotwire, Turbo Frames, Turbo Streams, Stimulus, ActionCable, Tailwind
-- AI model: Qwen3.6-27B (alias of Qwen3.8-27B-FP8) on Nexus vllm — PVE LXC `300 (vllm)`, `10.10.0.3:8000`, single backend
+- AI model: Qwen3.8-27B (Huihui-Qwen3.8-27B-abliterated-FP8) on Nexus vllm — PVE LXC `300 (vllm)`, `10.10.0.3:8000`, single backend
+- served-model 이름이 바뀌면 앱도 따라가야 한다: vLLM의 서빙 모델 id가 바뀌면 드롭인 `LLM_BACKENDS`의 `model`을 같은 id로 교정하지 않으면 모든 분석이 404로 실패한다
 - AI transport: HTTP over WireGuard VPN, configured by `LLM_BACKENDS` JSON (falls back to `LLAMA_SERVER_URL`); single-stage analysis (two-stage refine removed 2026-08-30)
 - Embeddings: bge-m3 (1024-dim) via llama-cpp-python server on the rails LXC at `EMBEDDING_URL=http://127.0.0.1:8900` (service `embeddings.service`)
 - Web scraping: Nokogiri for webpages, `yt-dlp` for YouTube subtitles and metadata
@@ -218,7 +219,7 @@ Systemd drop-in (inside LXC 101):
 Environment=LLAMA_SERVER_URL=http://10.10.0.4:8282
 Environment=PORT=3003
 Environment=SOLID_QUEUE_IN_PUMA=1
-Environment=LLM_BACKENDS=[{"url":"http://10.10.0.3:8000","model":"Qwen3.6-27B","role":"default","timeout":240}]
+Environment=LLM_BACKENDS=[{"url":"http://10.10.0.3:8000","model":"Qwen3.8-27B","role":"default","timeout":240}]
 Environment=EMBEDDING_URL=http://127.0.0.1:8900
 Environment=GITHUB_TOKEN=<fine-grained PAT>
 ```
@@ -233,7 +234,7 @@ Notes:
 
 - `LLM_BACKENDS` (Nexus vllm) is the effective analysis backend; the legacy `LLAMA_SERVER_URL` (beacon 8282) is dead since the infra migration but kept because production.rb requires the variable to be set.
 - **`LLM_BACKENDS` 이스케이프 함정 (2026-07-13 장애 원인)**: systemd `Environment=`는 큰따옴표를 quoting으로 해석해 벗겨낸다. JSON은 반드시 `\"`로 이스케이프한다 — 평범한 `"`로 넣으면 무효 JSON이 되어 `resolve_backends`가 `ParseError`를 던지고 **모든 분석이 실패**한다. 편집 후 `/proc/$(systemctl show <svc> -p MainPID --value)/environ`으로 실제 프로세스가 받는 값이 유효 JSON인지 검증할 것 (드롭인 편집은 restart 전까지 dormant라 다음 restart 때 터진다). 위 예시 블록은 가독성용이며 실제 파일에는 이스케이프가 들어간다.
-- timeout 240: vllm Qwen3.6-27B는 256K prefill + 512 토큰 생성이 ~10초지만 긴 유튜브 트랜스크립트 여유분으로 240초 유지.
+- timeout 240: vllm Qwen3.8-27B는 256K prefill + 512 토큰 생성이 ~10초지만 긴 유튜브 트랜스크립트 여유분으로 240초 유지.
 - 드롭인 변경 후: `sudo systemctl daemon-reload && sudo systemctl restart rails-puma@urlfavorites`
 - Embeddings run on the same container: `embeddings.service` (llama-cpp-python, bge-m3 Q8_0 GGUF, `127.0.0.1:8900`, model dir `/home/hwandam/services/embeddings/`).
 - The container git checkout fetches from GitHub over https using a stored credential (`/root/.git-credentials`, token same as `GITHUB_TOKEN`); remote name must stay `github` (bin/deploy expects it).
@@ -287,6 +288,7 @@ Common production issues:
 - reddit 분석만 `failed` (`ExtractionError`): `rdt` CLI 미설치 또는 쿠키 만료(기본 7일) — Reddit은 익명 API 전면 차단이라 로그인 쿠키 필수. `rdt status --json`으로 `authenticated` 확인 → 만료 시 Mac에서 `rdt login` 후 `~/.config/rdt-cli/credential.json` 재배치. 상세: `docs/runbooks/reddit-extraction.md`.
 - reddit만 403 / `authenticated: false` (쿠키·IP 정상인데): rdt가 Python 3.14로 구동되면 쿠키를 요청에 싣지 못한다 (2026-07-24 실측: 같은 쿠키가 3.12에선 성공). `uv tool install --python 3.12 'git+…rdt-cli…@고정커밋'`으로 3.12 고정 재설치.
 - 모든 분석 `failed` (`ParseError: Invalid LLM_BACKENDS JSON`): env.conf의 `"` 미이스케이프 → `\"`로 이스케이프 후 `/proc/PID/environ`으로 유효 JSON 검증.
+- 모든 분석 `failed` (로그에 `404 ... The model \`X\` does not exist.`): nexus vLLM의 served-model 이름이 바뀐 것 — `curl http://10.10.0.3:8000/v1/models`로 실제 id를 확인하고 드롭인 `LLM_BACKENDS`의 `model` 값을 그 id로 고친 뒤 `daemon-reload`+재시작 (2026-10-27 `Qwen3.6-27B` 별칭 제거 사례)
 - 배포했는데 잡이 옛 코드로 동작 (2026-07-13 발견): 이전 재시작 때 죽지 않은 **고아 solid-queue 트리(PPID=1)**가 같은 큐 DB에서 잡을 선점 → `lsof storage/production_queue.sqlite3`로 워커 트리 확인 → puma 기동 시각과 다른 supervisor `kill <PID>`.
 
 ## 모델 라우팅
@@ -331,7 +333,7 @@ GSD phase lifecycle + tmux 2계층 구조는 **폐기** — 위 "하네스" 섹�
 
 ```bash
 LLAMA_SERVER_URL=http://10.10.0.4:8282        # legacy, required to boot; analysis uses LLM_BACKENDS
-LLM_BACKENDS=[{"url":"http://10.10.0.3:8000","model":"Qwen3.6-27B","role":"default","timeout":240}]
+LLM_BACKENDS=[{"url":"http://10.10.0.3:8000","model":"Qwen3.8-27B","role":"default","timeout":240}]
 EMBEDDING_URL=http://127.0.0.1:8900           # bge-m3 via llama-cpp-python (embeddings.service)
 GITHUB_TOKEN=<fine-grained PAT>
 RAILS_ENV=production

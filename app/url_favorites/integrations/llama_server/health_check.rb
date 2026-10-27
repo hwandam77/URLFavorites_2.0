@@ -12,10 +12,10 @@ module UrlFavorites
           backends = UrlFavorites::Integrations::LlamaServer::Client.backends
           return false if backends.empty?
 
-          backends.all? { |backend| backend_healthy?(backend[:url]) }
+          backends.all? { |backend| backend_healthy?(backend[:url], backend[:model]) }
         end
 
-        def self.backend_healthy?(base_url)
+        def self.backend_healthy?(base_url, model = nil)
           return false if base_url.blank?
 
           conn = Faraday.new(base_url) do |f|
@@ -23,7 +23,25 @@ module UrlFavorites
             f.options.open_timeout = TIMEOUT_SECONDS
           end
           response = conn.get("/health")
-          response.status == 200
+          return false unless response.status == 200
+          return true if model.blank?
+
+          begin
+            models_response = conn.get("/v1/models")
+            return true unless models_response.status == 200
+
+            parsed = JSON.parse(models_response.body)
+            data = parsed.is_a?(Hash) ? parsed["data"] : nil
+            return true unless data.is_a?(Array) && data.any?
+
+            ids = data.filter_map { |entry| entry["id"] if entry.is_a?(Hash) }
+            return true if ids.empty? || ids.include?(model)
+
+            Rails.logger.error "[LlamaServer::HealthCheck] configured model=#{model.inspect}; serving ids=#{ids.inspect}"
+            false
+          rescue Faraday::Error, JSON::ParserError, Errno::ECONNREFUSED
+            true
+          end
         rescue Faraday::Error, Errno::ECONNREFUSED => e
           Rails.logger.warn "[LlamaServer::HealthCheck] #{base_url} unhealthy: #{e.class} #{e.message}"
           false
