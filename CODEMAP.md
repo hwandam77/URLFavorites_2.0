@@ -51,7 +51,7 @@ The core logic resides in `app/url_favorites/`, organized into three layers:
 ---
 
 ## ⚙️ Background Processing (`app/jobs/`)
-- `AnalyzeWebpageJob` / `AnalyzeWebpageAnalysisJob`: Scraping + AI analysis for webpages/GitHub.
+- `AnalyzeWebpageAnalysisJob`: Scraping + AI analysis for webpages/GitHub.
 - `AnalyzeYoutubeJob`: Transcript extraction + AI analysis for YouTube videos.
 - **`AnalyzeTwitterJob`**: X(트위터) 트윗 추출(syndication/Jina) + AI analysis.
 - `ReindexFavoriteJob`: Updates the semantic search index for a favorite.

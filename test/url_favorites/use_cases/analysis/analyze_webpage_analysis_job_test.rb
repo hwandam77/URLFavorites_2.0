@@ -1,7 +1,7 @@
 require "test_helper"
 require "webmock/minitest"
 
-class AnalyzeWebpageJobTest < ActiveSupport::TestCase
+class AnalyzeWebpageAnalysisJobTest < ActiveSupport::TestCase
   include ActiveJob::TestHelper
 
   setup do
@@ -24,7 +24,7 @@ class AnalyzeWebpageJobTest < ActiveSupport::TestCase
   test "성공 시 pending → analyzing → done 상태 전이 및 Analysis 생성" do
     UrlFavorites::Integrations::Webpage::Scraper.stub(:call, @scraper_result) do
       UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @analyzer_result) do
-        AnalyzeWebpageJob.perform_now(@favorite.id)
+        AnalyzeWebpageAnalysisJob.perform_now(@favorite.id)
 
         @favorite.reload
         assert_equal "done", @favorite.status
@@ -40,7 +40,7 @@ class AnalyzeWebpageJobTest < ActiveSupport::TestCase
     UrlFavorites::Integrations::Webpage::Scraper.stub(:call, @scraper_result) do
       UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @analyzer_result) do
         assert_enqueued_with(job: ReindexFavoriteJob, args: [ @favorite.id ]) do
-          AnalyzeWebpageJob.perform_now(@favorite.id)
+          AnalyzeWebpageAnalysisJob.perform_now(@favorite.id)
         end
       end
     end
@@ -49,7 +49,7 @@ class AnalyzeWebpageJobTest < ActiveSupport::TestCase
   test "raw_content 에 스크래퍼 결과를 캐싱한다" do
     UrlFavorites::Integrations::Webpage::Scraper.stub(:call, @scraper_result) do
       UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @analyzer_result) do
-        AnalyzeWebpageJob.perform_now(@favorite.id)
+        AnalyzeWebpageAnalysisJob.perform_now(@favorite.id)
 
         assert_not_nil @favorite.reload.analysis.raw_content
       end
@@ -58,7 +58,7 @@ class AnalyzeWebpageJobTest < ActiveSupport::TestCase
 
   test "스크래핑 실패 시 status = failed" do
     UrlFavorites::Integrations::Webpage::Scraper.stub(:call, ->(_url) { raise UrlFavorites::Integrations::Webpage::Scraper::FetchError, "스크래핑 실패" }) do
-      AnalyzeWebpageJob.perform_now(@favorite.id)
+      AnalyzeWebpageAnalysisJob.perform_now(@favorite.id)
 
       @favorite.reload
       assert_equal "failed", @favorite.status
@@ -68,7 +68,7 @@ class AnalyzeWebpageJobTest < ActiveSupport::TestCase
   test "LLM 분석 실패 시 status = failed" do
     UrlFavorites::Integrations::Webpage::Scraper.stub(:call, @scraper_result) do
       UrlFavorites::Integrations::LlamaServer::Client.stub(:call, ->(*_args) { raise UrlFavorites::Integrations::LlamaServer::Client::ServerError, "LLM 오류" }) do
-        AnalyzeWebpageJob.perform_now(@favorite.id)
+        AnalyzeWebpageAnalysisJob.perform_now(@favorite.id)
 
         @favorite.reload
         assert_equal "failed", @favorite.status
@@ -79,12 +79,12 @@ class AnalyzeWebpageJobTest < ActiveSupport::TestCase
   test "완료된 분석이 있으면 재분석 실패 시에도 done 유지" do
     UrlFavorites::Integrations::Webpage::Scraper.stub(:call, @scraper_result) do
       UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @analyzer_result) do
-        AnalyzeWebpageJob.perform_now(@favorite.id)
+        AnalyzeWebpageAnalysisJob.perform_now(@favorite.id)
       end
       assert_equal "done", @favorite.reload.status
 
       UrlFavorites::Integrations::LlamaServer::Client.stub(:call, ->(*_args) { raise UrlFavorites::Integrations::LlamaServer::Client::ServerError, "LLM 오류" }) do
-        AnalyzeWebpageJob.perform_now(@favorite.id)
+        AnalyzeWebpageAnalysisJob.perform_now(@favorite.id)
       end
 
       @favorite.reload
@@ -96,8 +96,8 @@ class AnalyzeWebpageJobTest < ActiveSupport::TestCase
   test "재실행 시 Analysis 를 덮어쓴다 (upsert)" do
     UrlFavorites::Integrations::Webpage::Scraper.stub(:call, @scraper_result) do
       UrlFavorites::Integrations::LlamaServer::Client.stub(:call, @analyzer_result) do
-        AnalyzeWebpageJob.perform_now(@favorite.id)
-        AnalyzeWebpageJob.perform_now(@favorite.id)
+        AnalyzeWebpageAnalysisJob.perform_now(@favorite.id)
+        AnalyzeWebpageAnalysisJob.perform_now(@favorite.id)
 
         assert_equal 1, Analysis.where(favorite_id: @favorite.id).count
       end
