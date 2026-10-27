@@ -20,9 +20,7 @@ module UrlFavorites
           return false if BLOCKED_HOSTS.include?(host.downcase)
           return false if BLOCKED_SUFFIXES.any? { |s| host.downcase.end_with?(s) }
 
-          ip_blocked = blocked_ip?(host)
-          resolves_to_blocked_ip = resolves_to_private?(host)
-          return false if ip_blocked || resolves_to_blocked_ip
+          return false if blocked_ip?(host) || resolves_to_blocked?(host)
 
           true
         rescue URI::InvalidURIError
@@ -36,15 +34,19 @@ module UrlFavorites
           false
         end
 
-        def self.resolves_to_private?(host)
+        def self.resolves_to_blocked?(host)
           Addrinfo.getaddrinfo(host, nil, nil, :STREAM).any? do |addr|
             blocked_ip_address?(IPAddr.new(addr.ip_address))
           end
         rescue IPAddr::InvalidAddressError, SocketError
+          # 도메인 해석 실패는 허용 — fetch도 실패한다. 숫자·점 표기만 fail-closed.
           host.match?(/\A[\d.]+\z/)
         end
 
         def self.blocked_ip_address?(ip)
+          ip = ip.native
+          return true if ip.to_i.zero?
+
           ip.loopback? || ip.private? || ip.link_local? ||
             BLOCKED_IP_RANGES.any? { |range| IPAddr.new(range).include?(ip) }
         end
