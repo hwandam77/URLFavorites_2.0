@@ -1,5 +1,6 @@
 require "uri"
 require "ipaddr"
+require "socket"
 
 module UrlFavorites
   module Domain
@@ -19,8 +20,9 @@ module UrlFavorites
           return false if BLOCKED_HOSTS.include?(host.downcase)
           return false if BLOCKED_SUFFIXES.any? { |s| host.downcase.end_with?(s) }
 
-          return false if blocked_ip?(host)
-          return false if resolves_to_private?(host)
+          ip_blocked = blocked_ip?(host)
+          resolves_to_blocked_ip = resolves_to_private?(host)
+          return false if ip_blocked || resolves_to_blocked_ip
 
           true
         rescue URI::InvalidURIError
@@ -29,22 +31,22 @@ module UrlFavorites
 
         def self.blocked_ip?(host)
           ip = IPAddr.new(host)
-          ip.loopback? || ip.private? || ip.link_local? ||
-            BLOCKED_IP_RANGES.any? { |range| IPAddr.new(range).include?(ip) }
+          blocked_ip_address?(ip)
         rescue IPAddr::InvalidAddressError
           false
         end
 
         def self.resolves_to_private?(host)
-          return false if host.match?(/\A\d+\.\d+\.\d+\.\d+\z/)
-
-          addr = Addrinfo.getaddrinfo(host, nil, nil, :STREAM).first
-          return false unless addr
-
-          ip = IPAddr.new(addr.ip_address)
-          ip.loopback? || ip.private? || ip.link_local?
+          Addrinfo.getaddrinfo(host, nil, nil, :STREAM).any? do |addr|
+            blocked_ip_address?(IPAddr.new(addr.ip_address))
+          end
         rescue IPAddr::InvalidAddressError, SocketError
-          false
+          host.match?(/\A[\d.]+\z/)
+        end
+
+        def self.blocked_ip_address?(ip)
+          ip.loopback? || ip.private? || ip.link_local? ||
+            BLOCKED_IP_RANGES.any? { |range| IPAddr.new(range).include?(ip) }
         end
       end
     end
