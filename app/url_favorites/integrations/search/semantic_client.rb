@@ -59,7 +59,7 @@ module UrlFavorites
         private
 
         def fetch_candidates_with_embeddings
-          sql = "SELECT favorite_id, embedding FROM favorite_embeddings LIMIT 1000"
+          sql = "SELECT favorite_id, embedding FROM favorite_embeddings"
           rows = ActiveRecord::Base.connection.execute(sql)
           rows.map { |r| { favorite_id: r["favorite_id"], content_embedding: r["embedding"] } }
         end
