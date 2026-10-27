@@ -64,6 +64,46 @@ class UrlFavorites::UseCases::Search::FavoriteSearchTest < ActiveSupport::TestCa
     refute_includes results.map(&:id), @fav2.id
   end
 
+  def test_handles_c_plus_plus_query
+    favorite = Favorite.create!(
+      title: "C++ 메모리 관리",
+      url: "https://example.com/cpp-memory",
+      content_type: "webpage",
+      status: "done"
+    )
+    UrlFavorites::Integrations::Search::Indexer.index(favorite)
+
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "C++")
+
+    assert_includes results.map(&:id), favorite.id
+  end
+
+  def test_handles_c_sharp_query
+    assert_nothing_raised do
+      UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "C#")
+    end
+  end
+
+  def test_handles_colon_query_as_implicit_and
+    favorite = Favorite.create!(
+      title: "foo bar",
+      url: "https://example.com/foo-bar",
+      content_type: "webpage",
+      status: "done"
+    )
+    UrlFavorites::Integrations::Search::Indexer.index(favorite)
+
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "foo:bar")
+
+    assert_includes results.map(&:id), favorite.id
+  end
+
+  def test_returns_empty_for_query_with_only_symbols
+    results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "+++")
+
+    assert_empty results
+  end
+
   def test_returns_favorites_matching_summary_keyword
     results = UrlFavorites::UseCases::Search::FavoriteSearch.call(query: "framework")
     assert_includes results.map(&:id), @fav1.id
